@@ -1,6 +1,6 @@
 import RenderRegion from "./region";
-import fragString from "../shader/sprite.frag?raw"
-import vertString from "../shader/sprite.vert?raw"
+import fragString from "../shader/sprite.frag";
+import vertString from "../shader/sprite.vert";
 import Rapid from "../render";
 import { WebglElementBufferArray } from "../math";
 import { WebGLContext } from "../interface";

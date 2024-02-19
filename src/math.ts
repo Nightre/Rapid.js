@@ -241,3 +241,45 @@ export class WebglElementBufferArray extends WebglBufferArray {
         this.objects = 0
     }
 }
+
+export class Color {
+    r: number
+    g: number
+    b: number
+    a: number
+    constructor(r: number, g: number, b: number, a: number) {
+        this.r = r
+        this.g = g
+        this.b = b
+        this.a = a
+    }
+    /**
+     * is equal to another color instance
+     * @param color 
+     * @returns 
+     */
+    equals(color: Color) {
+        return color.r == this.r &&
+            color.g == this.g &&
+            color.b == this.b &&
+            color.a == this.a
+    }
+    /**
+     * create a new color by hex string
+     * @param hexString 
+     * @returns 
+     */
+    static fromHex(hexString: string): Color {
+        if (hexString.startsWith('#')) {
+            hexString = hexString.slice(1);
+        }
+        const r = parseInt(hexString.slice(0, 2), 16) / 255;
+        const g = parseInt(hexString.slice(2, 4), 16) / 255;
+        const b = parseInt(hexString.slice(4, 6), 16) / 255;
+        let a = 1;
+        if (hexString.length >= 8) {
+            a = parseInt(hexString.slice(6, 8), 16) / 255;
+        }
+        return new Color(r, g, b, a);
+    }
+}

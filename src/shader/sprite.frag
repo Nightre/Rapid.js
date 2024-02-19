@@ -1,9 +1,9 @@
-precision highp float;
+precision mediump float;
 uniform sampler2D uTextures[%TEXTURE_NUM%];
 
-uniform vec4 uColor;
 varying vec2 vRegion;
 varying float vTextureId;
+varying float aColor;
 
 void main(void) {
     vec4 color;

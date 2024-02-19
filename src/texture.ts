@@ -1,4 +1,4 @@
-import { Rapid } from "."
+import Rapid from "./render"
 import { Images } from "./interface"
 import { createTexture } from "./webgl/utils"
 /**
