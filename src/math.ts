@@ -5,18 +5,19 @@ import { WebGLContext } from "./interface";
 type ArrayType = typeof Float32Array | typeof Uint16Array
 
 export class DynamicArrayBuffer {
-    protected usedElemNum: number
+    usedElemNum: number
     protected typedArray: Float32Array | Uint16Array
     private arrayType: ArrayType
     protected maxElemNum: number
     readonly bytePerElem: number
-
+    arraybuffer: ArrayBuffer
     constructor(arrayType: ArrayType) {
         this.usedElemNum = 0;
-        this.maxElemNum = 64;
+        this.maxElemNum = 512;
         this.bytePerElem = arrayType.BYTES_PER_ELEMENT
         this.arrayType = arrayType
-        this.typedArray = new arrayType(this.maxElemNum)
+        this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
+        this.typedArray = new arrayType(this.arraybuffer)
     }
 
     clear() {
@@ -35,7 +36,8 @@ export class DynamicArrayBuffer {
             }
 
             const data = this.typedArray;
-            this.typedArray = new this.arrayType(this.maxElemNum)
+            this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
+            this.typedArray = new this.arrayType(this.arraybuffer)
             this.typedArray.set(data);
             return this;
         }
@@ -45,8 +47,7 @@ export class DynamicArrayBuffer {
      * @param value 
      */
     push(value: number) {
-        this.typedArray[this.usedElemNum] = value
-        this.usedElemNum += 1
+        this.typedArray[this.usedElemNum++] = value
     }
     /**
      * pop a element

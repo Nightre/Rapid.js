@@ -1,7 +1,7 @@
 export const MATRIX_SIZE = 6
 
 // Sprite
-export const SPRITE_ELMENT_PER_VERTEX = 5
+export const SPRITE_ELMENT_PER_VERTEX = 6
 export const INDEX_PER_SPRITE = 6
 export const VERTEX_PER_SPRITE = 4
 export const FLOAT32_PER_SPRITE = VERTEX_PER_SPRITE * SPRITE_ELMENT_PER_VERTEX

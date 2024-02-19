@@ -12,6 +12,7 @@ class GLShader {
         this.program = createShaderProgram(rapid.gl, vs, fs)
         this.gl = rapid.gl
         this.parseShader(vs);
+        this.parseShader(fs);
     }
     use() {
         this.gl.useProgram(this.program)
