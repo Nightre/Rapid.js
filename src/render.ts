@@ -71,7 +71,7 @@ class Rapid {
         this.currentRegion?.render()
     }
 
-    renderSprite(texture: Texture, offsetX: number, offsetY: number, customShader?: GLShader) {
+    renderSprite(texture: Texture, offsetX: number, offsetY: number, color = 0xFFFFFFFF, customShader?: GLShader) {
         this.setRegion("sprite", customShader);
         (this.currentRegion as SpriteRegion).renderSprite(
             texture.base.texture,
@@ -82,7 +82,8 @@ class Rapid {
             texture.clipW,
             texture.clipH,
             offsetX,
-            offsetY
+            offsetY,
+            color
         )
     }
 

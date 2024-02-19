@@ -15,11 +15,15 @@ class RenderRegion {
         this.rapid = rapid
         this.gl = rapid.gl
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, Float32Array, rapid.gl.ARRAY_BUFFER)
+        this.webglArrayBuffer.onResize = this.onWebglArrayBufferResize.bind(this)
     }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
         const [tx, ty] = this.rapid.transformPoint(x, y)
         this.webglArrayBuffer.push(tx)
         this.webglArrayBuffer.push(ty)
+    }
+    protected onWebglArrayBufferResize(_arrayBuffer: ArrayBuffer) {
+
     }
     enterRegion(customShader?: GLShader) {
         this.currentShader = customShader ?? this.defaultShader

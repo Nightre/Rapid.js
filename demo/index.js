@@ -14,14 +14,11 @@ const render = ()=>{
     //     rapid.renderSprite(cat, index*40, 0)
     //     //rapid.matrixStack.popMat()
     // }
-    rapid.renderSprite(cat, 0, 0)
-    rapid.matrixStack.translate(100,100)
+    for (let index = 0; index < 1000; index++) {
+        rapid.renderSprite(cat, index*50,10)
+        rapid.renderSprite(plane, index*50,50)
 
-    rapid.renderSprite(cat, 50, 0)
-    rapid.renderSprite(plane, 100, 0)
-    rapid.matrixStack.translate(100,100)
-
-    rapid.renderSprite(plane, 10, 50)
+    }
 
     rapid.endRender()
 }
@@ -33,6 +30,6 @@ function animate() {
     stats.begin();
     render()
     stats.end();
-    //requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);

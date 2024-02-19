@@ -11,15 +11,22 @@ export class DynamicArrayBuffer {
     protected maxElemNum: number
     readonly bytePerElem: number
     arraybuffer: ArrayBuffer
+    private otherTypedArrays: ArrayLike<number>[] = []
+
     constructor(arrayType: ArrayType) {
         this.usedElemNum = 0;
-        this.maxElemNum = 512;
+        this.maxElemNum = 128;
         this.bytePerElem = arrayType.BYTES_PER_ELEMENT
         this.arrayType = arrayType
         this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
         this.typedArray = new arrayType(this.arraybuffer)
+        this.onResize(this.arraybuffer)
     }
-
+    addOtherTypedArray(typedClass: typeof Uint16Array | typeof Uint32Array | typeof Float32Array) {
+        this.otherTypedArrays.push(
+            new typedClass(this.arraybuffer)
+        )
+    }
     clear() {
         this.usedElemNum = 0;
     }
@@ -39,8 +46,11 @@ export class DynamicArrayBuffer {
             this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
             this.typedArray = new this.arrayType(this.arraybuffer)
             this.typedArray.set(data);
-            return this;
+            this.onResize(this.arraybuffer)
         }
+    }
+    onResize(_arraybuffer: ArrayBuffer) {
+
     }
     /**
      * push a new element
