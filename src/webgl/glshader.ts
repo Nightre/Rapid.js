@@ -5,7 +5,7 @@ import { createShaderProgram } from "./utils"
 class GLShader {
     attributeLoc: Record<string, number> = {}
     unifromLoc: Record<string, WebGLUniformLocation> = {}
-    private program: WebGLProgram
+    program: WebGLProgram
     private gl: WebGLContext
 
     constructor(rapid: Rapid, vs: string, fs: string) {
@@ -25,7 +25,7 @@ class GLShader {
             for (const match of attributeMatches) {
                 const name = match.split(' ')[2];
                 this.attributeLoc[name] = gl.getAttribLocation(this.program, name)!;
-                gl.enableVertexAttribArray(this.attributeLoc[name]);
+                
             }
         }
 
@@ -47,6 +47,7 @@ class GLShader {
             element.stride,
             element.offset || 0
         );
+        gl.enableVertexAttribArray(this.attributeLoc[element.name]);
     }
 }
 

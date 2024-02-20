@@ -4,7 +4,7 @@ const MATRIX_SIZE = 6
 type ArrayType = typeof Float32Array | typeof Uint16Array
 
 export class DynamicArrayBuffer {
-    protected usedElemNum: number
+    usedElemNum: number
     protected typedArray: Float32Array | Uint16Array
     private arrayType: ArrayType
     protected maxElemNum: number
@@ -125,6 +125,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
             } else {
                 gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
             }
+            this.dirty = false
         }
     }
 }

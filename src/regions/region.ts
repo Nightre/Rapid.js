@@ -12,9 +12,10 @@ class RenderRegion {
     protected gl: WebGLContext
     protected usedTextures: WebGLTexture[] = []
     protected readonly TEXTURE_UNITS_ARRAY: number[]
-    
+
     constructor(rapid: Rapid, attributes?: IAttribute[]) {
         this.attribute = attributes!
+
         this.rapid = rapid
         this.gl = rapid.gl
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, Float32Array, rapid.gl.ARRAY_BUFFER)
@@ -43,6 +44,7 @@ class RenderRegion {
         this.currentShader.use()
         this.initializeForNextRender()
         this.webglArrayBuffer.bindBuffer()
+
         this.attribute.forEach((element) => {
             this.currentShader?.setAttribute(element)
         })
@@ -70,6 +72,7 @@ class RenderRegion {
     }
     protected initializeForNextRender() {
         this.webglArrayBuffer.clear()
+        this.usedTextures = []
     }
 }
 

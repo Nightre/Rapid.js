@@ -12,6 +12,7 @@ const VERTEX_PER_SPRITE = 4
 const FLOAT32_PER_SPRITE = VERTEX_PER_SPRITE * SPRITE_ELMENT_PER_VERTEX
 //                       aPosition  aRegion   aTextureId  aColor
 const BYTES_PER_VERTEX = (4 * 2) + (4 * 2) + (4)       + (4)
+
 class SpriteElementArray extends WebglElementBufferArray {
     constructor(gl: WebGLContext) {
         super(gl, INDEX_PER_SPRITE, VERTEX_PER_SPRITE)
@@ -114,7 +115,6 @@ class SpriteRegion extends RenderRegion {
     protected initializeForNextRender(): void {
         super.initializeForNextRender()
         this.batchSprite = 0
-        this.usedTextures = []
     }
     private generateFragShader(fs: string, max: number) {
         let code = ""

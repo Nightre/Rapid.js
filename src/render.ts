@@ -74,7 +74,7 @@ class Rapid {
         this.currentRegion?.render()
     }
 
-    renderSprite(texture: Texture, offsetX: number, offsetY: number, color: Color = this.defaultColor, customShader?: GLShader) {
+    renderSprite(texture: Texture, offsetX: number = 0, offsetY: number = 0, color: Color = this.defaultColor, customShader?: GLShader) {
         this.setRegion("sprite", customShader);
         (this.currentRegion as SpriteRegion).renderSprite(
             texture.base.texture,
@@ -89,14 +89,16 @@ class Rapid {
             color.uint32
         )
     }
-    renderGraphic(vertexs: number[], offsetX: number, offsetY: number, color: Color = this.defaultColor, customShader?: GLShader){
+    
+    startGraphicDraw(customShader?: GLShader) {
         this.setRegion("graphic", customShader);
-        (this.currentRegion as GraphicRegion).renderGraphic(
-            vertexs,
-            offsetX,
-            offsetY,
-            color.uint32
-        )
+        (this.currentRegion as GraphicRegion).startRender()
+    }
+    addGraphicVertex(x: number, y: number, color: Color) {
+        (this.currentRegion as GraphicRegion).addVertex(x, y, color.uint32)
+    }
+    endGraphicDraw(){
+        (this.currentRegion as GraphicRegion).render()
     }
 
     clear() {
