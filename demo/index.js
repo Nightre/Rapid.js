@@ -93,10 +93,10 @@ const render = () => {
         element.x += element.speedX
         element.y += element.speedY
         element.speedY += 1
-        if (element.y > 600) {
+        if (element.y > 468) {
             element.speedY = -15 - Math.round(15 * Math.random())
         }
-        if (element.x > 600) {
+        if (element.x > 468) {
             element.speedX = -5
         } else if (element.x < 0) {
             element.speedX = 5
