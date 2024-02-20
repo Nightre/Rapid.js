@@ -1,7 +1,5 @@
 # 🚀 Rapid.js
 
-⚠️ This project is under development and will be completed soon ⚠️
-
 A highly efficient and lightweight WebGL renderer capable of rendering 10k sprites at 60fps.
 
 
@@ -14,6 +12,24 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 * Graphic
 * Matrix stacking
 * Color manipulation
+
+# Install
+
+```
+npm i rapid-render
+```
+
+Or use unpkg
+
+```html
+<script src="https://unpkg.com/rapid-render/dist/rapid.umd.cjs"></script>
+```
+
+# Import
+
+```js
+import { Rapid } from "rapid-render"
+```
 
 # Useage
 

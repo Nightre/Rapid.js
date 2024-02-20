@@ -1,6 +1,6 @@
 {
-  "name": "rapid.js",
-  "version": "0.0.1",
+  "name": "rapid-render",
+  "version": "0.0.2",
   "type": "module",
   "files": [
     "dist"
