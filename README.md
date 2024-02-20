@@ -67,7 +67,7 @@ rapid.renderSprite(cat,0,0, color) // draw Sprite
 rapid.restore() // back to the previous saved state
 
 // draw graphic
-// Different vertices can have different colors
+// vertices can have different colors
 rapid.startGraphicDraw()
 rapid.addGraphicVertex(0, 0, color)
 rapid.addGraphicVertex(100, 0, color)
