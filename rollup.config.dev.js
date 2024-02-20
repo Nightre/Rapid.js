@@ -11,7 +11,14 @@ export default {
         },
     ],
     plugins: [
-        typescript(),
+        typescript({
+            tsconfig: "./tsconfig.json",
+            tsconfigOverride: {
+                compilerOptions: {
+                    emitDeclarationOnly: false
+                }
+            }
+        }),
         string({
             include: [
                 "**/*.frag",
@@ -21,7 +28,7 @@ export default {
         server({
             open: true,
             contentBase: '.',
-            port:8080
+            port: 8080
         })
     ],
 };

@@ -107,7 +107,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         this.buffer = gl.createBuffer()!;
         this.type = type
     }
-    push(value: number): void {
+    override push(value: number): void {
         super.push(value)
         this.dirty = true
     }

@@ -24,14 +24,14 @@ class GraphicRegion extends RenderRegion {
         this.vertex = 0
         this.webglArrayBuffer.clear()
     }
-    addVertex(x: number, y: number, color: number): void {
+    override addVertex(x: number, y: number, color: number): void {
         this.webglArrayBuffer.resize(FLOAT32_PER_VERTEX)
         super.addVertex(x, y)
         this.webglArrayBuffer.pushUint(color)
         this.vertex += 1
     }
 
-    protected executeRender(): void {
+    protected override executeRender(): void {
         super.executeRender()
         const gl = this.gl
 

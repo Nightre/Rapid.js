@@ -21,7 +21,14 @@ export default {
         },
     ],
     plugins: [
-        typescript(),
+        typescript({
+            tsconfig: "./tsconfig.json",
+            tsconfigOverride: {
+                compilerOptions: {
+                    emitDeclarationOnly: false
+                }
+            }
+        }),
         string({
             include: [
                 "**/*.frag",

@@ -17,7 +17,7 @@ class SpriteElementArray extends WebglElementBufferArray {
     constructor(gl: WebGLContext, max: number) {
         super(gl, INDEX_PER_SPRITE, VERTEX_PER_SPRITE, max)
     }
-    protected addObject(vertex: number): void {
+    protected override addObject(vertex: number): void {
         super.addObject()
         this.push(vertex)
         this.push(vertex + 3)
@@ -51,7 +51,7 @@ class SpriteRegion extends RenderRegion {
         this.indexBuffer = new SpriteElementArray(gl, this.MAX_BATCH)
     }
 
-    protected addVertex(x: number, y: number, u: number, v: number, textureUnit: number, color: number): void {
+    protected override addVertex(x: number, y: number, u: number, v: number, textureUnit: number, color: number): void {
         super.addVertex(x, y)
 
         this.webglArrayBuffer.push(u)
@@ -96,12 +96,12 @@ class SpriteRegion extends RenderRegion {
         this.addVertex(posX, posY, texU, texV, textureUnit, color) // 2
         this.addVertex(offsetX, posY, u0, texV, textureUnit, color) // 3
     }
-    protected executeRender(): void {
+    protected override executeRender(): void {
         super.executeRender()
         const gl = this.gl
         gl.drawElements(gl.TRIANGLES, this.batchSprite * INDEX_PER_SPRITE, gl.UNSIGNED_SHORT, 0)
     }
-    enterRegion(customShader?: GLShader | undefined): void {
+    override enterRegion(customShader?: GLShader | undefined): void {
         super.enterRegion(customShader)
         this.indexBuffer.bindBuffer()
 
@@ -110,7 +110,7 @@ class SpriteRegion extends RenderRegion {
             this.TEXTURE_UNITS_ARRAY
         )
     }
-    protected initializeForNextRender(): void {
+    protected override initializeForNextRender(): void {
         super.initializeForNextRender()
         this.batchSprite = 0
     }
