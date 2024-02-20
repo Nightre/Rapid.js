@@ -99,12 +99,12 @@ class SpriteRegion extends RenderRegion {
     protected executeRender(): void {
         super.executeRender()
         const gl = this.gl
-        this.indexBuffer.bufferData()
         gl.drawElements(gl.TRIANGLES, this.batchSprite * INDEX_PER_SPRITE, gl.UNSIGNED_SHORT, 0)
     }
     enterRegion(customShader?: GLShader | undefined): void {
         super.enterRegion(customShader)
         this.indexBuffer.bindBuffer()
+
         this.gl.uniform1iv(
             this.currentShader!.unifromLoc["uTextures"],
             this.TEXTURE_UNITS_ARRAY

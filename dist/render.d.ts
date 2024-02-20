@@ -7,13 +7,17 @@ declare class Rapid {
     gl: WebGLContext;
     canvas: HTMLCanvasElement;
     projection: Float32Array;
+    projectionDirty: boolean;
     matrixStack: MatrixStack;
     texture: TextureCache;
+    width: number;
+    height: number;
     private currentRegion?;
     private currentRegionName?;
     private regions;
     readonly MAX_TEXTURE_UNITS: number;
     private readonly defaultColor;
+    backgroundColor: Color;
     constructor(options: IRapiadOptions);
     private registerBuildInRegion;
     registerRegion(name: string, regionClass: typeof RenderRegion): void;
@@ -26,6 +30,7 @@ declare class Rapid {
     startGraphicDraw(customShader?: GLShader): void;
     addGraphicVertex(x: number, y: number, color: Color): void;
     endGraphicDraw(): void;
+    resize(width: number, height: number): void;
     clear(): void;
     private createOrthMatrix;
     transformPoint(x: number, y: number): number[];

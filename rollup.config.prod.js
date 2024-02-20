@@ -21,9 +21,7 @@ export default {
         },
     ],
     plugins: [
-        typescript({
-            tsconfig: "./tsconfig.json"
-        }),
+        typescript(),
         string({
             include: [
                 "**/*.frag",
