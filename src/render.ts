@@ -27,6 +27,11 @@ class Rapid {
         this.MAX_TEXTURE_UNITS = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
         this.registerBuildInRegion()
+
+        gl.enable(gl.BLEND);
+        gl.disable(gl.DEPTH_TEST);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
     }
     private registerBuildInRegion() {
         this.registerRegion("sprite", SpriteRegion)

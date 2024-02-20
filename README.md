@@ -1,7 +1,7 @@
-# Rapid.js
+# 🚀 Rapid.js
 A highly efficient and lightweight WebGL renderer capable of rendering 10k sprites at 60fps.
 
-This project is under development and will be completed soon
+⚠️ This project is under development and will be completed soon ⚠️
 
 [Demo](./demo/index.html)
 
@@ -12,4 +12,3 @@ This project is under development and will be completed soon
 * Texture cropping
 * Matrix stacking
 * Color manipulation
-
