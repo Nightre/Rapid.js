@@ -1,4 +1,4 @@
-import { Color } from ".";
+import { Color } from "./math";
 
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 
