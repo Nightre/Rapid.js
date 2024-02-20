@@ -4,9 +4,14 @@ import vertString from "../shader/sprite.vert";
 import Rapid from "../render";
 import { WebglElementBufferArray } from "../math";
 import { WebGLContext } from "../interface";
-import { FLOAT32_PER_SPRITE, INDEX_PER_SPRITE, VERTEX_PER_SPRITE, SPRITE_ELMENT_PER_VERTEX } from "../const";
 import GLShader from "../webgl/glshader";
 
+const SPRITE_ELMENT_PER_VERTEX = 6
+const INDEX_PER_SPRITE = 6
+const VERTEX_PER_SPRITE = 4
+const FLOAT32_PER_SPRITE = VERTEX_PER_SPRITE * SPRITE_ELMENT_PER_VERTEX
+//                       aPosition  aRegion   aTextureId  aColor
+const BYTES_PER_VERTEX = (4 * 2) + (4 * 2) + (4)       + (4)
 class SpriteElementArray extends WebglElementBufferArray {
     constructor(gl: WebGLContext) {
         super(gl, INDEX_PER_SPRITE, VERTEX_PER_SPRITE)
@@ -30,13 +35,12 @@ class SpriteRegion extends RenderRegion {
 
     constructor(rapid: Rapid) {
         const gl = rapid.gl
-        const ELEMENT_SIZE = Float32Array.BYTES_PER_ELEMENT // = Uint32Array.BYTES_PER_ELEMENT
-        const stride = SPRITE_ELMENT_PER_VERTEX * ELEMENT_SIZE
+        const stride =  BYTES_PER_VERTEX
         super(rapid, [
             { name: "aPosition", size: 2, type: gl.FLOAT, stride },
-            { name: "aRegion", size: 2, type: gl.FLOAT, stride, offset: 2 * ELEMENT_SIZE },
-            { name: "aTextureId", size: 1, type: gl.FLOAT, stride, offset: 4 * ELEMENT_SIZE },
-            { name: "aColor", size: 4, type: gl.UNSIGNED_BYTE, stride, offset: 5 * ELEMENT_SIZE, normalized: true },
+            { name: "aRegion", size: 2, type: gl.FLOAT, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT },
+            { name: "aTextureId", size: 1, type: gl.FLOAT, stride, offset: 4 * Float32Array.BYTES_PER_ELEMENT },
+            { name: "aColor", size: 4, type: gl.UNSIGNED_BYTE, stride, offset: 5 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
         ])
         this.initDefaultShader(
             vertString,
@@ -96,10 +100,7 @@ class SpriteRegion extends RenderRegion {
         const gl = this.gl
         this.indexBuffer.bindBuffer()
         this.indexBuffer.bufferData()
-        this.gl.uniform1iv(
-            this.currentShader!.unifromLoc["uTextures"],
-            this.TEXTURE_UNITS_ARRAY
-        )
+
         gl.drawElements(gl.TRIANGLES, this.batchSprite * INDEX_PER_SPRITE, gl.UNSIGNED_SHORT, 0)
     }
     enterRegion(customShader?: GLShader | undefined): void {

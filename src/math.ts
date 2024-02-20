@@ -1,7 +1,6 @@
-import { MATRIX_SIZE } from "./const";
 import { WebGLContext } from "./interface";
 
-
+const MATRIX_SIZE = 6
 type ArrayType = typeof Float32Array | typeof Uint16Array
 
 export class DynamicArrayBuffer {

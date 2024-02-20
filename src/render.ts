@@ -1,5 +1,6 @@
 import { IRapiadOptions, WebGLContext } from "./interface"
 import { Color, MatrixStack } from "./math"
+import GraphicRegion from "./regions/graphic_region"
 import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
 import { Texture, TextureCache } from "./texture"
@@ -29,6 +30,7 @@ class Rapid {
     }
     private registerBuildInRegion() {
         this.registerRegion("sprite", SpriteRegion)
+        this.registerRegion("graphic", GraphicRegion)
     }
     registerRegion(name: string, regionClass: typeof RenderRegion) {
         this.regions.set(name, new regionClass(this))
@@ -82,6 +84,15 @@ class Rapid {
             texture.clipY,
             texture.clipW,
             texture.clipH,
+            offsetX,
+            offsetY,
+            color.uint32
+        )
+    }
+    renderGraphic(vertexs: number[], offsetX: number, offsetY: number, color: Color = this.defaultColor, customShader?: GLShader){
+        this.setRegion("graphic", customShader);
+        (this.currentRegion as GraphicRegion).renderGraphic(
+            vertexs,
             offsetX,
             offsetY,
             color.uint32
