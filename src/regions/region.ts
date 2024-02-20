@@ -10,20 +10,33 @@ class RenderRegion {
     protected webglArrayBuffer: WebglBufferArray
     protected rapid: Rapid
     protected gl: WebGLContext
+    protected usedTextures: WebGLTexture[] = []
+    protected readonly TEXTURE_UNITS_ARRAY: number[]
+    
     constructor(rapid: Rapid, attributes?: IAttribute[]) {
         this.attribute = attributes!
         this.rapid = rapid
         this.gl = rapid.gl
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, Float32Array, rapid.gl.ARRAY_BUFFER)
-        this.webglArrayBuffer.onResize = this.onWebglArrayBufferResize.bind(this)
+        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.MAX_TEXTURE_UNITS },
+            (_, index) => index);
     }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
         const [tx, ty] = this.rapid.transformPoint(x, y)
         this.webglArrayBuffer.push(tx)
         this.webglArrayBuffer.push(ty)
     }
-    protected onWebglArrayBufferResize(_arrayBuffer: ArrayBuffer) {
-
+    protected useTexture(texture: WebGLTexture) {
+        let textureUnit = this.usedTextures.indexOf(texture)
+        if (textureUnit === -1) {
+            // 新纹理 
+            if (this.usedTextures.length >= this.rapid.MAX_TEXTURE_UNITS) {
+                this.render()
+            }
+            this.usedTextures.push(texture)
+            textureUnit = this.usedTextures.length - 1
+        }
+        return textureUnit
     }
     enterRegion(customShader?: GLShader) {
         this.currentShader = customShader ?? this.defaultShader
@@ -49,6 +62,11 @@ class RenderRegion {
     protected executeRender() {
         this.webglArrayBuffer.bindBuffer()
         this.webglArrayBuffer.bufferData()
+        const gl = this.gl
+        this.usedTextures.forEach((texture, unit) => {
+            gl.activeTexture(gl.TEXTURE0 + unit);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+        });
     }
     protected initializeForNextRender() {
         this.webglArrayBuffer.clear()

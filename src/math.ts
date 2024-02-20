@@ -5,13 +5,14 @@ import { WebGLContext } from "./interface";
 type ArrayType = typeof Float32Array | typeof Uint16Array
 
 export class DynamicArrayBuffer {
-    usedElemNum: number
+    protected usedElemNum: number
     protected typedArray: Float32Array | Uint16Array
     private arrayType: ArrayType
     protected maxElemNum: number
     readonly bytePerElem: number
-    arraybuffer: ArrayBuffer
-    private otherTypedArrays: ArrayLike<number>[] = []
+    private arraybuffer: ArrayBuffer
+    /** if typedArray is Float32Array*/
+    private uint32?: Uint32Array
 
     constructor(arrayType: ArrayType) {
         this.usedElemNum = 0;
@@ -20,13 +21,11 @@ export class DynamicArrayBuffer {
         this.arrayType = arrayType
         this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
         this.typedArray = new arrayType(this.arraybuffer)
-        this.onResize(this.arraybuffer)
+        if (arrayType == Float32Array) {
+            this.uint32 = new Uint32Array(this.arraybuffer)
+        }
     }
-    addOtherTypedArray(typedClass: typeof Uint16Array | typeof Uint32Array | typeof Float32Array) {
-        this.otherTypedArrays.push(
-            new typedClass(this.arraybuffer)
-        )
-    }
+
     clear() {
         this.usedElemNum = 0;
     }
@@ -46,11 +45,10 @@ export class DynamicArrayBuffer {
             this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
             this.typedArray = new this.arrayType(this.arraybuffer)
             this.typedArray.set(data);
-            this.onResize(this.arraybuffer)
+            if (this.uint32) {
+                this.uint32 = new Uint32Array(this.arraybuffer)
+            }
         }
-    }
-    onResize(_arraybuffer: ArrayBuffer) {
-
     }
     /**
      * push a new element
@@ -58,6 +56,9 @@ export class DynamicArrayBuffer {
      */
     push(value: number) {
         this.typedArray[this.usedElemNum++] = value
+    }
+    pushUint(value: number) {
+        this.uint32![this.usedElemNum++] = value
     }
     /**
      * pop a element
@@ -123,7 +124,6 @@ export class WebglBufferArray extends DynamicArrayBuffer {
                 gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW)
                 this.webglBufferSize = this.maxElemNum
             } else {
-                // TODO: 考察是否需要裁剪typedarray
                 gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
             }
         }
@@ -152,7 +152,9 @@ export class MatrixStack extends DynamicArrayBuffer {
      * pop a matrix from the stack
      */
     popMat() {
-        this.pop(MATRIX_SIZE)
+        if (this.usedElemNum >= MATRIX_SIZE) {
+            this.pop(MATRIX_SIZE)
+        }
     }
     /**
      * push a matrix and indentiy it
@@ -218,6 +220,48 @@ export class MatrixStack extends DynamicArrayBuffer {
             arr[offset + 1] * x + arr[offset + 3] * y + arr[offset + 5]
         ];
     }
+    getInverse() {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        const a = arr[offset + 0];
+        const b = arr[offset + 1];
+        const c = arr[offset + 2];
+        const d = arr[offset + 3];
+        const e = arr[offset + 4];
+        const f = arr[offset + 5];
+
+        const det = a * d - b * c;
+        return new Float32Array([
+            d / det,
+            -b / det,
+            -c / det,
+            a / det,
+            (c * f - d * e) / det,
+            (b * e - a * f) / det
+        ]);
+    }
+    getTransform() {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        return new Float32Array([
+            arr[offset + 0],
+            arr[offset + 1],
+            arr[offset + 2],
+            arr[offset + 3],
+            arr[offset + 4],
+            arr[offset + 5]
+        ]);
+    }
+    setTransform(array: Float32Array | number[]) {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        arr[offset + 0] = array[0]
+        arr[offset + 1] = array[1]
+        arr[offset + 2] = array[2]
+        arr[offset + 3] = array[3]
+        arr[offset + 4] = array[4]
+        arr[offset + 5] = array[5]
+    }
 }
 
 export class WebglElementBufferArray extends WebglBufferArray {
@@ -252,45 +296,105 @@ export class WebglElementBufferArray extends WebglBufferArray {
         this.objects = 0
     }
 }
-
 export class Color {
-    r: number
-    g: number
-    b: number
-    a: number
+    private _r: number;
+    private _g: number;
+    private _b: number;
+    private _a: number;
+    uint32!: number;
+
     constructor(r: number, g: number, b: number, a: number) {
+        this._r = r;
+        this._g = g;
+        this._b = b;
+        this._a = a;
+        this.updateUint();
+    }
+
+    get r() {
+        return this._r;
+    }
+
+    set r(value: number) {
+        this._r = value;
+        this.updateUint();
+    }
+
+    get g() {
+        return this._g;
+    }
+
+    set g(value: number) {
+        this._g = value;
+        this.updateUint();
+    }
+
+    get b() {
+        return this._b;
+    }
+
+    set b(value: number) {
+        this._b = value;
+        this.updateUint();
+    }
+
+    get a() {
+        return this._a;
+    }
+
+    set a(value: number) {
+        this._a = value;
+        this.updateUint();
+    }
+
+    private updateUint() {
+        this.uint32 = ((this._a << 24) | (this._b << 16) | (this._g << 8) | this._r) >>> 0;
+    }
+    setRGBA(r: number, g: number, b: number, a: number) {
         this.r = r
         this.g = g
         this.b = b
         this.a = a
+        this.updateUint()
     }
-    /**
-     * is equal to another color instance
-     * @param color 
-     * @returns 
-     */
+    copy(color: Color) {
+        this.setRGBA(color.r, color.g, color.b, color.a)
+    }
     equals(color: Color) {
         return color.r == this.r &&
             color.g == this.g &&
             color.b == this.b &&
             color.a == this.a
     }
-    /**
-     * create a new color by hex string
-     * @param hexString 
-     * @returns 
-     */
+
     static fromHex(hexString: string): Color {
         if (hexString.startsWith('#')) {
             hexString = hexString.slice(1);
         }
-        const r = parseInt(hexString.slice(0, 2), 16) / 255;
-        const g = parseInt(hexString.slice(2, 4), 16) / 255;
-        const b = parseInt(hexString.slice(4, 6), 16) / 255;
-        let a = 1;
+        const r = parseInt(hexString.slice(0, 2), 16);
+        const g = parseInt(hexString.slice(2, 4), 16);
+        const b = parseInt(hexString.slice(4, 6), 16);
+        let a = 255;
         if (hexString.length >= 8) {
-            a = parseInt(hexString.slice(6, 8), 16) / 255;
+            a = parseInt(hexString.slice(6, 8), 16);
         }
         return new Color(r, g, b, a);
+    }
+    add(color: Color) {
+        return new Color(
+            Math.min(this.r + color.r, 255),
+            Math.min(this.g + color.g, 255),
+            Math.min(this.b + color.b, 255),
+            Math.min(this.a + color.a, 255)
+        );
+    }
+
+    subtract(color: Color) {
+        return new Color(
+            Math.max(this.r - color.r, 0),
+            Math.max(this.g - color.g, 0),
+            Math.max(this.b - color.b, 0),
+            Math.max(this.a - color.a, 0)
+        );
     }
 }

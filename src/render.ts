@@ -1,5 +1,5 @@
 import { IRapiadOptions, WebGLContext } from "./interface"
-import { MatrixStack } from "./math"
+import { Color, MatrixStack } from "./math"
 import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
 import { Texture, TextureCache } from "./texture"
@@ -18,6 +18,7 @@ class Rapid {
     private regions: Map<string, RenderRegion> = new Map
 
     readonly MAX_TEXTURE_UNITS: number
+    private readonly defaultColor = new Color(255, 255, 255, 255)
     constructor(options: IRapiadOptions) {
         const gl = getContext(options.canvas)
         this.gl = gl
@@ -71,7 +72,7 @@ class Rapid {
         this.currentRegion?.render()
     }
 
-    renderSprite(texture: Texture, offsetX: number, offsetY: number, color = 0xFFFFFFFF, customShader?: GLShader) {
+    renderSprite(texture: Texture, offsetX: number, offsetY: number, color: Color = this.defaultColor, customShader?: GLShader) {
         this.setRegion("sprite", customShader);
         (this.currentRegion as SpriteRegion).renderSprite(
             texture.base.texture,
@@ -83,7 +84,7 @@ class Rapid {
             texture.clipH,
             offsetX,
             offsetY,
-            color
+            color.uint32
         )
     }
 

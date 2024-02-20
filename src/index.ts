@@ -1,5 +1,6 @@
 import Rapid from "./render";
 
 export {
-    Rapid
+    Rapid,
 }
+export * from "./math";

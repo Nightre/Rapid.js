@@ -23,14 +23,11 @@ class SpriteElementArray extends WebglElementBufferArray {
     }
 }
 
-
 class SpriteRegion extends RenderRegion {
     private batchSprite: number = 0
     private indexBuffer: SpriteElementArray
-    private usedTextures: WebGLTexture[] = []
-    private colorBuffer: Uint32Array
-    private readonly TEXTURE_UNITS_ARRAY: number[]
-    private readonly MAX_BATCH: number
+    protected readonly MAX_BATCH: number
+
     constructor(rapid: Rapid) {
         const gl = rapid.gl
         const ELEMENT_SIZE = Float32Array.BYTES_PER_ELEMENT // = Uint32Array.BYTES_PER_ELEMENT
@@ -45,35 +42,17 @@ class SpriteRegion extends RenderRegion {
             vertString,
             this.generateFragShader(fragString, rapid.MAX_TEXTURE_UNITS)
         )
-        this.MAX_BATCH = this.getMaxBatchNnm()
+        this.MAX_BATCH = Math.floor(2**16 / VERTEX_PER_SPRITE) - 1
         this.indexBuffer = new SpriteElementArray(gl)
-        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.MAX_TEXTURE_UNITS },
-            (_, index) => index);
-        this.colorBuffer = new Uint32Array(this.webglArrayBuffer.arraybuffer)
     }
-    protected onWebglArrayBufferResize(arrayBuffer: ArrayBuffer): void {
-        this.colorBuffer = new Uint32Array(arrayBuffer)
-    }
-    private useTexture(texture: WebGLTexture) {
-        let textureUnit = this.usedTextures.indexOf(texture)
-        if (textureUnit === -1) {
-            // 新纹理 
-            if (this.usedTextures.length >= this.rapid.MAX_TEXTURE_UNITS) {
-                this.render()
-            }
-            this.usedTextures.push(texture)
-            textureUnit = this.usedTextures.length - 1
-        }
-        return textureUnit
-    }
+
     protected addVertex(x: number, y: number, u: number, v: number, textureUnit: number, color: number): void {
         super.addVertex(x, y)
 
         this.webglArrayBuffer.push(u)
         this.webglArrayBuffer.push(v)
         this.webglArrayBuffer.push(textureUnit)
-        //this.webglArrayBuffer.usedElemNum++
-        this.colorBuffer[this.webglArrayBuffer.usedElemNum++] = color /// 0xFFFFFFF
+        this.webglArrayBuffer.pushUint(color)
     }
     renderSprite(texture: WebGLTexture,
         width: number,
@@ -107,18 +86,14 @@ class SpriteRegion extends RenderRegion {
         const texU = u0 + u1
         const texV = v0 + v1
 
-        this.addVertex(offsetX, offsetY, u0, v0, textureUnit, color) // 0
-        this.addVertex(posX, offsetY, texU, v0, textureUnit, color) // 1
-        this.addVertex(posX, posY, texU, texV, textureUnit, color) // 2
-        this.addVertex(offsetX, posY, u0, texV, textureUnit, color) // 3
+        this.addVertex(offsetX, offsetY, u0  , v0  , textureUnit, color) // 0
+        this.addVertex(posX   , offsetY, texU, v0  , textureUnit, color) // 1
+        this.addVertex(posX   , posY   , texU, texV, textureUnit, color) // 2
+        this.addVertex(offsetX, posY   , u0  , texV, textureUnit, color) // 3
     }
     protected executeRender(): void {
         super.executeRender()
         const gl = this.gl
-        this.usedTextures.forEach((texture, unit) => {
-            gl.activeTexture(gl.TEXTURE0 + unit);
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-        });
         this.indexBuffer.bindBuffer()
         this.indexBuffer.bufferData()
         this.gl.uniform1iv(
@@ -157,10 +132,6 @@ class SpriteRegion extends RenderRegion {
         fs = fs.replace("%GET_COLOR%", code)
 
         return fs
-    }
-    private getMaxBatchNnm() {
-        // webgl does not seem to provide a way to obtain the maximum webglbuffer
-        return 10922
     }
 }
 
