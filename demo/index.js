@@ -81,7 +81,7 @@ const drawMatrixStackDemo = () => {
 
 const render = () => {
     if (add) {
-        for (let index = 0; index < 100; index++) {
+        for (let index = 0; index < 50; index++) {
             addSprite()
         }
     }
@@ -102,14 +102,14 @@ const render = () => {
             element.speedX = 5
         }
         rapid.renderSprite(element.texture, element.x, element.y)
-        if (index == 3000) {
-            drawGraphicDemo()
-        }
+        // if (index == 3000) {
+        //     drawGraphicDemo()
+        // }
     }
-    if (sprites.length < 3000) {
-        drawGraphicDemo()
-    }
-    drawMatrixStackDemo()
+    // if (sprites.length < 3000) {
+    //     drawGraphicDemo()
+    // }
+    // drawMatrixStackDemo()
 
     rapid.endRender()
 }
