@@ -11,7 +11,7 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 * Texture cropping
 * Graphic
 * Matrix stacking
-* Color manipulation
+* Color
 
 # Install
 
