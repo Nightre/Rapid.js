@@ -11,11 +11,11 @@ const INDEX_PER_SPRITE = 6
 const VERTEX_PER_SPRITE = 4
 const FLOAT32_PER_SPRITE = VERTEX_PER_SPRITE * SPRITE_ELMENT_PER_VERTEX
 //                       aPosition  aRegion   aTextureId  aColor
-const BYTES_PER_VERTEX = (4 * 2) + (4 * 2) + (4)       + (4)
+const BYTES_PER_VERTEX = (4 * 2) + (4 * 2) + (4) + (4)
 
 class SpriteElementArray extends WebglElementBufferArray {
-    constructor(gl: WebGLContext) {
-        super(gl, INDEX_PER_SPRITE, VERTEX_PER_SPRITE)
+    constructor(gl: WebGLContext, max: number) {
+        super(gl, INDEX_PER_SPRITE, VERTEX_PER_SPRITE, max)
     }
     protected addObject(vertex: number): void {
         super.addObject()
@@ -36,7 +36,7 @@ class SpriteRegion extends RenderRegion {
 
     constructor(rapid: Rapid) {
         const gl = rapid.gl
-        const stride =  BYTES_PER_VERTEX
+        const stride = BYTES_PER_VERTEX
         super(rapid, [
             { name: "aPosition", size: 2, type: gl.FLOAT, stride },
             { name: "aRegion", size: 2, type: gl.FLOAT, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT },
@@ -47,8 +47,8 @@ class SpriteRegion extends RenderRegion {
             vertString,
             this.generateFragShader(fragString, rapid.MAX_TEXTURE_UNITS)
         )
-        this.MAX_BATCH = Math.floor(2**16 / VERTEX_PER_SPRITE) - 1
-        this.indexBuffer = new SpriteElementArray(gl)
+        this.MAX_BATCH = Math.floor(2 ** 16 / VERTEX_PER_SPRITE)
+        this.indexBuffer = new SpriteElementArray(gl, this.MAX_BATCH)
     }
 
     protected addVertex(x: number, y: number, u: number, v: number, textureUnit: number, color: number): void {
@@ -70,11 +70,11 @@ class SpriteRegion extends RenderRegion {
         offsetY: number,
         color: number
     ) {
-        if (this.batchSprite > this.MAX_BATCH) {
+        if (this.batchSprite >= this.MAX_BATCH) {
             this.render()
         }
         this.batchSprite++
-        this.indexBuffer.setObjects(this.batchSprite)
+        //this.indexBuffer.setObjects(this.batchSprite)
         this.webglArrayBuffer.resize(FLOAT32_PER_SPRITE)
 
         const textureUnit = this.useTexture(texture)
@@ -91,22 +91,20 @@ class SpriteRegion extends RenderRegion {
         const texU = u0 + u1
         const texV = v0 + v1
 
-        this.addVertex(offsetX, offsetY, u0  , v0  , textureUnit, color) // 0
-        this.addVertex(posX   , offsetY, texU, v0  , textureUnit, color) // 1
-        this.addVertex(posX   , posY   , texU, texV, textureUnit, color) // 2
-        this.addVertex(offsetX, posY   , u0  , texV, textureUnit, color) // 3
+        this.addVertex(offsetX, offsetY, u0, v0, textureUnit, color) // 0
+        this.addVertex(posX, offsetY, texU, v0, textureUnit, color) // 1
+        this.addVertex(posX, posY, texU, texV, textureUnit, color) // 2
+        this.addVertex(offsetX, posY, u0, texV, textureUnit, color) // 3
     }
     protected executeRender(): void {
         super.executeRender()
         const gl = this.gl
-        this.indexBuffer.bindBuffer()
         this.indexBuffer.bufferData()
-
         gl.drawElements(gl.TRIANGLES, this.batchSprite * INDEX_PER_SPRITE, gl.UNSIGNED_SHORT, 0)
     }
     enterRegion(customShader?: GLShader | undefined): void {
         super.enterRegion(customShader)
-
+        this.indexBuffer.bindBuffer()
         this.gl.uniform1iv(
             this.currentShader!.unifromLoc["uTextures"],
             this.TEXTURE_UNITS_ARRAY

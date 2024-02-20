@@ -55,6 +55,7 @@ class RenderRegion {
     }
     exitRegion() { }
     protected initDefaultShader(vs: string, fs: string) {
+        this.webglArrayBuffer.bindBuffer()
         this.defaultShader = new GLShader(this.rapid, vs, fs)
     }
     render() {
@@ -62,13 +63,13 @@ class RenderRegion {
         this.initializeForNextRender()
     }
     protected executeRender() {
-        this.webglArrayBuffer.bindBuffer()
+        
         this.webglArrayBuffer.bufferData()
         const gl = this.gl
-        this.usedTextures.forEach((texture, unit) => {
+        for (let unit = 0; unit < this.usedTextures.length; unit++) {
             gl.activeTexture(gl.TEXTURE0 + unit);
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-        });
+            gl.bindTexture(gl.TEXTURE_2D, this.usedTextures[unit]);
+        }
     }
     protected initializeForNextRender() {
         this.webglArrayBuffer.clear()

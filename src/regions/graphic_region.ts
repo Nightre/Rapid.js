@@ -6,7 +6,7 @@ import RenderRegion from "./region";
 
 //                       aPosition  aColor
 const BYTES_PER_VERTEX = 2 * 4 +    4
-
+const FLOAT32_PER_VERTEX = 3
 class GraphicRegion extends RenderRegion {
     private vertex: number = 0
     constructor(rapid: Rapid) {
@@ -25,7 +25,7 @@ class GraphicRegion extends RenderRegion {
         this.webglArrayBuffer.clear()
     }
     addVertex(x: number, y: number, color: number): void {
-        this.webglArrayBuffer.resize(BYTES_PER_VERTEX)
+        this.webglArrayBuffer.resize(FLOAT32_PER_VERTEX)
         super.addVertex(x, y)
         this.webglArrayBuffer.pushUint(color)
         this.vertex += 1

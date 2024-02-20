@@ -101,7 +101,11 @@ const render = () => {
         } else if (element.x < 0) {
             element.speedX = 5
         }
-        rapid.renderSprite(element.texture, element.x, element.y)
+        rapid.save()
+        rapid.matrixStack.translate(element.x, element.y)
+        rapid.renderSprite(element.texture)
+        rapid.restore()
+
         // if (index == 3000) {
         //     drawGraphicDemo()
         // }

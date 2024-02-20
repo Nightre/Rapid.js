@@ -22,7 +22,8 @@ export default {
         }),
         server({
             open: true,
-            contentBase: '.'
+            contentBase: '.',
+            port:8080
         })
     ],
 };

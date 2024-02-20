@@ -15,7 +15,7 @@ export class DynamicArrayBuffer {
 
     constructor(arrayType: ArrayType) {
         this.usedElemNum = 0;
-        this.maxElemNum = 128;
+        this.maxElemNum = 512;
         this.bytePerElem = arrayType.BYTES_PER_ELEMENT
         this.arrayType = arrayType
         this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
@@ -40,14 +40,18 @@ export class DynamicArrayBuffer {
                 this.maxElemNum <<= 1;
             }
 
-            const data = this.typedArray;
-            this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
-            this.typedArray = new this.arrayType(this.arraybuffer)
-            this.typedArray.set(data);
-            if (this.uint32) {
-                this.uint32 = new Uint32Array(this.arraybuffer)
-            }
+            this.setMaxSize(this.maxElemNum)
         }
+    }
+    protected setMaxSize(size: number = this.maxElemNum){
+        const data = this.typedArray;
+        this.maxElemNum = size
+        this.arraybuffer = new ArrayBuffer(size * this.bytePerElem)
+        this.typedArray = new this.arrayType(this.arraybuffer)
+        if (this.uint32) {
+            this.uint32 = new Uint32Array(this.arraybuffer)
+        }
+        this.typedArray.set(data);
     }
     /**
      * push a new element
@@ -120,7 +124,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         if (this.dirty) {
             const gl = this.gl
             if (this.maxElemNum > this.webglBufferSize) {
-                gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW)
+                gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW )
                 this.webglBufferSize = this.maxElemNum
             } else {
                 gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
@@ -152,9 +156,7 @@ export class MatrixStack extends DynamicArrayBuffer {
      * pop a matrix from the stack
      */
     popMat() {
-        if (this.usedElemNum >= MATRIX_SIZE) {
-            this.pop(MATRIX_SIZE)
-        }
+        this.pop(MATRIX_SIZE)
     }
     /**
      * push a matrix and indentiy it
@@ -265,36 +267,17 @@ export class MatrixStack extends DynamicArrayBuffer {
 }
 
 export class WebglElementBufferArray extends WebglBufferArray {
-    private objects: number = 0
-    readonly indexVertPerObj: number
-    readonly vertexPerObject: number
 
-    constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number) {
+    constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number) {
         super(gl, Uint16Array, gl.ELEMENT_ARRAY_BUFFER)
-        this.indexVertPerObj = elemVertPerObj // quad = 6
-        this.vertexPerObject = vertexPerObject // quad = 4
-    }
-    protected addObject(_vertex?: number) {
-        this.objects++
-    }
-    /**
-     * set number of objects
-     * @param obj 
-     */
-    setObjects(obj: number) {
-        if (obj > this.objects) {
-            obj *= 2
-            this.resize((obj - this.objects) * this.indexVertPerObj)
-            while (obj > this.objects) {
-                this.addObject(this.objects * this.vertexPerObject)
-            }
+        this.setMaxSize(elemVertPerObj * maxBatch)
+        for (let index = 0; index < maxBatch; index++) {
+            this.addObject(index * vertexPerObject)
         }
+        this.bindBuffer()
+        this.bufferData()
     }
-
-    clear(): void {
-        super.clear()
-        this.objects = 0
-    }
+    protected addObject(_vertex?: number) {}
 }
 export class Color {
     private _r: number;
