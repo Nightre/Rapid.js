@@ -35,7 +35,7 @@ export declare class DynamicArrayBuffer {
      * @param end
      * @returns
      */
-    getArray(begin?: number, end?: number): Float32Array | Uint16Array;
+    getArray(begin?: number, end?: number): Uint16Array | Float32Array;
     /**
      * length of the array
      */

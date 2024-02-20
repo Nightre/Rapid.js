@@ -11,7 +11,6 @@ class RenderRegion {
     protected rapid: Rapid
     protected gl: WebGLContext
     protected usedTextures: WebGLTexture[] = []
-    protected toAddTextures: Set<number> = new Set
     protected readonly TEXTURE_UNITS_ARRAY: number[]
 
     constructor(rapid: Rapid, attributes?: IAttribute[]) {
@@ -37,7 +36,6 @@ class RenderRegion {
             }
             this.usedTextures.push(texture)
             textureUnit = this.usedTextures.length - 1
-            this.toAddTextures.add(textureUnit)
         }
         return textureUnit
     }
@@ -68,15 +66,10 @@ class RenderRegion {
         
         this.webglArrayBuffer.bufferData()
         const gl = this.gl
-        // for (let unit = 0; unit < this.usedTextures.length; unit++) {
-        //     gl.activeTexture(gl.TEXTURE0 + unit);
-        //     gl.bindTexture(gl.TEXTURE_2D, this.usedTextures[unit]);
-        // }
-        this.toAddTextures.forEach((unit)=>{
+        for (let unit = 0; unit < this.usedTextures.length; unit++) {
             gl.activeTexture(gl.TEXTURE0 + unit);
             gl.bindTexture(gl.TEXTURE_2D, this.usedTextures[unit]);
-        })
-        this.toAddTextures.clear()
+        }
     }
     protected initializeForNextRender() {
         this.webglArrayBuffer.clear()
