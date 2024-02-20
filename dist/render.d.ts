@@ -1,0 +1,33 @@
+import { IRapiadOptions, WebGLContext } from "./interface";
+import { Color, MatrixStack } from "./math";
+import RenderRegion from "./regions/region";
+import { Texture, TextureCache } from "./texture";
+import GLShader from "./webgl/glshader";
+declare class Rapid {
+    gl: WebGLContext;
+    canvas: HTMLCanvasElement;
+    projection: Float32Array;
+    matrixStack: MatrixStack;
+    texture: TextureCache;
+    private currentRegion?;
+    private currentRegionName?;
+    private regions;
+    readonly MAX_TEXTURE_UNITS: number;
+    private readonly defaultColor;
+    constructor(options: IRapiadOptions);
+    private registerBuildInRegion;
+    registerRegion(name: string, regionClass: typeof RenderRegion): void;
+    setRegion(regionName: string, customShader?: GLShader): void;
+    save(): void;
+    restore(): void;
+    startRender(clear?: boolean): void;
+    endRender(): void;
+    renderSprite(texture: Texture, offsetX?: number, offsetY?: number, color?: Color, customShader?: GLShader): void;
+    startGraphicDraw(customShader?: GLShader): void;
+    addGraphicVertex(x: number, y: number, color: Color): void;
+    endGraphicDraw(): void;
+    clear(): void;
+    private createOrthMatrix;
+    transformPoint(x: number, y: number): number[];
+}
+export default Rapid;
