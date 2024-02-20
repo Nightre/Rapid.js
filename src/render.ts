@@ -11,15 +11,21 @@ class Rapid {
     gl: WebGLContext
     canvas: HTMLCanvasElement
     projection: Float32Array
+    projectionDirty: boolean = true
+
 
     matrixStack = new MatrixStack()
     texture = new TextureCache(this)
+    width: number
+    height: number
+
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
 
     readonly MAX_TEXTURE_UNITS: number
     private readonly defaultColor = new Color(255, 255, 255, 255)
+    backgroundColor: Color
     constructor(options: IRapiadOptions) {
         const gl = getContext(options.canvas)
         this.gl = gl
@@ -27,11 +33,13 @@ class Rapid {
         this.MAX_TEXTURE_UNITS = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
         this.registerBuildInRegion()
-
+        this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
+        this.width = options.width || this.canvas.width
+        this.height = options.width || this.canvas.height
+        this.resize(this.width, this.height)
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
     }
     private registerBuildInRegion() {
         this.registerRegion("sprite", SpriteRegion)
@@ -77,6 +85,7 @@ class Rapid {
 
     endRender() {
         this.currentRegion?.render()
+        this.projectionDirty = false
     }
 
     renderSprite(texture: Texture, offsetX: number = 0, offsetY: number = 0, color: Color = this.defaultColor, customShader?: GLShader) {
@@ -94,7 +103,7 @@ class Rapid {
             color.uint32
         )
     }
-    
+
     startGraphicDraw(customShader?: GLShader) {
         this.setRegion("graphic", customShader);
         (this.currentRegion as GraphicRegion).startRender()
@@ -102,13 +111,29 @@ class Rapid {
     addGraphicVertex(x: number, y: number, color: Color) {
         (this.currentRegion as GraphicRegion).addVertex(x, y, color.uint32)
     }
-    endGraphicDraw(){
+    endGraphicDraw() {
         (this.currentRegion as GraphicRegion).render()
+    }
+
+    resize(width: number, height: number) {
+        const gl = this.gl
+
+        this.width = width
+        this.height = height
+        this.projection = this.createOrthMatrix(
+            0, this.width, this.height, 0
+        )
+        gl.viewport(
+            0, 0,
+            this.width, this.height
+        )
+        this.projectionDirty = true
     }
 
     clear() {
         const gl = this.gl
-        gl.clearColor(0.2, 0.2, 0.2, 1);
+        const c = this.backgroundColor
+        gl.clearColor(c.r, c.g, c.b, c.a);
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 

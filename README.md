@@ -22,6 +22,11 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 # Useage
 
 ```js
+let rapid = new Rapid({
+    canvas: document.getElementById("game"),
+    backgroundColor: Color.fromHex("FFFFFF")
+})
+
 // Creating textures
 const cat = await rapid.texture.textureFromUrl("./cat.png")
 const plane = await rapid.texture.textureFromUrl("./plane.png")
@@ -59,4 +64,7 @@ rapid.endGraphicDraw()
 
 // Called after rendering
 rapid.endRender()
+
+// set the size
+rapid.resize(100,100)
 ```

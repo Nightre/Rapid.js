@@ -1,3 +1,5 @@
+import { Color } from ".";
+
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 
 export interface IRapiadOptions {
@@ -5,6 +7,7 @@ export interface IRapiadOptions {
     pixelDensity?: number
     width?: number
     height?: number,
+    backgroundColor?: Color
 }
 export interface IAttribute {
     name: string

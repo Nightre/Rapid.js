@@ -1,6 +1,7 @@
 import { Color, Rapid } from "../dist/rapid.js"
 let rapid = new Rapid({
-    canvas: document.getElementById("game")
+    canvas: document.getElementById("game"),
+    backgroundColor: Color.fromHex("FFFFFF")
 })
 const cat = await rapid.texture.textureFromUrl("./cat.png")
 const plane = await rapid.texture.textureFromUrl("./plane.png")
