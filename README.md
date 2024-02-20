@@ -15,10 +15,6 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 * Matrix stacking
 * Color manipulation
 
-# Screen Shot
-
-![screen](./screenshot/screen.png)
-
 # Useage
 
 ```js
@@ -68,3 +64,7 @@ rapid.endRender()
 // set the size
 rapid.resize(100,100)
 ```
+
+# Screen Shot
+
+![screen](./screenshot/screen.png)
