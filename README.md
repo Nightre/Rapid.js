@@ -5,7 +5,7 @@
 A highly efficient and lightweight WebGL renderer capable of rendering 10k sprites at 60fps.
 
 
-[Demo](./demo/index.html)
+[Demo](https://nightre.github.io/rapid.js/demo/)
 
 # Features:
 * Fast rendering ( capable of rendering 10,000 sprites at 60fps )
