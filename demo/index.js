@@ -106,14 +106,14 @@ const render = () => {
         rapid.renderSprite(element.texture)
         rapid.restore()
 
-        // if (index == 3000) {
-        //     drawGraphicDemo()
-        // }
+        if (index == 3000) {
+            drawGraphicDemo()
+        }
     }
-    // if (sprites.length < 3000) {
-    //     drawGraphicDemo()
-    // }
-    // drawMatrixStackDemo()
+    if (sprites.length < 3000) {
+        drawGraphicDemo()
+    }
+    drawMatrixStackDemo()
 
     rapid.endRender()
 }
