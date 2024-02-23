@@ -11,6 +11,7 @@ declare class RenderRegion {
     protected gl: WebGLContext;
     protected usedTextures: WebGLTexture[];
     protected readonly TEXTURE_UNITS_ARRAY: number[];
+    protected needBind: Set<number>;
     constructor(rapid: Rapid, attributes?: IAttribute[]);
     protected addVertex(x: number, y: number, ..._: unknown[]): void;
     protected useTexture(texture: WebGLTexture): number;

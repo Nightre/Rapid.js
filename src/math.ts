@@ -90,7 +90,6 @@ export class DynamicArrayBuffer {
     }
 }
 
-
 export class WebglBufferArray extends DynamicArrayBuffer {
     buffer: WebGLBuffer
     gl: WebGLContext
@@ -267,7 +266,6 @@ export class MatrixStack extends DynamicArrayBuffer {
 }
 
 export class WebglElementBufferArray extends WebglBufferArray {
-
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number) {
         super(gl, Uint16Array, gl.ELEMENT_ARRAY_BUFFER)
         this.setMaxSize(elemVertPerObj * maxBatch)
@@ -279,6 +277,7 @@ export class WebglElementBufferArray extends WebglBufferArray {
     }
     protected addObject(_vertex?: number) {}
 }
+
 export class Color {
     private _r: number;
     private _g: number;
