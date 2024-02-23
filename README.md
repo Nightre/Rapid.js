@@ -2,6 +2,9 @@
 
 A highly efficient and lightweight WebGL renderer capable of rendering 10k sprites at 60fps.
 
+* `intel(r) UHD graphic 620` can handle 30k sprites at a stable 60fps (integrated graphics)
+* `NVIDIA GeForce GTX 150 with Max-Q Design` can handle a stable 60k sprites at 60fps (discrete graphics)
+(32 * 32 texture sprites bouncing)
 
 [demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
