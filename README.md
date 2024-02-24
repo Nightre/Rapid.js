@@ -9,6 +9,9 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 
 [demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
+[matrix stacking demo](https://nightre.github.io/Rapid.js/demo/matrix_stack.html) ( [source code](./demo/matrix_stack.js) )
+
+
 # Features:
 * Fast rendering ( capable of rendering 10,000 sprites at 60fps )
 * Multi-texture support ( Batch rendering based on the GPU's maximum texture units )
