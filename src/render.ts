@@ -10,32 +10,38 @@ import { getContext } from "./webgl/utils"
 class Rapid {
     gl: WebGLContext
     canvas: HTMLCanvasElement
-    projection: Float32Array
+    projection!: Float32Array
     projectionDirty: boolean = true
-
 
     matrixStack = new MatrixStack()
     texture = new TextureCache(this)
     width: number
     height: number
 
+    backgroundColor: Color
+    devicePixelRatio = window.devicePixelRatio || 1
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
 
     readonly MAX_TEXTURE_UNITS: number
     private readonly defaultColor = new Color(255, 255, 255, 255)
-    backgroundColor: Color
     constructor(options: IRapiadOptions) {
         const gl = getContext(options.canvas)
         this.gl = gl
         this.canvas = options.canvas
         this.MAX_TEXTURE_UNITS = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-        this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
-        this.registerBuildInRegion()
-        this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
+
         this.width = options.width || this.canvas.width
-        this.height = options.width || this.canvas.height
+        this.height = options.width || this.canvas.height        
+//        this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
+
+
+        this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
+        this.registerBuildInRegion()
+        this.initWebgl(gl)
+    }
+    private initWebgl(gl: WebGLContext) {
         this.resize(this.width, this.height)
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
@@ -48,7 +54,6 @@ class Rapid {
     registerRegion(name: string, regionClass: typeof RenderRegion) {
         this.regions.set(name, new regionClass(this))
     }
-
     setRegion(regionName: string, customShader?: GLShader) {
         if (
             // isRegionChanged
@@ -116,16 +121,17 @@ class Rapid {
     }
 
     resize(width: number, height: number) {
-        const gl = this.gl
-
         this.width = width
         this.height = height
-        this.projection = this.createOrthMatrix(
-            0, this.width, this.height, 0
+        const cvsWidth = width * this.devicePixelRatio
+        const cvsHeight = height * this.devicePixelRatio
+        this.canvas.width = cvsWidth
+        this.canvas.height = cvsHeight
+        this.gl.viewport(
+            0, 0, cvsWidth, cvsHeight
         )
-        gl.viewport(
-            0, 0,
-            this.width, this.height
+        this.projection = this.createOrthMatrix(
+            0, width, height, 0
         )
         this.projectionDirty = true
     }

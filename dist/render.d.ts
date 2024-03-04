@@ -12,13 +12,15 @@ declare class Rapid {
     texture: TextureCache;
     width: number;
     height: number;
+    backgroundColor: Color;
+    devicePixelRatio: number;
     private currentRegion?;
     private currentRegionName?;
     private regions;
     readonly MAX_TEXTURE_UNITS: number;
     private readonly defaultColor;
-    backgroundColor: Color;
     constructor(options: IRapiadOptions);
+    private initWebgl;
     private registerBuildInRegion;
     registerRegion(name: string, regionClass: typeof RenderRegion): void;
     setRegion(regionName: string, customShader?: GLShader): void;
