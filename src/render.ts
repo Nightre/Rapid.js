@@ -14,28 +14,27 @@ class Rapid {
     projectionDirty: boolean = true
 
     matrixStack = new MatrixStack()
-    texture = new TextureCache(this)
+    textures = new TextureCache(this)
     width: number
     height: number
 
-    backgroundColor: Color
-    devicePixelRatio = window.devicePixelRatio || 1
+    backgroundColor: Color    
+    readonly devicePixelRatio = window.devicePixelRatio || 1
+    readonly maxTextureUnits: number
+    private readonly defaultColor = new Color(255, 255, 255, 255)
+
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
-
-    readonly MAX_TEXTURE_UNITS: number
-    private readonly defaultColor = new Color(255, 255, 255, 255)
+    
     constructor(options: IRapiadOptions) {
         const gl = getContext(options.canvas)
         this.gl = gl
         this.canvas = options.canvas
-        this.MAX_TEXTURE_UNITS = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
+        this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 
         this.width = options.width || this.canvas.width
         this.height = options.width || this.canvas.height        
-//        this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
-
 
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
         this.registerBuildInRegion()

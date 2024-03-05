@@ -3,8 +3,8 @@ let rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("FFFFFF")
 })
-const cat = await rapid.texture.textureFromUrl("./cat.png")
-const plane = await rapid.texture.textureFromUrl("./plane.png")
+const cat = await rapid.textures.textureFromUrl("./cat.png")
+const plane = await rapid.textures.textureFromUrl("./plane.png")
 
 //           R    G  B  A
 const red = new Color(255, 0, 0, 255)

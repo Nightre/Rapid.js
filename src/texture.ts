@@ -136,7 +136,7 @@ class Texture {
      * @returns A new `Texture` instance created from the specified URL.
      */
     static fromUrl(rapid: Rapid, url: string) {
-        return rapid.texture.textureFromUrl(url)
+        return rapid.textures.textureFromUrl(url)
     }
 }
 

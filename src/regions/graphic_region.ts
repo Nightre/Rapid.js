@@ -30,6 +30,22 @@ class GraphicRegion extends RenderRegion {
         this.webglArrayBuffer.pushUint(color)
         this.vertex += 1
     }
+    drawCircle(x: number, y: number, radius: number, color: number): void {
+        const numSegments = 30; // Increase this for a smoother circle
+        const angleStep = (2 * Math.PI) / numSegments;
+    
+        this.startRender();
+        this.addVertex(x, y, color); // Center point
+    
+        for (let i = 0; i <= numSegments; i++) {
+            const angle = i * angleStep;
+            const dx = x + radius * Math.cos(angle);
+            const dy = y + radius * Math.sin(angle);
+            this.addVertex(dx, dy, color);
+        }
+    
+        this.executeRender();
+    }
 
     protected override executeRender(): void {
         super.executeRender()

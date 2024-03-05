@@ -45,7 +45,7 @@ class SpriteRegion extends RenderRegion {
         ])
         this.initDefaultShader(
             vertString,
-            this.generateFragShader(fragString, rapid.MAX_TEXTURE_UNITS)
+            this.generateFragShader(fragString, rapid.maxTextureUnits)
         )
         this.MAX_BATCH = Math.floor(2 ** 16 / VERTEX_PER_SPRITE)
         this.indexBuffer = new SpriteElementArray(gl, this.MAX_BATCH)

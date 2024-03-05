@@ -445,7 +445,7 @@ class RenderRegion {
         this.rapid = rapid;
         this.gl = rapid.gl;
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, Float32Array, rapid.gl.ARRAY_BUFFER);
-        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.MAX_TEXTURE_UNITS }, (_, index) => index);
+        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.maxTextureUnits }, (_, index) => index);
     }
     addVertex(x, y, ..._) {
         const [tx, ty] = this.rapid.transformPoint(x, y);
@@ -456,7 +456,7 @@ class RenderRegion {
         let textureUnit = this.usedTextures.indexOf(texture);
         if (textureUnit === -1) {
             // 新纹理 
-            if (this.usedTextures.length >= this.rapid.MAX_TEXTURE_UNITS) {
+            if (this.usedTextures.length >= this.rapid.maxTextureUnits) {
                 this.render();
             }
             this.usedTextures.push(texture);
@@ -523,6 +523,19 @@ class GraphicRegion extends RenderRegion {
         this.webglArrayBuffer.pushUint(color);
         this.vertex += 1;
     }
+    drawCircle(x, y, radius, color) {
+        const numSegments = 30; // Increase this for a smoother circle
+        const angleStep = (2 * Math.PI) / numSegments;
+        this.startRender();
+        this.addVertex(x, y, color); // Center point
+        for (let i = 0; i <= numSegments; i++) {
+            const angle = i * angleStep;
+            const dx = x + radius * Math.cos(angle);
+            const dy = y + radius * Math.sin(angle);
+            this.addVertex(dx, dy, color);
+        }
+        this.executeRender();
+    }
     executeRender() {
         super.executeRender();
         const gl = this.gl;
@@ -566,7 +579,7 @@ class SpriteRegion extends RenderRegion {
             { name: "aColor", size: 4, type: gl.UNSIGNED_BYTE, stride, offset: 5 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
         ]);
         this.batchSprite = 0;
-        this.initDefaultShader(vertString, this.generateFragShader(fragString, rapid.MAX_TEXTURE_UNITS));
+        this.initDefaultShader(vertString, this.generateFragShader(fragString, rapid.maxTextureUnits));
         this.MAX_BATCH = Math.floor(2 ** 16 / VERTEX_PER_SPRITE);
         this.indexBuffer = new SpriteElementArray(gl, this.MAX_BATCH);
     }
@@ -723,7 +736,7 @@ class Texture {
      * @returns A new `Texture` instance created from the specified URL.
      */
     static fromUrl(rapid, url) {
-        return rapid.texture.textureFromUrl(url);
+        return rapid.textures.textureFromUrl(url);
     }
 }
 
@@ -731,17 +744,16 @@ class Rapid {
     constructor(options) {
         this.projectionDirty = true;
         this.matrixStack = new MatrixStack();
-        this.texture = new TextureCache(this);
+        this.textures = new TextureCache(this);
         this.devicePixelRatio = window.devicePixelRatio || 1;
-        this.regions = new Map;
         this.defaultColor = new Color(255, 255, 255, 255);
+        this.regions = new Map;
         const gl = getContext(options.canvas);
         this.gl = gl;
         this.canvas = options.canvas;
-        this.MAX_TEXTURE_UNITS = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
+        this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         this.width = options.width || this.canvas.width;
         this.height = options.width || this.canvas.height;
-        //        this.projection = this.createOrthMatrix(0, this.canvas.width, this.canvas.height, 0)
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255);
         this.registerBuildInRegion();
         this.initWebgl(gl);

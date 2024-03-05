@@ -19,7 +19,7 @@ class RenderRegion {
         this.rapid = rapid
         this.gl = rapid.gl
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, Float32Array, rapid.gl.ARRAY_BUFFER)
-        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.MAX_TEXTURE_UNITS },
+        this.TEXTURE_UNITS_ARRAY = Array.from({ length: rapid.maxTextureUnits },
             (_, index) => index);
     }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
@@ -31,7 +31,7 @@ class RenderRegion {
         let textureUnit = this.usedTextures.indexOf(texture)
         if (textureUnit === -1) {
             // 新纹理 
-            if (this.usedTextures.length >= this.rapid.MAX_TEXTURE_UNITS) {
+            if (this.usedTextures.length >= this.rapid.maxTextureUnits) {
                 this.render()
             }
             this.usedTextures.push(texture)
