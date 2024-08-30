@@ -57,7 +57,7 @@ class RenderRegion {
     exitRegion() { }
     protected initDefaultShader(vs: string, fs: string) {
         this.webglArrayBuffer.bindBuffer()
-        this.defaultShader = new GLShader(this.rapid, vs, fs, this.attribute)
+        this.defaultShader = new GLShader(this.rapid, vs, fs)
     }
     render() {
         this.executeRender()

@@ -10,6 +10,7 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 [demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
 [matrix stack demo](https://nightre.github.io/Rapid.js/demo/matrix_stack.html) ( [source code](./demo/matrix_stack.js) )
+
 [custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
 
 
@@ -97,8 +98,7 @@ View demo and watch detailed shader code [custom shader demo](https://nightre.gi
 const vertexShaderSource = `...`
 const fragmentShaderSource = `...`
 
-const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource, spriteAttributes)
-// If you want to create a custom shader for graphic, please use graphicAttributes
+const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource)
 rapid.startRender()
 
 rapid.renderSprite(plane, 100, 100, {

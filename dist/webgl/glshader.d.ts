@@ -4,9 +4,8 @@ declare class GLShader {
     attributeLoc: Record<string, number>;
     uniformLoc: Record<string, WebGLUniformLocation>;
     program: WebGLProgram;
-    attribute: IAttribute[];
     private gl;
-    constructor(rapid: Rapid, vs: string, fs: string, attribute: IAttribute[]);
+    constructor(rapid: Rapid, vs: string, fs: string);
     setUniforms(uniforms: UniformType): void;
     private getUniform;
     use(): void;

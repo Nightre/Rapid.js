@@ -1,4 +1,4 @@
-import { Color, Rapid, GLShader, spriteAttributes, graphicAttributes } from "../dist/rapid.js"
+import { Color, Rapid, GLShader } from "../dist/rapid.js"
 let rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("FFFFFF")
@@ -63,8 +63,7 @@ void main(void) {
 // If you don't want to display the sprite's texture, then you don't need to add "uniform sampler2D uTextures[%TEXTURE_NUM%];" and "%GET_COLOR%"
 // These two will be replaced by rapid for better performance
 
-const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource, spriteAttributes)
-// If you want to create a custom shader for graphic, please use graphicAttributes
+const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource)
 const render = () => {
     rapid.startRender()
 

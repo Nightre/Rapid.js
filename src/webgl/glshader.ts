@@ -6,14 +6,12 @@ class GLShader {
     attributeLoc: Record<string, number> = {}
     uniformLoc: Record<string, WebGLUniformLocation> = {}
     program: WebGLProgram
-    attribute: IAttribute[]
     private gl: WebGLContext
 
-    constructor(rapid: Rapid, vs: string, fs: string, attribute: IAttribute[]) {
+    constructor(rapid: Rapid, vs: string, fs: string) {
         const processedFragmentShaderSource = generateFragShader(fs, rapid.maxTextureUnits)
         this.program = createShaderProgram(rapid.gl, vs, processedFragmentShaderSource)
         this.gl = rapid.gl
-        this.attribute = attribute
         this.parseShader(vs);
         this.parseShader(processedFragmentShaderSource);
     }
