@@ -28,7 +28,7 @@ export const compileShader = (gl: WebGLContext, source: string, type: number) =>
     }
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    
+
     // 检查编译状态
     const compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!compileStatus) {
@@ -36,7 +36,7 @@ export const compileShader = (gl: WebGLContext, source: string, type: number) =>
         console.error("Shader compilation failed:", errorLog);
         throw new Error("Unable to compile shader: " + errorLog + source);
     }
-    
+
     return shader;
 }
 
@@ -76,3 +76,24 @@ export function createTexture(gl: WebGLRenderingContext, image: TexImageSource, 
     }
     return texture
 }
+export function generateFragShader(fs: string, max: number) {
+    if (fs.includes("%TEXTURE_NUM%")) fs = fs.replace("%TEXTURE_NUM%", max.toString())
+    if (fs.includes("%GET_COLOR%")) {
+        let code = ""
+        for (let index = 0; index < max; index++) {
+            if (index == 0) {
+                code += `if(vTextureId == ${index}.0)`
+            } else if (index == max - 1) {
+                code += `else`
+            } else {
+                code += `else if(vTextureId == ${index}.0)`
+            }
+            code += `{color = texture2D(uTextures[${index}], vRegion);}`
+        }
+        fs = fs.replace("%GET_COLOR%", code)
+    }
+
+    return fs
+}
+export const FLOAT = 5126;
+export const UNSIGNED_BYTE = 5121;

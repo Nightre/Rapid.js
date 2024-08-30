@@ -47,7 +47,7 @@ const drawMatrixStackDemo = () => {
     rapid.renderSprite(plane)
     rapid.restore()
     rapid.matrixStack.translate(50, 50)
-    rapid.renderSprite(cat,0,0,red)
+    rapid.renderSprite(cat, 0, 0, red)
 }
 let time = 0
 
@@ -55,8 +55,8 @@ const render = () => {
     time += 0.1
     rapid.startRender()
 
-    drawGraphicDemo()
     drawMatrixStackDemo()
+    drawGraphicDemo()
 
     rapid.endRender()
 }

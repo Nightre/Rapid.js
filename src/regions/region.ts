@@ -50,14 +50,14 @@ class RenderRegion {
             this.currentShader!.setAttribute(element)
         }
         this.gl.uniformMatrix4fv(
-            this.currentShader.unifromLoc["uProjectionMatrix"],
+            this.currentShader.uniformLoc["uProjectionMatrix"],
             false, this.rapid.projection
         )
     }
     exitRegion() { }
     protected initDefaultShader(vs: string, fs: string) {
         this.webglArrayBuffer.bindBuffer()
-        this.defaultShader = new GLShader(this.rapid, vs, fs)
+        this.defaultShader = new GLShader(this.rapid, vs, fs, this.attribute)
     }
     render() {
         this.executeRender()

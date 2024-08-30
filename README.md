@@ -10,6 +10,8 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 [demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
 [matrix stack demo](https://nightre.github.io/Rapid.js/demo/matrix_stack.html) ( [source code](./demo/matrix_stack.js) )
+[custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
+
 
 
 # Features:
@@ -69,9 +71,9 @@ rapid.matrixStack.scale(1)
 rapid.matrixStack.rotate(0)
 
 //               texture offset color
-rapid.renderSprite(cat,0,0, color) // draw Sprite
+rapid.renderSprite(cat, 0, 0, color) // draw Sprite
+// or rapid.renderSprite(cat, 0, 0, { color })
 rapid.restore() // back to the previous saved state
-
 // draw graphic
 // vertices can have different colors
 rapid.startGraphicDraw()
@@ -87,6 +89,35 @@ rapid.endRender()
 rapid.resize(100,100)
 ```
 
+# Custom Shader
+
+View demo and watch detailed shader code [custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
+
+```js
+const vertexShaderSource = `...`
+const fragmentShaderSource = `...`
+
+const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource, spriteAttributes)
+// If you want to create a custom shader for graphic, please use graphicAttributes
+rapid.startRender()
+
+rapid.renderSprite(plane, 100, 100, {
+    shader: customShader, // shader
+    uniforms: {
+        // Set custom uniform (You can set mat3, vec2, and so on here)
+        uCustomUniform: Number(costumUniformValue)
+        //  uVec2Uniform: [0,2] // recognized as vec2
+        //  uMat3Uniform: [
+        //     [0,0,0],
+        //     [0,0,0],
+        //     [0,0,0],
+        //  ]
+        // recognized as mat3
+    }
+});
+
+rapid.endRender()
+```
 # Screen Shot
 
 ![screen](./screenshot/screen.png)

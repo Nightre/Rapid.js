@@ -3,8 +3,9 @@ import fragString from "../shader/sprite.frag";
 import vertString from "../shader/sprite.vert";
 import Rapid from "../render";
 import { WebglElementBufferArray } from "../math";
-import { WebGLContext } from "../interface";
+import { UniformType, WebGLContext } from "../interface";
 import GLShader from "../webgl/glshader";
+import { FLOAT, UNSIGNED_BYTE } from "../webgl/utils";
 
 const SPRITE_ELMENT_PER_VERTEX = 6
 const INDEX_PER_SPRITE = 6
@@ -36,16 +37,10 @@ class SpriteRegion extends RenderRegion {
 
     constructor(rapid: Rapid) {
         const gl = rapid.gl
-        const stride = BYTES_PER_VERTEX
-        super(rapid, [
-            { name: "aPosition", size: 2, type: gl.FLOAT, stride },
-            { name: "aRegion", size: 2, type: gl.FLOAT, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT },
-            { name: "aTextureId", size: 1, type: gl.FLOAT, stride, offset: 4 * Float32Array.BYTES_PER_ELEMENT },
-            { name: "aColor", size: 4, type: gl.UNSIGNED_BYTE, stride, offset: 5 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
-        ])
+        super(rapid, spriteAttributes)
         this.initDefaultShader(
             vertString,
-            this.generateFragShader(fragString, rapid.maxTextureUnits)
+            fragString, //generateFragShader(fragString, rapid.maxTextureUnits)
         )
         this.MAX_BATCH = Math.floor(2 ** 16 / VERTEX_PER_SPRITE)
         this.indexBuffer = new SpriteElementArray(gl, this.MAX_BATCH)
@@ -68,8 +63,10 @@ class SpriteRegion extends RenderRegion {
         v1: number,
         offsetX: number,
         offsetY: number,
-        color: number
+        color: number,
+        uniforms?: UniformType
     ) {
+        uniforms && this.currentShader?.setUniforms(uniforms)
         if (this.batchSprite >= this.MAX_BATCH) {
             this.render()
         }
@@ -106,7 +103,7 @@ class SpriteRegion extends RenderRegion {
         this.indexBuffer.bindBuffer()
 
         this.gl.uniform1iv(
-            this.currentShader!.unifromLoc["uTextures"],
+            this.currentShader!.uniformLoc["uTextures"],
             this.TEXTURE_UNITS_ARRAY
         )
     }
@@ -114,24 +111,15 @@ class SpriteRegion extends RenderRegion {
         super.initializeForNextRender()
         this.batchSprite = 0
     }
-    private generateFragShader(fs: string, max: number) {
-        let code = ""
-        fs = fs.replace("%TEXTURE_NUM%", max.toString())
-
-        for (let index = 0; index < max; index++) {
-            if (index == 0) {
-                code += `if(vTextureId == ${index}.0)`
-            } else if (index == max - 1) {
-                code += `else`
-            } else {
-                code += `else if(vTextureId == ${index}.0)`
-            }
-            code += `{color = texture2D(uTextures[${index}], vRegion);}`
-        }
-        fs = fs.replace("%GET_COLOR%", code)
-
-        return fs
-    }
 }
 
+const stride = BYTES_PER_VERTEX
+const spriteAttributes = [
+    { name: "aPosition", size: 2, type: FLOAT, stride },
+    { name: "aRegion", size: 2, type: FLOAT, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT },
+    { name: "aTextureId", size: 1, type: FLOAT, stride, offset: 4 * Float32Array.BYTES_PER_ELEMENT },
+    { name: "aColor", size: 4, type: UNSIGNED_BYTE, stride, offset: 5 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
+]
+
+export { spriteAttributes }
 export default SpriteRegion

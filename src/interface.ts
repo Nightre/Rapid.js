@@ -1,4 +1,5 @@
 import { Color } from "./math";
+import GLShader from "./webgl/glshader";
 
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 
@@ -17,5 +18,10 @@ export interface IAttribute {
     stride: number
     offset?: number
 }
-
+export interface IRenderSpriteOptions {
+    color?: Color;
+    shader?: GLShader;
+    uniforms?: UniformType
+}
+export type UniformType = Record<string, number | Array<any>>
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas 

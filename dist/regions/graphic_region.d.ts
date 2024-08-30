@@ -8,4 +8,20 @@ declare class GraphicRegion extends RenderRegion {
     drawCircle(x: number, y: number, radius: number, color: number): void;
     protected executeRender(): void;
 }
+declare const graphicAttributes: ({
+    name: string;
+    size: number;
+    type: number;
+    stride: number;
+    offset?: undefined;
+    normalized?: undefined;
+} | {
+    name: string;
+    size: number;
+    type: number;
+    stride: number;
+    offset: number;
+    normalized: boolean;
+})[];
+export { graphicAttributes };
 export default GraphicRegion;

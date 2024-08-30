@@ -2,25 +2,20 @@
 import { Rapid } from "..";
 import fragString from "../shader/graphic.frag";
 import vertString from "../shader/graphic.vert";
+import { FLOAT, UNSIGNED_BYTE } from "../webgl/utils";
 import RenderRegion from "./region";
 
 //                       aPosition  aColor
-const BYTES_PER_VERTEX = 2 * 4 +    4
+const BYTES_PER_VERTEX = 2 * 4 + 4
 const FLOAT32_PER_VERTEX = 3
 class GraphicRegion extends RenderRegion {
     private vertex: number = 0
     constructor(rapid: Rapid) {
-        const gl = rapid.gl
-
-        const stride = BYTES_PER_VERTEX
-        super(rapid, [
-            { name: "aPosition", size: 2, type: gl.FLOAT, stride },
-            { name: "aColor", size: 4, type: gl.UNSIGNED_BYTE, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
-        ])
+        super(rapid, graphicAttributes)
 
         this.initDefaultShader(vertString, fragString)
     }
-    startRender(){
+    startRender() {
         this.vertex = 0
         this.webglArrayBuffer.clear()
     }
@@ -33,17 +28,17 @@ class GraphicRegion extends RenderRegion {
     drawCircle(x: number, y: number, radius: number, color: number): void {
         const numSegments = 30; // Increase this for a smoother circle
         const angleStep = (2 * Math.PI) / numSegments;
-    
+
         this.startRender();
         this.addVertex(x, y, color); // Center point
-    
+
         for (let i = 0; i <= numSegments; i++) {
             const angle = i * angleStep;
             const dx = x + radius * Math.cos(angle);
             const dy = y + radius * Math.sin(angle);
             this.addVertex(dx, dy, color);
         }
-    
+
         this.executeRender();
     }
 
@@ -56,4 +51,10 @@ class GraphicRegion extends RenderRegion {
     }
 }
 
+const stride = BYTES_PER_VERTEX
+const graphicAttributes = [
+    { name: "aPosition", size: 2, type: FLOAT, stride },
+    { name: "aColor", size: 4, type: UNSIGNED_BYTE, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
+]
+export { graphicAttributes }
 export default GraphicRegion

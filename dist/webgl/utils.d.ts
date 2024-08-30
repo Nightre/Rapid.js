@@ -22,3 +22,6 @@ export declare const compileShader: (gl: WebGLContext, source: string, type: num
  */
 export declare const createShaderProgram: (gl: WebGLContext, vsSource: string, fsSource: string) => WebGLProgram;
 export declare function createTexture(gl: WebGLRenderingContext, image: TexImageSource, antialias: boolean): WebGLTexture;
+export declare function generateFragShader(fs: string, max: number): string;
+export declare const FLOAT = 5126;
+export declare const UNSIGNED_BYTE = 5121;

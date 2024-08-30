@@ -278,6 +278,9 @@ export class WebglElementBufferArray extends WebglBufferArray {
     protected addObject(_vertex?: number) {}
 }
 
+/**
+ * Represents a color with red, green, blue, and alpha (transparency) components.
+ */
 export class Color {
     private _r: number;
     private _g: number;
@@ -285,6 +288,13 @@ export class Color {
     private _a: number;
     uint32!: number;
 
+    /**
+     * Creates an instance of Color.
+     * @param r - The red component (0-255).
+     * @param g - The green component (0-255).
+     * @param b - The blue component (0-255).
+     * @param a - The alpha component (0-255).
+     */
     constructor(r: number, g: number, b: number, a: number) {
         this._r = r;
         this._g = g;
@@ -293,62 +303,118 @@ export class Color {
         this.updateUint();
     }
 
+    /**
+     * Gets the red component.
+     */
     get r() {
         return this._r;
     }
 
+    /**
+     * Sets the red component and updates the uint32 representation.
+     * @param value - The new red component (0-255).
+     */
     set r(value: number) {
         this._r = value;
         this.updateUint();
     }
 
+    /**
+     * Gets the green component.
+     */
     get g() {
         return this._g;
     }
 
+    /**
+     * Sets the green component and updates the uint32 representation.
+     * @param value - The new green component (0-255).
+     */
     set g(value: number) {
         this._g = value;
         this.updateUint();
     }
 
+    /**
+     * Gets the blue component.
+     */
     get b() {
         return this._b;
     }
 
+    /**
+     * Sets the blue component and updates the uint32 representation.
+     * @param value - The new blue component (0-255).
+     */
     set b(value: number) {
         this._b = value;
         this.updateUint();
     }
 
+    /**
+     * Gets the alpha component.
+     */
     get a() {
         return this._a;
     }
 
+    /**
+     * Sets the alpha component and updates the uint32 representation.
+     * @param value - The new alpha component (0-255).
+     */
     set a(value: number) {
         this._a = value;
         this.updateUint();
     }
 
+    /**
+     * Updates the uint32 representation of the color.
+     * @private
+     */
     private updateUint() {
         this.uint32 = ((this._a << 24) | (this._b << 16) | (this._g << 8) | this._r) >>> 0;
     }
+
+    /**
+     * Sets the RGBA values of the color and updates the uint32 representation.
+     * @param r - The red component (0-255).
+     * @param g - The green component (0-255).
+     * @param b - The blue component (0-255).
+     * @param a - The alpha component (0-255).
+     */
     setRGBA(r: number, g: number, b: number, a: number) {
-        this.r = r
-        this.g = g
-        this.b = b
-        this.a = a
-        this.updateUint()
-    }
-    copy(color: Color) {
-        this.setRGBA(color.r, color.g, color.b, color.a)
-    }
-    equals(color: Color) {
-        return color.r == this.r &&
-            color.g == this.g &&
-            color.b == this.b &&
-            color.a == this.a
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+        this.updateUint();
     }
 
+    /**
+     * Copies the RGBA values from another color.
+     * @param color - The color to copy from.
+     */
+    copy(color: Color) {
+        this.setRGBA(color.r, color.g, color.b, color.a);
+    }
+
+    /**
+     * Checks if the current color is equal to another color.
+     * @param color - The color to compare with.
+     * @returns True if the colors are equal, otherwise false.
+     */
+    equals(color: Color) {
+        return color.r === this.r &&
+            color.g === this.g &&
+            color.b === this.b &&
+            color.a === this.a;
+    }
+
+    /**
+     * Creates a Color instance from a hexadecimal color string.
+     * @param hexString - The hexadecimal color string, e.g., '#RRGGBB' or '#RRGGBBAA'.
+     * @returns A new Color instance.
+     */
     static fromHex(hexString: string): Color {
         if (hexString.startsWith('#')) {
             hexString = hexString.slice(1);
@@ -362,6 +428,12 @@ export class Color {
         }
         return new Color(r, g, b, a);
     }
+
+    /**
+     * Adds the components of another color to this color, clamping the result to 255.
+     * @param color - The color to add.
+     * @returns A new Color instance with the result of the addition.
+     */
     add(color: Color) {
         return new Color(
             Math.min(this.r + color.r, 255),
@@ -371,6 +443,11 @@ export class Color {
         );
     }
 
+    /**
+     * Subtracts the components of another color from this color, clamping the result to 0.
+     * @param color - The color to subtract.
+     * @returns A new Color instance with the result of the subtraction.
+     */
     subtract(color: Color) {
         return new Color(
             Math.max(this.r - color.r, 0),
