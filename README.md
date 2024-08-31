@@ -79,11 +79,14 @@ rapid.renderSprite(cat, 0, 0, color) // draw Sprite
 rapid.restore() // back to the previous saved state
 // draw graphic
 // vertices can have different colors
-rapid.startGraphicDraw()
-rapid.addGraphicVertex(0, 0, color)
-rapid.addGraphicVertex(100, 0, color)
-rapid.addGraphicVertex(100, 100, color)
-rapid.endGraphicDraw()
+const path = [new Vec2(0, 0), new Vec2(100, 0), new Vec2(100, 100)]
+rapid.renderGraphic(0,0,{points:path, color:green})
+// or
+// rapid.startGraphicDraw()
+// rapid.addGraphicVertex(0, 0, color)
+// rapid.addGraphicVertex(100, 0, color)
+// rapid.addGraphicVertex(100, 100, color)
+// rapid.endGraphicDraw()
 
 // Called after rendering
 rapid.endRender()
