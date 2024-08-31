@@ -1,4 +1,4 @@
-import { IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface"
+import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface"
 import { getStrokeGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
@@ -164,16 +164,19 @@ class Rapid {
     }
 
     renderLine(offsetX: number = 0, offsetY: number = 0, options: IRenderLineOptions) {
-        const vertexs = getStrokeGeometry(options.points, options);
-        this.renderGraphic(offsetX, offsetY, vertexs, options.color, this.gl.TRIANGLES)
+        const points = getStrokeGeometry(options.points, options);
+        this.renderGraphic(offsetX, offsetY, { color: options.color, drawType: this.gl.TRIANGLES, points })
     }
-    renderGraphic(offsetX: number = 0, offsetY: number = 0, vertexs: Vec2[], color?: Color, drawType?: number) {
-        this.startGraphicDraw()
-        if (drawType) {
-            (this.currentRegion as GraphicRegion).drawType = drawType
+    renderGraphic(offsetX: number = 0, offsetY: number = 0, options: IGraphicOptions | Vec2[]): void {
+        if (options instanceof Array) {
+            return this.renderGraphic(offsetX, offsetY, { points: options })
         }
-        vertexs.forEach(vec => {
-            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, color || this.defaultColorBlack)
+        this.startGraphicDraw()
+        if (options.drawType) {
+            (this.currentRegion as GraphicRegion).drawType = options.drawType
+        }
+        options.points.forEach(vec => {
+            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, options.color || this.defaultColorBlack)
         })
         this.endGraphicDraw()
     }

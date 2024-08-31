@@ -208,10 +208,12 @@ export class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to scale the matrix horizontally.
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
-    scale(x: number | Vec2, y: number): void {
+    scale(x: number | Vec2, y?: number): void {
         if (x instanceof Vec2) {
             return this.scale(x.x, x.y)
         }
+        if (!y) y = x
+        debugger
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         arr[offset + 0] = arr[offset + 0] * x;

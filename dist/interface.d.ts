@@ -79,5 +79,10 @@ export interface IRenderLineOptions extends ILineOptions {
     points: Vec2[];
     color?: Color;
 }
+export interface IGraphicOptions {
+    points: Vec2[];
+    color?: Color;
+    drawType?: number;
+}
 export type UniformType = Record<string, number | Array<any>>;
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas;

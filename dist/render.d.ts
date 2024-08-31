@@ -1,4 +1,4 @@
-import { IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface";
+import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { Texture, TextureCache } from "./texture";
@@ -75,7 +75,7 @@ declare class Rapid {
      */
     renderSprite(texture: Texture, offsetX?: number, offsetY?: number, options?: IRenderSpriteOptions | Color): void;
     renderLine(offsetX: number | undefined, offsetY: number | undefined, options: IRenderLineOptions): void;
-    renderGraphic(offsetX: number | undefined, offsetY: number | undefined, vertexs: Vec2[], color?: Color, drawType?: number): void;
+    renderGraphic(offsetX: number | undefined, offsetY: number | undefined, options: IGraphicOptions | Vec2[]): void;
     /**
      * Starts a graphic drawing process with an optional custom shader.
      * @param customShader - An optional custom shader to use.

@@ -17,6 +17,8 @@ const linePath = [new Vec2(0, 0), new Vec2(0, 50), new Vec2(120, 100), new Vec2(
 const drawGraphicDemo = () => {
     rapid.startGraphicDraw()
     const s = Math.sin(time)
+    linePath[1].x = s * 20
+
     rapid.addGraphicVertex(50 + s * 50, 100, red)
     rapid.addGraphicVertex(200, 50, blue)
     rapid.addGraphicVertex(200 + s * 100, 200, yellow)
@@ -35,6 +37,7 @@ const drawGraphicDemo = () => {
 }
 const drawMatrixStackDemo = () => {
     const s = Math.sin(time)
+    
     rapid.matrixStack.translate(150, 50)
     rapid.save() // save matrixStack
     rapid.matrixStack.rotate(s * 0.5 + 0.1)
@@ -60,12 +63,12 @@ const drawMatrixStackDemo = () => {
     rapid.renderSprite(cat, 0, 0, red)
     rapid.renderSprite(text, 200, 0)
     text.setText("time:" + Math.round(time))
-    linePath[1].x = s * 20
 }
 let time = 0
 
 const render = () => {
     time += 0.1
+    
     rapid.startRender()
 
     drawMatrixStackDemo()

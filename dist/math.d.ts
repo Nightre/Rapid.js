@@ -91,7 +91,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to scale the matrix horizontally.
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
-    scale(x: number | Vec2, y: number): void;
+    scale(x: number | Vec2, y?: number): void;
     apply(x: number | Vec2, y: number): Vec2 | number[];
     getInverse(): Float32Array;
     getTransform(): Float32Array;
