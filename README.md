@@ -1,10 +1,10 @@
 # 🚀 Rapid.js
 
-A highly efficient and lightweight WebGL renderer capable of rendering 10k sprites at 60fps.
+A highly efficient and lightweight WebGL renderer
 
 ## [API Docs](https://nightre.github.io/Rapid.js/docs/)
 
-[demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
+[stress test demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
 [render demo](https://nightre.github.io/Rapid.js/demo/matrix_stack.html) ( [source code](./demo/matrix_stack.js) )
 
