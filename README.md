@@ -49,8 +49,8 @@ let rapid = new Rapid({
 })
 
 // Creating textures
-const cat = await rapid.texture.textureFromUrl("./cat.png")
-const plane = await rapid.texture.textureFromUrl("./plane.png")
+const cat = await rapid.textures.textureFromUrl("./cat.png")
+const plane = await rapid.textures.textureFromUrl("./plane.png")
 // or
 // Texture.fromImageSource(img)
 // Texture.fromUrl(url)
