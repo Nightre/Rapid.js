@@ -96,20 +96,26 @@ class Texture {
      * The height of the texture.
      */
     height!: number;
-
-    scale: number = 1
+    /**
+     * Image scaling factor
+     */
+    protected scale: number = 1
     /**
      * Creates a new `Texture` instance with the specified base texture reference.
      * @param base - The {@link BaseTexture} to be used by the texture.
      */
     constructor(base?: BaseTexture) {
-        this.setBase(base)
+        this.setBaseTextur(base)
     }
-
-    setBase(base?: BaseTexture, scale: number = 1) {
+    /**
+     * Set or change BaseTexture
+     * @param base 
+     * @param scale 
+     */
+    setBaseTextur(base?: BaseTexture) {
         if (base) {
             this.base = base
-            this.setClipRegion(0, 0, base.width * scale, base.height * scale)
+            this.setClipRegion(0, 0, base.width, base.height)
         }
     }
     /**
@@ -154,7 +160,7 @@ export const SCALEFACTOR = 2
 class Text extends Texture {
     private options: ITextOptions;
     private rapid: Rapid;
-    override scale: number = 1 / SCALEFACTOR
+    protected override scale: number = 1 / SCALEFACTOR
     text: string;
 
     /**
@@ -170,12 +176,9 @@ class Text extends Texture {
     }
     private updateTextImage() {
         const canvas = this.createTextCanvas();
-        this.setBase(BaseTexture.fromImageSource(this.rapid, canvas, true))
+        this.setBaseTextur(BaseTexture.fromImageSource(this.rapid, canvas, true))
     }
-    /**
-     * Creates a canvas with the text rendered on it.
-     * @returns A `Canvas` element with the rendered text.
-     */
+
     private createTextCanvas(): HTMLCanvasElement {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -216,7 +219,10 @@ class Text extends Texture {
 
         return canvas;
     }
-
+    /**
+     * Update the displayed text
+     * @param text 
+     */
     setText(text: string) {
         this.text = text
         this.updateTextImage()

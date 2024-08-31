@@ -16,7 +16,11 @@ class GLShader {
         this.parseShader(vs);
         this.parseShader(processedFragmentShaderSource);
     }
-
+    /**
+     * Set the uniform of this shader
+     * @param uniforms 
+     * @param usedTextureUnit How many texture units have been used
+     */
     setUniforms(uniforms: UniformType, usedTextureUnit: number) {
         const gl = this.gl;
         for (const uniformName in uniforms) {
@@ -81,10 +85,13 @@ class GLShader {
     private getUniform(name: string) {
         return this.uniformLoc[name]
     }
+    /**
+     * use this shader
+     */
     use() {
         this.gl.useProgram(this.program)
     }
-    parseShader(shader: string) {
+    private parseShader(shader: string) {
         const gl = this.gl
 
         const attributeMatches = shader.match(/attribute\s+\w+\s+(\w+)/g);
@@ -104,6 +111,10 @@ class GLShader {
             }
         }
     }
+    /**
+     * Set vertex attributes in glsl shader
+     * @param element 
+     */
     setAttribute(element: IAttribute) {
         const loc = this.attributeLoc[element.name]
         if (typeof loc != "undefined") {

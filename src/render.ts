@@ -163,22 +163,41 @@ class Rapid {
         )
     }
 
-    renderLine(offsetX: number = 0, offsetY: number = 0, options: IRenderLineOptions) {
+    /**
+     * Renders a line with the specified options.
+     * 
+     * @param offsetX - The X offset to apply when rendering the line. Defaults to 0.
+     * @param offsetY - The Y offset to apply when rendering the line. Defaults to 0.
+     * @param options - The options for rendering the line, including points and color.
+     */
+    renderLine(offsetX: number = 0, offsetY: number = 0, options: IRenderLineOptions): void {
         const points = getStrokeGeometry(options.points, options);
-        this.renderGraphic(offsetX, offsetY, { color: options.color, drawType: this.gl.TRIANGLES, points })
+        this.renderGraphic(offsetX, offsetY, { color: options.color, drawType: this.gl.TRIANGLES, points });
     }
+
+    /**
+     * Renders graphics based on the provided options or array of Vec2 points.
+     * 
+     * @param offsetX - The X offset to apply when rendering the graphics. Defaults to 0.
+     * @param offsetY - The Y offset to apply when rendering the graphics. Defaults to 0.
+     * @param options - Either an object containing graphic options or an array of Vec2 points.
+     * 
+     * @remarks
+     * If `options` is an array of `Vec2`, it will be converted to an object with `points` property.
+     * If `options` is an object, it should contain `points` (array of `Vec2`) and optionally `color` and `drawType`.
+     */
     renderGraphic(offsetX: number = 0, offsetY: number = 0, options: IGraphicOptions | Vec2[]): void {
         if (options instanceof Array) {
-            return this.renderGraphic(offsetX, offsetY, { points: options })
+            return this.renderGraphic(offsetX, offsetY, { points: options });
         }
-        this.startGraphicDraw()
+        this.startGraphicDraw();
         if (options.drawType) {
-            (this.currentRegion as GraphicRegion).drawType = options.drawType
+            (this.currentRegion as GraphicRegion).drawType = options.drawType;
         }
         options.points.forEach(vec => {
-            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, options.color || this.defaultColorBlack)
-        })
-        this.endGraphicDraw()
+            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, options.color || this.defaultColorBlack);
+        });
+        this.endGraphicDraw();
     }
     /**
      * Starts a graphic drawing process with an optional custom shader.

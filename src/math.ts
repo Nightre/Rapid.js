@@ -221,6 +221,10 @@ export class MatrixStack extends DynamicArrayBuffer {
         arr[offset + 2] = arr[offset + 2] * y;
         arr[offset + 3] = arr[offset + 3] * y;
     }
+    /**
+     * Transforms a point by applying the current matrix stack.
+     * @returns The transformed point as an array `[newX, newY]`.
+     */
     apply(x: number | Vec2, y: number): Vec2 | number[] {
         if (x instanceof Vec2) {
             return new Vec2(...this.apply(x.x, x.y) as number[])
@@ -232,6 +236,10 @@ export class MatrixStack extends DynamicArrayBuffer {
             arr[offset + 1] * x + arr[offset + 3] * y + arr[offset + 5]
         ];
     }
+    /**
+     * Obtain the inverse matrix of the current matrix
+     * @returns inverse matrix
+     */
     getInverse() {
         const offset = this.usedElemNum - MATRIX_SIZE;
         const arr = this.typedArray;
@@ -252,6 +260,10 @@ export class MatrixStack extends DynamicArrayBuffer {
             (b * e - a * f) / det
         ]);
     }
+    /**
+     * Get a copy of the current transformation matrix
+     * @returns matrix
+     */
     getTransform() {
         const offset = this.usedElemNum - MATRIX_SIZE;
         const arr = this.typedArray;
@@ -264,6 +276,10 @@ export class MatrixStack extends DynamicArrayBuffer {
             arr[offset + 5]
         ]);
     }
+    /**
+     * Set the current transformation matrix
+     * @param array 
+     */
     setTransform(array: Float32Array | number[]) {
         const offset = this.usedElemNum - MATRIX_SIZE;
         const arr = this.typedArray;
@@ -469,21 +485,38 @@ export class Color {
     }
 }
 
+/**
+ * Represents a 2D vector with x and y components.
+ */
 export class Vec2 {
     x: number;
     y: number;
 
+    /**
+     * Creates an instance of Vec2.
+     * @param x - The x coordinate (default is 0).
+     * @param y - The y coordinate (default is 0).
+     */
     constructor(x?: number, y?: number) {
         this.x = x !== undefined ? x : 0;
         this.y = y !== undefined ? y : 0;
     }
 
+    /**
+     * Multiplies the vector by a scalar.
+     * @param f - The scalar value to multiply by.
+     * @returns The current instance with updated values.
+     */
     scalarMult(f: number): this {
         this.x *= f;
         this.y *= f;
         return this;
     }
 
+    /**
+     * Rotates the vector 90 degrees counterclockwise.
+     * @returns The current instance with updated values.
+     */
     perpendicular(): this {
         const x = this.x;
         this.x = -this.y;
@@ -491,16 +524,28 @@ export class Vec2 {
         return this;
     }
 
+    /**
+     * Inverts the direction of the vector.
+     * @returns The current instance with updated values.
+     */
     invert(): this {
         this.x = -this.x;
         this.y = -this.y;
         return this;
     }
 
+    /**
+     * Calculates the length of the vector.
+     * @returns The length of the vector.
+     */
     length(): number {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
+    /**
+     * Normalizes the vector to have a length of 1.
+     * @returns The current instance with updated values.
+     */
     normalize(): this {
         const mod = this.length();
         this.x /= mod;
@@ -508,26 +553,59 @@ export class Vec2 {
         return this;
     }
 
+    /**
+     * Calculates the angle of the vector relative to the x-axis.
+     * @returns The angle of the vector.
+     */
     angle(): number {
         return this.y / this.x;
     }
 
+    /**
+     * Computes the angle between two vectors.
+     * @param p0 - The starting vector.
+     * @param p1 - The ending vector.
+     * @returns The angle between the two vectors in radians.
+     */
     static Angle(p0: Vec2, p1: Vec2): number {
-        return Math.atan2(p1.x - p0.x, p1.y - p0.y);
+        return Math.atan2(p1.y - p0.y, p1.x - p0.x);
     }
 
+    /**
+     * Adds two vectors together.
+     * @param p0 - The first vector.
+     * @param p1 - The second vector.
+     * @returns A new vector representing the sum of p0 and p1.
+     */
     static Add(p0: Vec2, p1: Vec2): Vec2 {
         return new Vec2(p0.x + p1.x, p0.y + p1.y);
     }
 
+    /**
+     * Subtracts one vector from another.
+     * @param p1 - The vector to subtract from.
+     * @param p0 - The vector to subtract.
+     * @returns A new vector representing the difference between p1 and p0.
+     */
     static Sub(p1: Vec2, p0: Vec2): Vec2 {
         return new Vec2(p1.x - p0.x, p1.y - p0.y);
     }
 
+    /**
+     * Finds the midpoint between two vectors.
+     * @param p0 - The first vector.
+     * @param p1 - The second vector.
+     * @returns A new vector representing the midpoint between p0 and p1.
+     */
     static Middle(p0: Vec2, p1: Vec2): Vec2 {
         return Vec2.Add(p0, p1).scalarMult(0.5);
     }
 
+    /**
+     * Converts an array of coordinate pairs into an array of Vec2 instances.
+     * @param array - An array of [x, y] coordinate pairs.
+     * @returns An array of Vec2 instances.
+     */
     static FormArray(array: number[][]): Vec2[] {
         return array.map(pair => new Vec2(pair[0], pair[1]));
     }
