@@ -224,6 +224,8 @@ class Text extends Texture {
      * @param text 
      */
     setText(text: string) {
+        if (this.text == text) return
+        
         this.text = text
         this.updateTextImage()
     }
