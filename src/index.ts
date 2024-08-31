@@ -2,8 +2,10 @@ import { graphicAttributes } from "./regions/graphic_region";
 import { spriteAttributes } from "./regions/sprite_region";
 import Rapid from "./render";
 import GLShader from "./webgl/glshader";
+import { Text } from "./texture";
 
 export {
+    Text,
     Rapid,
     GLShader,
     spriteAttributes,

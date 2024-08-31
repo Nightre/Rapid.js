@@ -2,6 +2,7 @@ import { Rapid } from "..";
 import RenderRegion from "./region";
 declare class GraphicRegion extends RenderRegion {
     private vertex;
+    drawType: number;
     constructor(rapid: Rapid);
     startRender(): void;
     addVertex(x: number, y: number, color: number): void;

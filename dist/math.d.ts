@@ -80,7 +80,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to translate horizontally.
      * @param y - The amount to translate vertically.
      */
-    translate(x: number, y: number): void;
+    translate(x: number | Vec2, y: number): void;
     /**
      * Rotates the current matrix by the specified angle.
      * @param angle - The angle, in radians, to rotate the matrix by.
@@ -91,8 +91,8 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to scale the matrix horizontally.
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
-    scale(x: number, y?: number): void;
-    apply(x: number, y: number): number[];
+    scale(x: number | Vec2, y: number): void;
+    apply(x: number | Vec2, y: number): Vec2 | number[];
     getInverse(): Float32Array;
     getTransform(): Float32Array;
     setTransform(array: Float32Array | number[]): void;
@@ -196,5 +196,20 @@ export declare class Color {
      * @returns A new Color instance with the result of the subtraction.
      */
     subtract(color: Color): Color;
+}
+export declare class Vec2 {
+    x: number;
+    y: number;
+    constructor(x?: number, y?: number);
+    scalarMult(f: number): this;
+    perpendicular(): this;
+    invert(): this;
+    length(): number;
+    normalize(): this;
+    angle(): number;
+    static Angle(p0: Vec2, p1: Vec2): number;
+    static Add(p0: Vec2, p1: Vec2): Vec2;
+    static Sub(p1: Vec2, p0: Vec2): Vec2;
+    static Middle(p0: Vec2, p1: Vec2): Vec2;
 }
 export {};

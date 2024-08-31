@@ -20,7 +20,9 @@ A highly efficient and lightweight WebGL renderer capable of rendering 10k sprit
 * Multi-texture support ( Batch rendering based on the GPU's maximum texture units )
 * Graphic
 * Matrix stack
-* Color
+* Text
+* Line
+* custom Shader
 
 # Install
 

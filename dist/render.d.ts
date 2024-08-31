@@ -1,5 +1,5 @@
-import { IRapiadOptions, IRenderSpriteOptions, WebGLContext } from "./interface";
-import { Color, MatrixStack } from "./math";
+import { IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface";
+import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { Texture, TextureCache } from "./texture";
 import GLShader from "./webgl/glshader";
@@ -19,6 +19,7 @@ declare class Rapid {
     readonly devicePixelRatio: number;
     readonly maxTextureUnits: number;
     private readonly defaultColor;
+    private readonly defaultColorBlack;
     private currentRegion?;
     private currentRegionName?;
     private regions;
@@ -73,6 +74,8 @@ declare class Rapid {
      * @param options - Rendering options including color and custom shader.
      */
     renderSprite(texture: Texture, offsetX?: number, offsetY?: number, options?: IRenderSpriteOptions | Color): void;
+    renderLine(offsetX: number | undefined, offsetY: number | undefined, options: IRenderLineOptions): void;
+    renderGraphic(offsetX: number | undefined, offsetY: number | undefined, vertexs: Vec2[], color?: Color, drawType?: number): void;
     /**
      * Starts a graphic drawing process with an optional custom shader.
      * @param customShader - An optional custom shader to use.
@@ -84,7 +87,7 @@ declare class Rapid {
      * @param y - The Y position of the vertex.
      * @param color - The color of the vertex.
      */
-    addGraphicVertex(x: number, y: number, color: Color): void;
+    addGraphicVertex(x: number | Vec2, y?: number | Color, color?: Color): void;
     /**
      * Ends the graphic drawing process by rendering the current graphic region.
      */
@@ -114,6 +117,6 @@ declare class Rapid {
      * @param y - The Y coordinate of the point.
      * @returns The transformed point as an array `[newX, newY]`.
      */
-    transformPoint(x: number, y: number): number[];
+    transformPoint(x: number, y: number): number[] | Vec2;
 }
 export default Rapid;

@@ -1,5 +1,6 @@
 import { IAttribute, UniformType, WebGLContext } from "../interface"
 import Rapid from "../render"
+import { Texture } from "../texture"
 import { createShaderProgram, generateFragShader } from "./utils"
 
 class GLShader {
@@ -15,12 +16,19 @@ class GLShader {
         this.parseShader(vs);
         this.parseShader(processedFragmentShaderSource);
     }
-    setUniforms(uniforms: UniformType) {
+
+    setUniforms(uniforms: UniformType, usedTextureUnit: number) {
         const gl = this.gl;
         for (const uniformName in uniforms) {
             const value = uniforms[uniformName];
             const loc = this.getUniform(uniformName);
-            if (typeof value === 'number') {
+            
+            if (value instanceof Texture && value.base?.texture) {
+                gl.activeTexture(gl.TEXTURE0 + usedTextureUnit);
+                gl.bindTexture(gl.TEXTURE_2D, value.base.texture);
+                gl.uniform1i(loc, usedTextureUnit);
+                usedTextureUnit += 1
+            } else if (typeof value === 'number') {
                 gl.uniform1f(loc, value);
             } else if (Array.isArray(value)) {
                 switch (value.length) {
@@ -69,7 +77,7 @@ class GLShader {
             }
         }
     }
-    
+
     private getUniform(name: string) {
         return this.uniformLoc[name]
     }

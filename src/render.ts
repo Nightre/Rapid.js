@@ -1,5 +1,6 @@
-import { IRapiadOptions, IRenderSpriteOptions, WebGLContext } from "./interface"
-import { Color, MatrixStack } from "./math"
+import { IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface"
+import { getStrokeGeometry } from "./line"
+import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
 import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
@@ -25,6 +26,7 @@ class Rapid {
     readonly devicePixelRatio = window.devicePixelRatio || 1
     readonly maxTextureUnits: number
     private readonly defaultColor = new Color(255, 255, 255, 255)
+    private readonly defaultColorBlack = new Color(0, 0, 0, 255)
 
     private currentRegion?: RenderRegion
     private currentRegionName?: string
@@ -141,6 +143,7 @@ class Rapid {
      * @param options - Rendering options including color and custom shader.
      */
     renderSprite(texture: Texture, offsetX: number = 0, offsetY: number = 0, options?: IRenderSpriteOptions | Color): void {
+        if (!texture.base) return
         if (options instanceof Color) {
             return this.renderSprite(texture, offsetX, offsetY, { color: options })
         }
@@ -160,6 +163,20 @@ class Rapid {
         )
     }
 
+    renderLine(offsetX: number = 0, offsetY: number = 0, options: IRenderLineOptions) {
+        const vertexs = getStrokeGeometry(options.points, options);
+        this.renderGraphic(offsetX, offsetY, vertexs, options.color, this.gl.TRIANGLES)
+    }
+    renderGraphic(offsetX: number = 0, offsetY: number = 0, vertexs: Vec2[], color?: Color, drawType?: number) {
+        this.startGraphicDraw()
+        if (drawType) {
+            (this.currentRegion as GraphicRegion).drawType = drawType
+        }
+        vertexs.forEach(vec => {
+            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, color || this.defaultColorBlack)
+        })
+        this.endGraphicDraw()
+    }
     /**
      * Starts a graphic drawing process with an optional custom shader.
      * @param customShader - An optional custom shader to use.
@@ -175,8 +192,11 @@ class Rapid {
      * @param y - The Y position of the vertex.
      * @param color - The color of the vertex.
      */
-    addGraphicVertex(x: number, y: number, color: Color) {
-        (this.currentRegion as GraphicRegion).addVertex(x, y, color.uint32)
+    addGraphicVertex(x: number | Vec2, y?: number | Color, color?: Color): void {
+        if (x instanceof Vec2) {
+            return this.addGraphicVertex(x.x, x.y, y as Color)
+        }
+        (this.currentRegion as GraphicRegion).addVertex(x, y as number, color!.uint32)
     }
 
     /**

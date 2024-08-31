@@ -10,9 +10,10 @@ const BYTES_PER_VERTEX = 2 * 4 + 4
 const FLOAT32_PER_VERTEX = 3
 class GraphicRegion extends RenderRegion {
     private vertex: number = 0
+    drawType: number
     constructor(rapid: Rapid) {
         super(rapid, graphicAttributes)
-
+        this.drawType = rapid.gl.TRIANGLE_FAN
         this.initDefaultShader(vertString, fragString)
     }
     startRender() {
@@ -46,7 +47,8 @@ class GraphicRegion extends RenderRegion {
         super.executeRender()
         const gl = this.gl
 
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, this.vertex)
+        gl.drawArrays(this.drawType, 0, this.vertex)
+        this.drawType = this.rapid.gl.TRIANGLE_FAN
         this.vertex = 0
     }
 }

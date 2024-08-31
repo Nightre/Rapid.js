@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { Images } from "./interface";
+import { Images, ITextOptions } from "./interface";
 /**
  * texture manager
  */
@@ -16,6 +16,7 @@ declare class TextureCache {
      */
     textureFromUrl(url: string, antialias?: boolean): Promise<Texture>;
     loadImage(url: string): Promise<HTMLImageElement>;
+    createText(options: ITextOptions): Text;
 }
 /**
  * Each {@link Texture} references a baseTexture, and different textures may have the same baseTexture
@@ -31,7 +32,7 @@ declare class Texture {
     /**
      * Reference to the {@link BaseTexture} used by this texture.
      */
-    base: BaseTexture;
+    base?: BaseTexture;
     /**
      * The x-coordinate of the top-left corner of the clipped region.
      */
@@ -56,11 +57,13 @@ declare class Texture {
      * The height of the texture.
      */
     height: number;
+    scale: number;
     /**
      * Creates a new `Texture` instance with the specified base texture reference.
      * @param base - The {@link BaseTexture} to be used by the texture.
      */
-    constructor(base: BaseTexture);
+    constructor(base?: BaseTexture);
+    setBase(base?: BaseTexture, scale?: number): void;
     /**
      * Sets the region of the texture to be used for rendering.
      * @param x - The x-coordinate of the top-left corner of the region.
@@ -85,4 +88,23 @@ declare class Texture {
      */
     static fromUrl(rapid: Rapid, url: string): Promise<Texture>;
 }
-export { Texture, BaseTexture, TextureCache };
+export declare const SCALEFACTOR = 2;
+declare class Text extends Texture {
+    private options;
+    private rapid;
+    scale: number;
+    text: string;
+    /**
+     * Creates a new `Text` instance.
+     * @param options - The options for rendering the text, such as font, size, color, etc.
+     */
+    constructor(rapid: Rapid, options: ITextOptions);
+    private updateTextImage;
+    /**
+     * Creates a canvas with the text rendered on it.
+     * @returns A `Canvas` element with the rendered text.
+     */
+    private createTextCanvas;
+    setText(text: string): void;
+}
+export { Text, Texture, BaseTexture, TextureCache };

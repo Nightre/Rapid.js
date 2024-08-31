@@ -1,5 +1,5 @@
 import Rapid from "./render"
-import { Images } from "./interface"
+import { Images, ITextOptions } from "./interface"
 import { createTexture } from "./webgl/utils"
 /**
  * texture manager
@@ -35,6 +35,9 @@ class TextureCache {
             image.src = url;
         });
     };
+    createText(options: ITextOptions) {
+        return new Text(this.render, options)
+    }
 }
 
 /**
@@ -62,7 +65,7 @@ class Texture {
     /**
      * Reference to the {@link BaseTexture} used by this texture.
      */
-    base: BaseTexture;
+    base?: BaseTexture;
 
     /**
      * The x-coordinate of the top-left corner of the clipped region.
@@ -94,13 +97,20 @@ class Texture {
      */
     height!: number;
 
+    scale: number = 1
     /**
      * Creates a new `Texture` instance with the specified base texture reference.
      * @param base - The {@link BaseTexture} to be used by the texture.
      */
-    constructor(base: BaseTexture) {
-        this.base = base
-        this.setClipRegion(0, 0, base.width, base.height)
+    constructor(base?: BaseTexture) {
+        this.setBase(base)
+    }
+
+    setBase(base?: BaseTexture, scale: number = 1) {
+        if (base) {
+            this.base = base
+            this.setClipRegion(0, 0, base.width * scale, base.height * scale)
+        }
     }
     /**
      * Sets the region of the texture to be used for rendering.
@@ -110,12 +120,13 @@ class Texture {
      * @param h - The height of the region.
      */
     setClipRegion(x: number, y: number, w: number, h: number) {
+        if (!this.base) return
         this.clipX = x / this.base.width
         this.clipY = y / this.base.width
         this.clipW = this.clipX + (w / this.base.width)
-        this.clipH = this.clipY + (h / this.base.width)
-        this.width = w
-        this.height = h
+        this.clipH = this.clipY + (h / this.base.height)
+        this.width = w * this.scale
+        this.height = h * this.scale
     }
     /**
      * Creates a new `Texture` instance from the specified image source.
@@ -139,8 +150,81 @@ class Texture {
         return rapid.textures.textureFromUrl(url)
     }
 }
+export const SCALEFACTOR = 2
+class Text extends Texture {
+    private options: ITextOptions;
+    private rapid: Rapid;
+    override scale: number = 1 / SCALEFACTOR
+    text: string;
+
+    /**
+     * Creates a new `Text` instance.
+     * @param options - The options for rendering the text, such as font, size, color, etc.
+     */
+    constructor(rapid: Rapid, options: ITextOptions) {
+        super()
+        this.rapid = rapid
+        this.options = options;
+        this.text = options.text || ''
+        this.updateTextImage()
+    }
+    private updateTextImage() {
+        const canvas = this.createTextCanvas();
+        this.setBase(BaseTexture.fromImageSource(this.rapid, canvas, true))
+    }
+    /**
+     * Creates a canvas with the text rendered on it.
+     * @returns A `Canvas` element with the rendered text.
+     */
+    private createTextCanvas(): HTMLCanvasElement {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+            throw new Error('Failed to get canvas context');
+        }
+
+        context.font = `${this.options.fontSize || 16}px ${this.options.fontFamily || 'Arial'}`;
+        context.fillStyle = this.options.color || '#000';
+        context.textAlign = this.options.textAlign || 'left';
+        context.textBaseline = this.options.textBaseline || 'top';
+
+        // Measure text to adjust canvas size
+        const lines = this.text.split('\n');
+        let maxWidth = 0;
+        let totalHeight = 0;
+
+        for (const line of lines) {
+            const metrics = context.measureText(line);
+            maxWidth = Math.max(maxWidth, metrics.width);
+            totalHeight += (this.options.fontSize || 16);
+        }
+
+        canvas.width = maxWidth * SCALEFACTOR;
+        canvas.height = totalHeight * SCALEFACTOR;
+        context.scale(SCALEFACTOR, SCALEFACTOR);
+        // Redraw the text on the correctly sized canvas
+        context.font = `${this.options.fontSize || 16}px ${this.options.fontFamily || 'Arial'}`;
+        context.fillStyle = this.options.color || '#000';
+        context.textAlign = this.options.textAlign || 'left';
+        context.textBaseline = this.options.textBaseline || 'top';
+        let yOffset = 0;
+        for (const line of lines) {
+            context.fillText(line, 0, yOffset);
+            yOffset += (this.options.fontSize || 16);
+        }
+
+        return canvas;
+    }
+
+    setText(text: string) {
+        this.text = text
+        this.updateTextImage()
+    }
+}
 
 export {
+    Text,
     Texture,
     BaseTexture,
     TextureCache

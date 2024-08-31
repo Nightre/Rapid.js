@@ -6,7 +6,7 @@ declare class GLShader {
     program: WebGLProgram;
     private gl;
     constructor(rapid: Rapid, vs: string, fs: string);
-    setUniforms(uniforms: UniformType): void;
+    setUniforms(uniforms: UniformType, usedTextureUnit: number): void;
     private getUniform;
     use(): void;
     parseShader(shader: string): void;

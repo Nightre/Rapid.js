@@ -43,7 +43,7 @@ export class DynamicArrayBuffer {
             this.setMaxSize(this.maxElemNum)
         }
     }
-    protected setMaxSize(size: number = this.maxElemNum){
+    protected setMaxSize(size: number = this.maxElemNum) {
         const data = this.typedArray;
         this.maxElemNum = size
         this.arraybuffer = new ArrayBuffer(size * this.bytePerElem)
@@ -123,7 +123,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         if (this.dirty) {
             const gl = this.gl
             if (this.maxElemNum > this.webglBufferSize) {
-                gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW )
+                gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW)
                 this.webglBufferSize = this.maxElemNum
             } else {
                 gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
@@ -174,7 +174,10 @@ export class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to translate horizontally.
      * @param y - The amount to translate vertically.
      */
-    translate(x: number, y: number) {
+    translate(x: number | Vec2, y: number): void {
+        if (x instanceof Vec2) {
+            return this.translate(x.x, x.y)
+        }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         arr[offset + 4] = arr[offset + 0] * x + arr[offset + 2] * y + arr[offset + 4];
@@ -205,7 +208,10 @@ export class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to scale the matrix horizontally.
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
-    scale(x: number, y = x) {
+    scale(x: number | Vec2, y: number): void {
+        if (x instanceof Vec2) {
+            return this.scale(x.x, x.y)
+        }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         arr[offset + 0] = arr[offset + 0] * x;
@@ -213,7 +219,10 @@ export class MatrixStack extends DynamicArrayBuffer {
         arr[offset + 2] = arr[offset + 2] * y;
         arr[offset + 3] = arr[offset + 3] * y;
     }
-    apply(x: number, y: number) {
+    apply(x: number | Vec2, y: number): Vec2 | number[] {
+        if (x instanceof Vec2) {
+            return new Vec2(...this.apply(x.x, x.y) as number[])
+        }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         return [
@@ -275,7 +284,7 @@ export class WebglElementBufferArray extends WebglBufferArray {
         this.bindBuffer()
         this.bufferData()
     }
-    protected addObject(_vertex?: number) {}
+    protected addObject(_vertex?: number) { }
 }
 
 /**
@@ -455,5 +464,65 @@ export class Color {
             Math.max(this.b - color.b, 0),
             Math.max(this.a - color.a, 0)
         );
+    }
+}
+
+export class Vec2 {
+    x: number;
+    y: number;
+
+    constructor(x?: number, y?: number) {
+        this.x = x !== undefined ? x : 0;
+        this.y = y !== undefined ? y : 0;
+    }
+
+    scalarMult(f: number): this {
+        this.x *= f;
+        this.y *= f;
+        return this;
+    }
+
+    perpendicular(): this {
+        const x = this.x;
+        this.x = -this.y;
+        this.y = x;
+        return this;
+    }
+
+    invert(): this {
+        this.x = -this.x;
+        this.y = -this.y;
+        return this;
+    }
+
+    length(): number {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    normalize(): this {
+        const mod = this.length();
+        this.x /= mod;
+        this.y /= mod;
+        return this;
+    }
+
+    angle(): number {
+        return this.y / this.x;
+    }
+
+    static Angle(p0: Vec2, p1: Vec2): number {
+        return Math.atan2(p1.x - p0.x, p1.y - p0.y);
+    }
+
+    static Add(p0: Vec2, p1: Vec2): Vec2 {
+        return new Vec2(p0.x + p1.x, p0.y + p1.y);
+    }
+
+    static Sub(p1: Vec2, p0: Vec2): Vec2 {
+        return new Vec2(p1.x - p0.x, p1.y - p0.y);
+    }
+
+    static Middle(p0: Vec2, p1: Vec2): Vec2 {
+        return Vec2.Add(p0, p1).scalarMult(0.5);
     }
 }

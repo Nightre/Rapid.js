@@ -23,7 +23,7 @@ class RenderRegion {
             (_, index) => index);
     }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
-        const [tx, ty] = this.rapid.transformPoint(x, y)
+        const [tx, ty] = this.rapid.transformPoint(x, y) as number[]
         this.webglArrayBuffer.push(tx)
         this.webglArrayBuffer.push(ty)
     }

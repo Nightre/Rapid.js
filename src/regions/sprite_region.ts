@@ -66,7 +66,7 @@ class SpriteRegion extends RenderRegion {
         color: number,
         uniforms?: UniformType
     ) {
-        uniforms && this.currentShader?.setUniforms(uniforms)
+        uniforms && this.currentShader?.setUniforms(uniforms, 1)
         if (this.batchSprite >= this.MAX_BATCH) {
             this.render()
         }
