@@ -79,7 +79,7 @@ rapid.renderSprite(cat, 0, 0, color) // draw Sprite
 rapid.restore() // back to the previous saved state
 // draw graphic
 // vertices can have different colors
-const path = [new Vec2(0, 0), new Vec2(100, 0), new Vec2(100, 100)]
+const path = Vec2.FormArray([[0, 0], [100, 0], [100, 100]]) //[new Vec2(0, 0), new Vec2(100, 0), new Vec2(100, 100)]
 rapid.renderGraphic(0,0,{points:path, color:green})
 // or
 // rapid.startGraphicDraw()

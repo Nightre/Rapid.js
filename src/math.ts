@@ -527,4 +527,8 @@ export class Vec2 {
     static Middle(p0: Vec2, p1: Vec2): Vec2 {
         return Vec2.Add(p0, p1).scalarMult(0.5);
     }
+
+    static FormArray(array: number[][]): Vec2[] {
+        return array.map(pair => new Vec2(pair[0], pair[1]));
+    }
 }

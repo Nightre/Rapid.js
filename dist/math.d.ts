@@ -211,5 +211,6 @@ export declare class Vec2 {
     static Add(p0: Vec2, p1: Vec2): Vec2;
     static Sub(p1: Vec2, p0: Vec2): Vec2;
     static Middle(p0: Vec2, p1: Vec2): Vec2;
+    static FormArray(array: number[][]): Vec2[];
 }
 export {};
