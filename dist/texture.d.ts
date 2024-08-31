@@ -57,13 +57,21 @@ declare class Texture {
      * The height of the texture.
      */
     height: number;
-    scale: number;
+    /**
+     * Image scaling factor
+     */
+    protected scale: number;
     /**
      * Creates a new `Texture` instance with the specified base texture reference.
      * @param base - The {@link BaseTexture} to be used by the texture.
      */
     constructor(base?: BaseTexture);
-    setBase(base?: BaseTexture, scale?: number): void;
+    /**
+     * Set or change BaseTexture
+     * @param base
+     * @param scale
+     */
+    setBaseTextur(base?: BaseTexture): void;
     /**
      * Sets the region of the texture to be used for rendering.
      * @param x - The x-coordinate of the top-left corner of the region.
@@ -92,7 +100,7 @@ export declare const SCALEFACTOR = 2;
 declare class Text extends Texture {
     private options;
     private rapid;
-    scale: number;
+    protected scale: number;
     text: string;
     /**
      * Creates a new `Text` instance.
@@ -100,11 +108,11 @@ declare class Text extends Texture {
      */
     constructor(rapid: Rapid, options: ITextOptions);
     private updateTextImage;
-    /**
-     * Creates a canvas with the text rendered on it.
-     * @returns A `Canvas` element with the rendered text.
-     */
     private createTextCanvas;
+    /**
+     * Update the displayed text
+     * @param text
+     */
     setText(text: string): void;
 }
 export { Text, Texture, BaseTexture, TextureCache };

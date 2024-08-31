@@ -92,9 +92,25 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
     scale(x: number | Vec2, y?: number): void;
+    /**
+     * Transforms a point by applying the current matrix stack.
+     * @returns The transformed point as an array `[newX, newY]`.
+     */
     apply(x: number | Vec2, y: number): Vec2 | number[];
+    /**
+     * Obtain the inverse matrix of the current matrix
+     * @returns inverse matrix
+     */
     getInverse(): Float32Array;
+    /**
+     * Get a copy of the current transformation matrix
+     * @returns matrix
+     */
     getTransform(): Float32Array;
+    /**
+     * Set the current transformation matrix
+     * @param array
+     */
     setTransform(array: Float32Array | number[]): void;
 }
 export declare class WebglElementBufferArray extends WebglBufferArray {
@@ -197,20 +213,82 @@ export declare class Color {
      */
     subtract(color: Color): Color;
 }
+/**
+ * Represents a 2D vector with x and y components.
+ */
 export declare class Vec2 {
     x: number;
     y: number;
+    /**
+     * Creates an instance of Vec2.
+     * @param x - The x coordinate (default is 0).
+     * @param y - The y coordinate (default is 0).
+     */
     constructor(x?: number, y?: number);
+    /**
+     * Multiplies the vector by a scalar.
+     * @param f - The scalar value to multiply by.
+     * @returns The current instance with updated values.
+     */
     scalarMult(f: number): this;
+    /**
+     * Rotates the vector 90 degrees counterclockwise.
+     * @returns The current instance with updated values.
+     */
     perpendicular(): this;
+    /**
+     * Inverts the direction of the vector.
+     * @returns The current instance with updated values.
+     */
     invert(): this;
+    /**
+     * Calculates the length of the vector.
+     * @returns The length of the vector.
+     */
     length(): number;
+    /**
+     * Normalizes the vector to have a length of 1.
+     * @returns The current instance with updated values.
+     */
     normalize(): this;
+    /**
+     * Calculates the angle of the vector relative to the x-axis.
+     * @returns The angle of the vector.
+     */
     angle(): number;
+    /**
+     * Computes the angle between two vectors.
+     * @param p0 - The starting vector.
+     * @param p1 - The ending vector.
+     * @returns The angle between the two vectors in radians.
+     */
     static Angle(p0: Vec2, p1: Vec2): number;
+    /**
+     * Adds two vectors together.
+     * @param p0 - The first vector.
+     * @param p1 - The second vector.
+     * @returns A new vector representing the sum of p0 and p1.
+     */
     static Add(p0: Vec2, p1: Vec2): Vec2;
+    /**
+     * Subtracts one vector from another.
+     * @param p1 - The vector to subtract from.
+     * @param p0 - The vector to subtract.
+     * @returns A new vector representing the difference between p1 and p0.
+     */
     static Sub(p1: Vec2, p0: Vec2): Vec2;
+    /**
+     * Finds the midpoint between two vectors.
+     * @param p0 - The first vector.
+     * @param p1 - The second vector.
+     * @returns A new vector representing the midpoint between p0 and p1.
+     */
     static Middle(p0: Vec2, p1: Vec2): Vec2;
+    /**
+     * Converts an array of coordinate pairs into an array of Vec2 instances.
+     * @param array - An array of [x, y] coordinate pairs.
+     * @returns An array of Vec2 instances.
+     */
     static FormArray(array: number[][]): Vec2[];
 }
 export {};
