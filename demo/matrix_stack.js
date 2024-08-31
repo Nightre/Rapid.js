@@ -25,7 +25,7 @@ const drawGraphicDemo = () => {
     rapid.addGraphicVertex(100, 300 + s * 100, green)
     rapid.addGraphicVertex(50, 300, green)
     rapid.endGraphicDraw()
-    // or rapid.renderGraphic(0,0,[...vec2],green)
+    // or rapid.renderGraphic(0,0,{points:[], color:green})
 
     rapid.renderLine(0, 0, {
         points: linePath,
