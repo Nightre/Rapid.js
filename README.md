@@ -21,7 +21,6 @@ A highly efficient and lightweight WebGL renderer
 * **Text Rendering**
 * **Line Drawing**
 * **Custom Shaders**
-* **Texture Clipping**
 * **Mask**
 
 # Install
