@@ -213,7 +213,6 @@ export class MatrixStack extends DynamicArrayBuffer {
             return this.scale(x.x, x.y)
         }
         if (!y) y = x
-        debugger
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         arr[offset + 0] = arr[offset + 0] * x;

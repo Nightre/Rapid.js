@@ -6,12 +6,12 @@ import { WebGLContext } from "../interface";
  * @returns webgl1 or webgl2
  */
 export const getContext = (canvas: HTMLCanvasElement): WebGLContext => {
-    const gl = canvas.getContext("webgl2") || canvas.getContext("webgl")
+    const options = { stencil: true }
+    const gl = canvas.getContext("webgl2", options) || canvas.getContext("webgl", options)
     if (!gl) {
-        //TODO
-        throw new Error("TODO");
+        throw new Error("Unable to initialize WebGL. Your browser may not support it.");
     }
-    return gl;
+    return gl as WebGLContext;
 }
 
 /**
@@ -57,6 +57,11 @@ export const createShaderProgram = (gl: WebGLContext, vsSource: string, fsSource
     gl.attachShader(program, vShader);
     gl.attachShader(program, fShader);
     gl.linkProgram(program);
+    const linkStatus = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (!linkStatus) {
+        const errorLog = gl.getProgramInfoLog(program);
+        throw new Error("Unable to link shader program: " + errorLog);
+    }
     return program;
 }
 

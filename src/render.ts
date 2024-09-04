@@ -1,4 +1,4 @@
-import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface"
+import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, MaskType, WebGLContext } from "./interface"
 import { getStrokeGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
@@ -26,12 +26,11 @@ class Rapid {
     readonly devicePixelRatio = window.devicePixelRatio || 1
     readonly maxTextureUnits: number
     private readonly defaultColor = new Color(255, 255, 255, 255)
-    private readonly defaultColorBlack = new Color(0, 0, 0, 255)
+    //    private readonly defaultColorBlack = new Color(0, 0, 0, 255)
 
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
-
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -59,6 +58,7 @@ class Rapid {
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.enable(gl.STENCIL_TEST);
     }
 
     /**
@@ -77,7 +77,12 @@ class Rapid {
     registerRegion(name: string, regionClass: typeof RenderRegion) {
         this.regions.set(name, new regionClass(this))
     }
-
+    private quitCurrentRegion() {
+        if (this.currentRegion && this.currentRegion.hasPendingContent()) {
+            this.currentRegion.render();
+            this.currentRegion.exitRegion();
+        }
+    }
     /**
      * Sets the current render region by name and optionally a custom shader.
      * @param regionName - The name of the region to set as current.
@@ -91,11 +96,7 @@ class Rapid {
             (customShader && customShader !== this.currentRegion!.currentShader)
         ) {
             const region = this.regions.get(regionName)!;
-            if (this.currentRegion) {
-                this.currentRegion.render();
-                this.currentRegion.exitRegion();
-            }
-
+            this.quitCurrentRegion()
             this.currentRegion = region;
             this.currentRegionName = regionName
             region.enterRegion(customShader);
@@ -121,6 +122,7 @@ class Rapid {
      * @param clear - Whether to clear the matrix stack. Defaults to true.
      */
     startRender(clear: boolean = true) {
+        this.clear()
         clear && this.matrixStack.clear()
         this.matrixStack.pushIdentity()
         this.currentRegion = undefined
@@ -190,42 +192,58 @@ class Rapid {
         if (options instanceof Array) {
             return this.renderGraphic(offsetX, offsetY, { points: options });
         }
-        this.startGraphicDraw();
+        this.setRegion("graphic", options.shader);
+        const currentRegion = this.currentRegion as GraphicRegion
+
+        currentRegion.startRender(options.texture)
+
         if (options.drawType) {
-            (this.currentRegion as GraphicRegion).drawType = options.drawType;
+            currentRegion.drawType = options.drawType;
         }
-        options.points.forEach(vec => {
-            this.addGraphicVertex(vec.x + offsetX, vec.y + offsetY, options.color || this.defaultColorBlack);
+        options.points.forEach((vec, index) => {
+            const color = options.color instanceof Array ? options.color[index] : options.color
+            const uv = options.uv?.[index] as Vec2
+
+            currentRegion.addVertex(vec.x + offsetX, vec.y + offsetY, uv?.x, uv?.y, (color || this.defaultColor).uint32);
         });
-        this.endGraphicDraw();
-    }
-    /**
-     * Starts a graphic drawing process with an optional custom shader.
-     * @param customShader - An optional custom shader to use.
-     */
-    startGraphicDraw(customShader?: GLShader) {
-        this.setRegion("graphic", customShader);
-        (this.currentRegion as GraphicRegion).startRender()
+        currentRegion.render()
     }
 
     /**
-     * Adds a vertex to the current graphic drawing with a specified position and color.
-     * @param x - The X position of the vertex.
-     * @param y - The Y position of the vertex.
-     * @param color - The color of the vertex.
+     * Renders a rectangle
+     * @param offsetX - The X coordinate of the top-left corner of the rectangle
+     * @param offsetY - The Y coordinate of the top-left corner of the rectangle
+     * @param width - The width of the rectangle
+     * @param height - The height of the rectangle
+     * @param color - The color of the rectangle
      */
-    addGraphicVertex(x: number | Vec2, y?: number | Color, color?: Color): void {
-        if (x instanceof Vec2) {
-            return this.addGraphicVertex(x.x, x.y, y as Color)
+    renderRect(offsetX: number, offsetY: number, width: number, height: number, color: Color = this.defaultColor): void {
+        const points = [
+            new Vec2(0, 0),
+            new Vec2(width, 0),
+            new Vec2(width, height),
+            new Vec2(0, height)
+        ];
+        this.renderGraphic(offsetX, offsetY, { points, color, drawType: this.gl.TRIANGLE_FAN });
+    }
+
+    /**
+     * Renders a circle
+     * @param offsetX - The X coordinate of the circle's center
+     * @param offsetY - The Y coordinate of the circle's center
+     * @param radius - The radius of the circle
+     * @param color - The color of the circle
+     * @param segments - The number of segments to use when rendering the circle, default is 32
+     */
+    renderCircle(offsetX: number, offsetY: number, radius: number, color: Color = this.defaultColor, segments: number = 32): void {
+        const points: Vec2[] = [];
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            points.push(new Vec2(x, y));
         }
-        (this.currentRegion as GraphicRegion).addVertex(x, y as number, color!.uint32)
-    }
-
-    /**
-     * Ends the graphic drawing process by rendering the current graphic region.
-     */
-    endGraphicDraw() {
-        (this.currentRegion as GraphicRegion).render()
+        this.renderGraphic(offsetX, offsetY, { points, color, drawType: this.gl.TRIANGLE_FAN });
     }
 
     /**
@@ -257,6 +275,7 @@ class Rapid {
         const c = this.backgroundColor
         gl.clearColor(c.r, c.g, c.b, c.a);
         gl.clear(gl.COLOR_BUFFER_BIT);
+        this.clearMask()
     }
 
     /**
@@ -284,6 +303,57 @@ class Rapid {
      */
     transformPoint(x: number, y: number) {
         return this.matrixStack.apply(x, y)
+    }
+    /**
+     * Starts drawing a mask using the stencil buffer.
+     * This method sets up the WebGL context to begin defining a mask area.
+     */
+    startDrawMask() {
+        const gl = this.gl;
+        this.quitCurrentRegion()
+        gl.clearStencil(0);
+        gl.clear(gl.STENCIL_BUFFER_BIT);
+        gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+        gl.colorMask(false, false, false, false);
+    }
+
+    /**
+     * Ends the mask drawing process.
+     * This method configures the WebGL context to use the defined mask for subsequent rendering.
+     */
+    endDrawMask(type = MaskType.Normal) {
+        const gl = this.gl;
+        this.quitCurrentRegion()
+        this.setMaskType(type)
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+        gl.colorMask(true, true, true, true);
+    }
+
+    /**
+     * Sets the mask type for rendering
+     * @param type - The type of mask to apply
+     */
+    setMaskType(type: MaskType) {
+        const gl = this.gl;
+        this.quitCurrentRegion();
+
+        switch (type) {
+            case MaskType.Normal:
+                gl.stencilFunc(gl.EQUAL, 1, 0xFF);
+                break;
+            case MaskType.Inverse:
+                gl.stencilFunc(gl.NOTEQUAL, 1, 0xFF);
+                break;
+        }
+    }
+    /**
+     * Clears the current mask by clearing the stencil buffer.
+     * This effectively removes any previously defined mask.
+     */
+    clearMask() {
+        const gl = this.gl;
+        gl.clear(gl.STENCIL_BUFFER_BIT);
     }
 }
 

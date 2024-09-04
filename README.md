@@ -10,6 +10,7 @@ A highly efficient and lightweight WebGL renderer
 
 [custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
 
+[mask demo](https://nightre.github.io/Rapid.js/demo/mask.html) ( [source code](./demo/mask.js) )
 
 
 # Features
@@ -21,6 +22,7 @@ A highly efficient and lightweight WebGL renderer
 * **Line Drawing**
 * **Custom Shaders**
 * **Texture Clipping**
+* **Mask**
 
 # Install
 

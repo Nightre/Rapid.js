@@ -1,4 +1,5 @@
 import { Color, Vec2 } from "./math";
+import { Texture } from "./texture";
 import GLShader from "./webgl/glshader";
 
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
@@ -92,8 +93,20 @@ export interface IRenderLineOptions extends ILineOptions {
 }
 export interface IGraphicOptions {
     points: Vec2[],
-    color?: Color,
-    drawType?: number
+    color?: Color | Color[],
+    drawType?: number,
+    uv?: Vec2[],
+    texture?: Texture,
+    shader?: GLShader
 }
-export type UniformType = Record<string, number | Array<any>>
-export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas 
+export enum RenderStatus {
+    NORMAL,
+    MASK
+}
+
+export enum MaskType {
+    Normal = 'normal',
+    Inverse = 'inverse'
+}
+export type UniformType = Record<string, number | Array<any> | boolean>
+export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas

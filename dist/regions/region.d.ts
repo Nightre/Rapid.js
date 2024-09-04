@@ -21,5 +21,6 @@ declare class RenderRegion {
     render(): void;
     protected executeRender(): void;
     protected initializeForNextRender(): void;
+    hasPendingContent(): boolean;
 }
 export default RenderRegion;

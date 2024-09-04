@@ -111,6 +111,9 @@ class SpriteRegion extends RenderRegion {
         super.initializeForNextRender()
         this.batchSprite = 0
     }
+    override hasPendingContent(): boolean {
+        return this.batchSprite > 0
+    }
 }
 
 const stride = BYTES_PER_VERTEX

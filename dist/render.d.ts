@@ -1,4 +1,4 @@
-import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, WebGLContext } from "./interface";
+import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, MaskType, WebGLContext } from "./interface";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { Texture, TextureCache } from "./texture";
@@ -19,7 +19,6 @@ declare class Rapid {
     readonly devicePixelRatio: number;
     readonly maxTextureUnits: number;
     private readonly defaultColor;
-    private readonly defaultColorBlack;
     private currentRegion?;
     private currentRegionName?;
     private regions;
@@ -43,6 +42,7 @@ declare class Rapid {
      * @param regionClass - The class of the region to register.
      */
     registerRegion(name: string, regionClass: typeof RenderRegion): void;
+    private quitCurrentRegion;
     /**
      * Sets the current render region by name and optionally a custom shader.
      * @param regionName - The name of the region to set as current.
@@ -95,21 +95,23 @@ declare class Rapid {
      */
     renderGraphic(offsetX: number | undefined, offsetY: number | undefined, options: IGraphicOptions | Vec2[]): void;
     /**
-     * Starts a graphic drawing process with an optional custom shader.
-     * @param customShader - An optional custom shader to use.
+     * Renders a rectangle
+     * @param offsetX - The X coordinate of the top-left corner of the rectangle
+     * @param offsetY - The Y coordinate of the top-left corner of the rectangle
+     * @param width - The width of the rectangle
+     * @param height - The height of the rectangle
+     * @param color - The color of the rectangle
      */
-    startGraphicDraw(customShader?: GLShader): void;
+    renderRect(offsetX: number, offsetY: number, width: number, height: number, color?: Color): void;
     /**
-     * Adds a vertex to the current graphic drawing with a specified position and color.
-     * @param x - The X position of the vertex.
-     * @param y - The Y position of the vertex.
-     * @param color - The color of the vertex.
+     * Renders a circle
+     * @param offsetX - The X coordinate of the circle's center
+     * @param offsetY - The Y coordinate of the circle's center
+     * @param radius - The radius of the circle
+     * @param color - The color of the circle
+     * @param segments - The number of segments to use when rendering the circle, default is 32
      */
-    addGraphicVertex(x: number | Vec2, y?: number | Color, color?: Color): void;
-    /**
-     * Ends the graphic drawing process by rendering the current graphic region.
-     */
-    endGraphicDraw(): void;
+    renderCircle(offsetX: number, offsetY: number, radius: number, color?: Color, segments?: number): void;
     /**
      * Resizes the canvas and updates the viewport and projection matrix.
      * @param width - The new width of the canvas.
@@ -136,5 +138,25 @@ declare class Rapid {
      * @returns The transformed point as an array `[newX, newY]`.
      */
     transformPoint(x: number, y: number): number[] | Vec2;
+    /**
+     * Starts drawing a mask using the stencil buffer.
+     * This method sets up the WebGL context to begin defining a mask area.
+     */
+    startDrawMask(): void;
+    /**
+     * Ends the mask drawing process.
+     * This method configures the WebGL context to use the defined mask for subsequent rendering.
+     */
+    endDrawMask(type?: MaskType): void;
+    /**
+     * Sets the mask type for rendering
+     * @param type - The type of mask to apply
+     */
+    setMaskType(type: MaskType): void;
+    /**
+     * Clears the current mask by clearing the stencil buffer.
+     * This effectively removes any previously defined mask.
+     */
+    clearMask(): void;
 }
 export default Rapid;

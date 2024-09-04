@@ -12,6 +12,7 @@ declare class SpriteRegion extends RenderRegion {
     protected executeRender(): void;
     enterRegion(customShader?: GLShader | undefined): void;
     protected initializeForNextRender(): void;
+    hasPendingContent(): boolean;
 }
 declare const spriteAttributes: ({
     name: string;

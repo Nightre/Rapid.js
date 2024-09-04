@@ -78,6 +78,10 @@ class RenderRegion {
         this.webglArrayBuffer.clear()
         this.usedTextures = []
     }
+
+    hasPendingContent(): boolean {
+        return false
+    }
 }
 
 export default RenderRegion
