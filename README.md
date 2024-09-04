@@ -123,6 +123,3 @@ rapid.renderSprite(plane, 100, 100, {
 
 rapid.endRender()
 ```
-# Screen Shot
-
-![screen](./screenshot/screen.png)
