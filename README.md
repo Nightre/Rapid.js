@@ -108,7 +108,7 @@ rapid.startRender()
 rapid.renderSprite(plane, 100, 100, {
     shader: customShader, // shader
     uniforms: {
-        // Set custom uniform (You can set mat3, vec2, and so on here)
+        // Set custom uniform (You can set mat3, vec2, texture and so on here)
         uCustomUniform: Number(costumUniformValue)
         //  uVec2Uniform: [0,2] // recognized as vec2
         //  uMat3Uniform: [
