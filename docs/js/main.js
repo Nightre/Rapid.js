@@ -6,7 +6,7 @@ window.onload = () => {
             <img src="./assets/logo.png" style="image-rendering: pixelated;" width="40">
             Rapid
         </h3>
-        <a href="/docs">Home</a>
+        <a href="./index.html">Home</a>
         <a href="./docs.html">Document</a>
         <a href="./examples.html">Examples</a>
         <a href="./api/index.html">API</a>
