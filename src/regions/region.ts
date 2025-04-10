@@ -16,7 +16,7 @@ class RenderRegion {
     protected isCostumShader: boolean = false
     protected readonly MAX_TEXTURE_UNIT_ARRAY: number[]
     private costumUnifrom?: Uniform
-
+    private defaultShader?: GLShader
     constructor(rapid: Rapid) {
         this.rapid = rapid
         this.gl = rapid.gl
@@ -81,7 +81,9 @@ class RenderRegion {
     setShader(name: string, vs: string, fs: string, attributes?: IAttribute[]) {
         this.webglArrayBuffer.bindBuffer()
         this.shaders.set(name, new GLShader(this.rapid, vs, fs, attributes))
-        this.currentShaderName = name
+        if (name === "default") {
+            this.defaultShader = this.shaders.get(name)
+        }
     }
     getShader(name: string) {
         return this.shaders.get(name)
@@ -111,7 +113,7 @@ class RenderRegion {
     }
 
     isShaderChanged(shader?: GLShader) {
-        return (shader || 'default') != this.currentShaderName
+        return (shader || this.defaultShader) != this.currentShader
     }
 }
 

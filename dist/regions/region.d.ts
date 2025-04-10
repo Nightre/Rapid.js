@@ -15,6 +15,7 @@ declare class RenderRegion {
     protected isCostumShader: boolean;
     protected readonly MAX_TEXTURE_UNIT_ARRAY: number[];
     private costumUnifrom?;
+    private defaultShader?;
     constructor(rapid: Rapid);
     setTextureUnits(usedTexture: number): number[];
     protected addVertex(x: number, y: number, ..._: unknown[]): void;
