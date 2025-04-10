@@ -6,6 +6,7 @@ import { Uniform } from "../webgl/uniform";
 
 class RenderRegion {
     currentShader?: GLShader
+    private currentShaderName!: string
     protected webglArrayBuffer: WebglBufferArray
     protected rapid: Rapid
     protected gl: WebGLContext
@@ -80,6 +81,7 @@ class RenderRegion {
     setShader(name: string, vs: string, fs: string, attributes?: IAttribute[]) {
         this.webglArrayBuffer.bindBuffer()
         this.shaders.set(name, new GLShader(this.rapid, vs, fs, attributes))
+        this.currentShaderName = name
     }
     getShader(name: string) {
         return this.shaders.get(name)
@@ -109,7 +111,7 @@ class RenderRegion {
     }
 
     isShaderChanged(shader?: GLShader) {
-        return (shader || this.getShader('default')) != this.currentShader
+        return (shader || 'default') != this.currentShaderName
     }
 }
 

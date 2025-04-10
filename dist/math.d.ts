@@ -21,7 +21,7 @@ export declare class DynamicArrayBuffer {
     private float32?;
     private uint16?;
     constructor(arrayType: ArrayType);
-    getArrayType(arrayType: ArrayType): Float32ArrayConstructor | Uint32ArrayConstructor | Uint16ArrayConstructor;
+    getArrayType(arrayType: ArrayType): Uint16ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor;
     updateTypedArray(): void;
     clear(): void;
     /**
@@ -45,7 +45,7 @@ export declare class DynamicArrayBuffer {
      * @param end
      * @returns
      */
-    getArray(begin?: number, end?: number): Uint32Array | Float32Array | Uint16Array;
+    getArray(begin?: number, end?: number): Uint16Array | Uint32Array | Float32Array;
     /**
      * length of the array
      */
