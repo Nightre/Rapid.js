@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Demos</title>
+    <!-- 添加Prism.js用于代码高亮 -->
+    <link rel="icon" href="./assets/logo.png">
+    <link rel="stylesheet" href="./assets/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="./js/main.js"></script>
+    <script src="./js/sidebar.js"></script>
+    <style>
+        .iframe-container {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            height: 100%;
+            width: calc(500px + 2rem);
+            flex-shrink: 0;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .code-container {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.2rem;
+            background-color: #f1f3f5;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .code-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        .code-action-btn {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .code-action-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .code-content {
+            flex: 1;
+            overflow: auto;
+            height: 100%;
+        }
+
+        .code-content pre {
+            margin: 0;
+            border-radius: 0;
+            height: 100%;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #6c757d;
+        }        
+        .container {
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 侧边导航 -->
+        <div class="sidebar">
+            <div class="list-nav" id="sidebar-container">
+                <h3>Examples</h3>
+            </div>
+        </div>
+
+        <!-- Demo展示 -->
+        <div class="iframe-container" id="iframe-container">
+            <iframe id="demo-frame" src="./examples/stress-test.html" allowfullscreen></iframe>
+        </div>
+
+        <!-- 代码展示 -->
+        <div class="code-container">
+            <div class="code-header">
+                <div class="code-title" id="code-file-name">stress-test.js</div>
+                <div class="code-actions">
+                    <button class="code-action-btn" id="copy-btn">Copy</button>
+                </div>
+            </div>
+            <div class="code-content" id="code-content">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const demoFrame = document.getElementById('demo-frame');
+        const codeContent = document.getElementById('code-content');
+        const codeFileName = document.getElementById('code-file-name');
+        const copyButton = document.getElementById('copy-btn');
+
+        // 示例列表
+        const demosList = {
+            'stress test': 'stress-test',
+            'mask': 'mask',
+            'custom-shader': 'custom-shader',
+            'custom-shader-graphic': 'custom-shader-graphic',
+            'tilemap': 'tilemap',
+            'tilemap-isometric': 'tilemap-isometric',
+            'text': 'text',
+            'matrix-stack': 'matrix-stack',
+            'line': 'line',
+            'graphic': 'graphic'
+        };
+
+        // 加载代码文件
+        async function loadCodeFile(demoKey) {
+            codeContent.innerHTML = '<div class="loading">Loading...</div>';
+            codeFileName.textContent = `${demoKey}.js`;
+
+            try {
+                const response = await fetch(`./examples/js/${demoKey}.js`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load file: ${response.status}`);
+                }
+
+                const code = await response.text();
+                // 删除注释块
+                const cleanedCode = code.replace(/\/\/ CLEAR START[\s\S]*?\/\/ CLEAR END/g, '').replace('/dist/rapid.js', 'rapid-render');
+                // 使用Prism.js高亮代码
+                codeContent.innerHTML = `<pre><code class="language-javascript">${cleanedCode}</code></pre>`;
+                Prism.highlightAll();
+            } catch (error) {
+                codeContent.innerHTML = `<div class="loading">Failed to load code file: ${error.message}</div>`;
+            }
+        }
+
+        // 复制代码功能
+        copyButton.addEventListener('click', () => {
+            const codeElement = codeContent.querySelector('code');
+            if (codeElement) {
+                navigator.clipboard.writeText(codeElement.textContent)
+                    .then(() => {
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy:', err);
+                    });
+            }
+        });
+
+        // 使用通用侧边栏组件
+        createSidebar({
+            containerId: 'sidebar-container',
+            items: demosList,
+            urlParam: 'demo',
+            defaultItem: 'stress-test',
+            onSelect: (value) => {
+                // 更新iframe源
+                demoFrame.src = `./examples/${value}.html`;
+                // 加载对应的代码文件
+                loadCodeFile(value);
+            }
+        });
+    </script>
+</body>
+
+</html>
