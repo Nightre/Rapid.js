@@ -1,4 +1,4 @@
-import { Color, Rapid, TileSet, Vec2, MathUtils } from "/dist/rapid.js";
+import { Color, Rapid, TileSet, Vec2, MathUtils } from "/Rapid.js/dist/rapid.js";
 
 const rapid = new Rapid({
     canvas: document.getElementById("game"),

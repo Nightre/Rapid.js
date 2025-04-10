@@ -43,7 +43,7 @@ rapid.endDrawMask();
 Here's a complete example of using an include mask:
 
 ```javascript
-import { MaskType, Color, Rapid, Vec2 } from "/dist/rapid.js"
+import { MaskType, Color, Rapid, Vec2 } from "/Rapid.js/dist/rapid.js"
 
 // Initialize Rapid
 const rapid = new Rapid({

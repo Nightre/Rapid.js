@@ -157,7 +157,7 @@
 
                 const code = await response.text();
                 // 删除注释块
-                const cleanedCode = code.replace(/\/\/ CLEAR START[\s\S]*?\/\/ CLEAR END/g, '').replace('/dist/rapid.js', 'rapid-render');
+                const cleanedCode = code.replace(/\/\/ CLEAR START[\s\S]*?\/\/ CLEAR END/g, '').replace('/Rapid.js/dist/rapid.js', 'rapid-render');
                 // 使用Prism.js高亮代码
                 codeContent.innerHTML = `<pre><code class="language-javascript">${cleanedCode}</code></pre>`;
                 Prism.highlightAll();
