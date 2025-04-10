@@ -15,5 +15,6 @@ void main(void) {
     vRegion = aRegion;
     vTextureId = aTextureId;
     vColor = aColor;
+
     gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
 }

@@ -1,15 +1,29 @@
 import { Color, Vec2 } from "./math";
 import { Texture } from "./texture";
+import { TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
+import { Uniform } from "./webgl/uniform";
 
+/**
+ * @ignore
+ */
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 
-export interface IRapiadOptions {
+/**
+ * @ignore
+ */
+export interface IMathStruct<T> {
+    clone(obj: T): T,
+    copy(obj: T): void,
+    equal(obj: T): boolean
+}
+
+export interface IRapidOptions {
     canvas: HTMLCanvasElement
-    pixelDensity?: number
     width?: number
     height?: number,
-    backgroundColor?: Color
+    backgroundColor?: Color,
+    antialias?: boolean,
 }
 export interface IAttribute {
     name: string
@@ -19,16 +33,39 @@ export interface IAttribute {
     stride: number
     offset?: number
 }
-export interface IRenderSpriteOptions {
+
+export interface ITransform {
+    position?: Vec2,
+    scale?: Vec2 | number,
+    rotation?: number,
+    flipX?: boolean,
+    flipY?: boolean,
+    offset?: Vec2,
+
+    x?: number,
+    y?: number,
+
+    offsetX?: number,
+    offsetY?: number,
+    origin?: Vec2 | number,
+
+    restoreTransform?: boolean,
+    saveTransform?: boolean,
+
+    afterSave?(): unknown,
+    beforRestore?(): unknown,
+}
+
+export interface IRenderSpriteOptions extends ITransform, IShader {
     color?: Color;
-    shader?: GLShader;
-    uniforms?: UniformType
+    texture?: Texture,
+    offset?: Vec2,
 }
 export interface ITextOptions {
     /**
      * The text string to be rendered.
      */
-    text: string;
+    text?: string;
 
     /**
      * The font size for the text.
@@ -61,52 +98,73 @@ export interface ITextOptions {
      * Default is 'top'.
      */
     textBaseline?: CanvasTextBaseline;
-
-    /**
-     * Whether to apply antialiasing to the texture.
-     * Default is `false`.
-     */
-    antialias?: boolean;
-}
-
-export enum JoinTyps {
-    BEVEL,
-    ROUND,
-    MITER,
-}
-
-export enum CapTyps {
-    BUTT,
-    ROUND,
-    SQUARE,
 }
 
 export interface ILineOptions {
-    cap?: CapTyps;
-    join?: JoinTyps;
     width?: number;
-    miterLimit?: number;
-}
-export interface IRenderLineOptions extends ILineOptions {
+    closed?: boolean;
     points: Vec2[],
-    color?: Color
+    roundCap?: boolean,
+    color?: Color,
 }
-export interface IGraphicOptions {
+export interface IRenderLineOptions extends ILineOptions, ITransform { }
+export interface IGraphicOptions extends ITransform, IShader {
     points: Vec2[],
     color?: Color | Color[],
     drawType?: number,
     uv?: Vec2[],
     texture?: Texture,
-    shader?: GLShader
 }
-export enum RenderStatus {
-    NORMAL,
-    MASK
+
+export interface ICircleOptions extends IGraphicOptions {
+    radius: number,
+    segments?: number,
+}
+
+export interface IRectOptions extends IGraphicOptions {
+    width: number,
+    height: number,
 }
 
 export enum MaskType {
-    Normal = 'normal',
-    Inverse = 'inverse'
+    Include = 'normal',
+    Exclude = 'inverse'
 }
-export type UniformType = Record<string, number | Array<any> | boolean>
+export type UniformType = Record<string, number | Array<any> | boolean | Texture>
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas
+export interface IRegisterTileOptions extends IRenderSpriteOptions {
+    texture: Texture,
+    offsetX?: number,
+    offsetY?: number,
+    ySortOffset?: number
+}
+
+export interface YSortCallback {
+    ySort: number,
+    render?: () => void,
+    renderSprite?: IRenderSpriteOptions
+}
+export interface ILayerRender extends ITransform {
+    error?: number | Vec2,
+    errorX?: number,
+    errorY?: number,
+
+    ySortCallback?: Array<YSortCallback>,
+    shape?: TilemapShape,
+    tileSet: TileSet,
+
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => IRenderSpriteOptions | undefined | void,
+}
+export interface IShader {
+    shader?: GLShader;
+    uniforms?: Uniform,
+}
+export enum TilemapShape {
+    SQUARE = "square",
+    ISOMETRIC = "isometric",
+}
+
+export enum ShaderType {
+    SPRITE='sprite',
+    GRAPHIC='graphic',
+}

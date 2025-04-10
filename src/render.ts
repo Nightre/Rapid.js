@@ -1,10 +1,12 @@
-import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, MaskType, WebGLContext } from "./interface"
-import { getStrokeGeometry } from "./line"
+import { ICircleOptions, IGraphicOptions, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, IRenderSpriteOptions, ShaderType as ShaderType, ITransform, MaskType, WebGLContext } from "./interface"
+import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
 import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
 import { Texture, TextureCache } from "./texture"
+import { TileMapRender, TileSet } from "./tilemap"
+import { getSize } from "./utils"
 import GLShader from "./webgl/glshader"
 import { getContext } from "./webgl/utils"
 
@@ -18,10 +20,10 @@ class Rapid {
     projectionDirty: boolean = true
 
     matrixStack = new MatrixStack()
-    textures = new TextureCache(this)
+    textures: TextureCache
     width: number
     height: number
-
+    tileMap: TileMapRender = new TileMapRender(this)
     backgroundColor: Color
     readonly devicePixelRatio = window.devicePixelRatio || 1
     readonly maxTextureUnits: number
@@ -31,14 +33,17 @@ class Rapid {
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
+    private currentMaskType: MaskType = MaskType.Include
+    private currentTransformOptions?: ITransform
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
      */
-    constructor(options: IRapiadOptions) {
+    constructor(options: IRapidOptions) {
         const gl = getContext(options.canvas)
         this.gl = gl
         this.canvas = options.canvas
+        this.textures = new TextureCache(this, options.antialias ?? false)
         this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 
         this.width = options.width || this.canvas.width
@@ -46,19 +51,29 @@ class Rapid {
 
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
         this.registerBuildInRegion()
-        this.initWebgl(gl)
+        this.initWebgl(gl, options)
+    }
+
+    /**
+     * Render a tile map layer.
+     * @param data - The map data to render.
+     * @param options - The options for rendering the tile map layer.
+     */
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRender | TileSet): void {
+        this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
     }
 
     /**
      * Initializes WebGL context settings.
      * @param gl - The WebGL context.
      */
-    private initWebgl(gl: WebGLContext) {
+    private initWebgl(gl: WebGLContext, options: IRapidOptions) {
         this.resize(this.width, this.height)
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.enable(gl.STENCIL_TEST);
+        gl.enable(gl.SCISSOR_TEST);
     }
 
     /**
@@ -87,13 +102,14 @@ class Rapid {
      * Sets the current render region by name and optionally a custom shader.
      * @param regionName - The name of the region to set as current.
      * @param customShader - An optional custom shader to use with the region.
+     * @param hasUnifrom - have costum unifrom
      */
     setRegion(regionName: string, customShader?: GLShader) {
         if (
             // isRegionChanged
             regionName != this.currentRegionName ||
             // isShaderChanged
-            (customShader && customShader !== this.currentRegion!.currentShader)
+            (this.currentRegion && this.currentRegion.isShaderChanged(customShader))
         ) {
             const region = this.regions.get(regionName)!;
             this.quitCurrentRegion()
@@ -118,6 +134,16 @@ class Rapid {
     }
 
     /**
+     * Executes a callback function within a saved and restored matrix state scope.
+     * @param cb - The callback function to execute within the saved and restored matrix state scope.
+     */
+    withTransform(cb: () => void) {
+        this.save()
+        cb()
+        this.restore()
+    }
+
+    /**
      * Starts the rendering process, resetting the matrix stack and clearing the current region.
      * @param clear - Whether to clear the matrix stack. Defaults to true.
      */
@@ -136,20 +162,27 @@ class Rapid {
         this.currentRegion?.render()
         this.projectionDirty = false
     }
-
     /**
-     * Renders a sprite with the specified texture, offset, and options.
-     * @param texture - The texture to render.
-     * @param offsetX - The X offset for the sprite. Defaults to 0.
-     * @param offsetY - The Y offset for the sprite. Defaults to 0.
-     * @param options - Rendering options including color and custom shader.
+     * Render
+     * @param cb - The function to render.
      */
-    renderSprite(texture: Texture, offsetX: number = 0, offsetY: number = 0, options?: IRenderSpriteOptions | Color): void {
-        if (!texture.base) return
-        if (options instanceof Color) {
-            return this.renderSprite(texture, offsetX, offsetY, { color: options })
-        }
-        this.setRegion("sprite", options?.shader);
+    render(cb: () => void) {
+        this.startRender()
+        cb()
+        this.endRender()
+    }
+    /**
+     * Renders a sprite with the specified options.
+     * 
+     * @param options - The rendering options for the sprite, including texture, position, color, and shader.
+     */
+    renderSprite(options: IRenderSpriteOptions): void {
+        const texture = options.texture
+        if (!texture || !texture.base) return
+
+        const { offsetX, offsetY } = this.startDraw(options, texture.width, texture.height)
+        this.setRegion("sprite", options.shader);
+
         (this.currentRegion as SpriteRegion).renderSprite(
             texture.base.texture,
             texture.width,
@@ -160,82 +193,123 @@ class Rapid {
             texture.clipH,
             offsetX,
             offsetY,
-            (options?.color || this.defaultColor).uint32,
-            options?.uniforms
+            (options.color || this.defaultColor).uint32,
+            options.uniforms
         )
+        this.afterDraw()
+    }
+
+    /**
+     * Renders a texture directly without additional options.
+     * This is a convenience method that calls renderSprite with just the texture.
+     * 
+     * @param texture - The texture to render at the current transformation position.
+     */
+    renderTexture(texture: Texture): void {
+        if (!texture.base) return
+        this.renderSprite({ texture })
     }
 
     /**
      * Renders a line with the specified options.
      * 
-     * @param offsetX - The X offset to apply when rendering the line. Defaults to 0.
-     * @param offsetY - The Y offset to apply when rendering the line. Defaults to 0.
-     * @param options - The options for rendering the line, including points and color.
+     * @param options - The options for rendering the line, including points, color, width, and join/cap types.
      */
-    renderLine(offsetX: number = 0, offsetY: number = 0, options: IRenderLineOptions): void {
-        const points = getStrokeGeometry(options.points, options);
-        this.renderGraphic(offsetX, offsetY, { color: options.color, drawType: this.gl.TRIANGLES, points });
+    renderLine(options: IRenderLineOptions): void {
+        const linePoints = options.closed ? [...options.points, options.points[0]] : options.points;
+        const points = getLineGeometry({ ...options, points: linePoints })!;
+        this.renderGraphic({ ...options, drawType: this.gl.TRIANGLES, points });
     }
 
     /**
-     * Renders graphics based on the provided options or array of Vec2 points.
+     * Renders graphics based on the provided options.
      * 
-     * @param offsetX - The X offset to apply when rendering the graphics. Defaults to 0.
-     * @param offsetY - The Y offset to apply when rendering the graphics. Defaults to 0.
-     * @param options - Either an object containing graphic options or an array of Vec2 points.
-     * 
-     * @remarks
-     * If `options` is an array of `Vec2`, it will be converted to an object with `points` property.
-     * If `options` is an object, it should contain `points` (array of `Vec2`) and optionally `color` and `drawType`.
+     * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(offsetX: number = 0, offsetY: number = 0, options: IGraphicOptions | Vec2[]): void {
-        if (options instanceof Array) {
-            return this.renderGraphic(offsetX, offsetY, { points: options });
-        }
-        this.setRegion("graphic", options.shader);
+    renderGraphic(options: IGraphicOptions): void {
+        this.startGraphicDraw(options)
+        options.points.forEach((vec, index) => {
+            const color = Array.isArray(options.color) ? options.color[index] : options.color
+            const uv = options.uv?.[index] as Vec2
+            this.addGraphicVertex(vec.x, vec.y, uv, color)
+        });
+        this.endGraphicDraw()
+    }
+    /**
+     * Starts the graphic drawing process.
+     * 
+     * @param options - The options for the graphic drawing, including shader, texture, and draw type.
+     */
+    startGraphicDraw(options: IGraphicOptions) {
+        const { offsetX, offsetY } = this.startDraw(options)
+        this.setRegion("graphic", options.shader)
         const currentRegion = this.currentRegion as GraphicRegion
-
-        currentRegion.startRender(options.texture)
-
+        currentRegion.startRender(offsetX, offsetY, options.texture, options.uniforms)
         if (options.drawType) {
             currentRegion.drawType = options.drawType;
         }
-        options.points.forEach((vec, index) => {
-            const color = options.color instanceof Array ? options.color[index] : options.color
-            const uv = options.uv?.[index] as Vec2
-
-            currentRegion.addVertex(vec.x + offsetX, vec.y + offsetY, uv?.x, uv?.y, (color || this.defaultColor).uint32);
-        });
-        currentRegion.render()
     }
 
     /**
-     * Renders a rectangle
-     * @param offsetX - The X coordinate of the top-left corner of the rectangle
-     * @param offsetY - The Y coordinate of the top-left corner of the rectangle
-     * @param width - The width of the rectangle
-     * @param height - The height of the rectangle
-     * @param color - The color of the rectangle
+     * Adds a vertex to the current graphic being drawn.
+     * 
+     * @param offsetX - The X coordinate of the vertex.
+     * @param offsetY - The Y coordinate of the vertex.
+     * @param uv - The texture UV coordinates for the vertex.
+     * @param color - The color of the vertex. Defaults to the renderer's default color.
      */
-    renderRect(offsetX: number, offsetY: number, width: number, height: number, color: Color = this.defaultColor): void {
+    addGraphicVertex(offsetX: number, offsetY: number, uv: Vec2, color?: Color): void {
+        const currentRegion = this.currentRegion as GraphicRegion
+        currentRegion.addVertex(offsetX, offsetY, uv?.x, uv?.y, (color || this.defaultColor).uint32);
+    }
+
+    /**
+     * Completes the graphic drawing process and renders the result.
+     */
+    endGraphicDraw() {
+        const currentRegion = this.currentRegion as GraphicRegion
+        currentRegion.render()
+
+        this.afterDraw()
+    }
+
+    private startDraw(options: ITransform, width: number = 0, height: number = 0) {
+        this.currentTransformOptions = options
+        return this.matrixStack.applyTransform(options, width, height)
+    }
+
+    private afterDraw() {
+        if (this.currentTransformOptions) {
+            this.matrixStack.applyTransformAfter(this.currentTransformOptions)
+        }
+    }
+
+    /**
+     * Renders a rectangle with the specified options.
+     * 
+     * @param options - The options for rendering the rectangle, including width, height, position, and color.
+     */
+    renderRect(options: IRectOptions): void {
+        const { width, height } = options
         const points = [
             new Vec2(0, 0),
             new Vec2(width, 0),
             new Vec2(width, height),
             new Vec2(0, height)
         ];
-        this.renderGraphic(offsetX, offsetY, { points, color, drawType: this.gl.TRIANGLE_FAN });
+        this.renderGraphic({ ...options, points, drawType: this.gl.TRIANGLE_FAN });
     }
 
     /**
-     * Renders a circle
-     * @param offsetX - The X coordinate of the circle's center
-     * @param offsetY - The Y coordinate of the circle's center
-     * @param radius - The radius of the circle
-     * @param color - The color of the circle
-     * @param segments - The number of segments to use when rendering the circle, default is 32
+     * Renders a circle with the specified options.
+     * 
+     * @param options - The options for rendering the circle, including radius, position, color, and segment count.
      */
-    renderCircle(offsetX: number, offsetY: number, radius: number, color: Color = this.defaultColor, segments: number = 32): void {
+    renderCircle(options: ICircleOptions): void {
+        const segments = options.segments || 32
+        const radius = options.radius
+        const color = options.color || this.defaultColor
+
         const points: Vec2[] = [];
         for (let i = 0; i <= segments; i++) {
             const angle = (i / segments) * Math.PI * 2;
@@ -243,7 +317,7 @@ class Rapid {
             const y = Math.sin(angle) * radius;
             points.push(new Vec2(x, y));
         }
-        this.renderGraphic(offsetX, offsetY, { points, color, drawType: this.gl.TRIANGLE_FAN });
+        this.renderGraphic({ ...options, points, color, drawType: this.gl.TRIANGLE_FAN });
     }
 
     /**
@@ -251,20 +325,25 @@ class Rapid {
      * @param width - The new width of the canvas.
      * @param height - The new height of the canvas.
      */
-    resize(width: number, height: number) {
-        this.width = width
-        this.height = height
-        const cvsWidth = width * this.devicePixelRatio
-        const cvsHeight = height * this.devicePixelRatio
-        this.canvas.width = cvsWidth
-        this.canvas.height = cvsHeight
+    resize(logicalWidth: number, logicalHeight: number) {
+        this.width = logicalWidth
+        this.height = logicalHeight
+        const physicalWidth = logicalWidth * this.devicePixelRatio
+        const physicalHeight = logicalHeight * this.devicePixelRatio
+        this.canvas.width = physicalWidth
+        this.canvas.height = physicalHeight
+
+        this.canvas.style.width = logicalWidth + 'px'
+        this.canvas.style.height = logicalHeight + 'px'
+
         this.gl.viewport(
-            0, 0, cvsWidth, cvsHeight
+            0, 0, physicalWidth, physicalHeight
         )
         this.projection = this.createOrthMatrix(
-            0, width, height, 0
+            0, logicalWidth, logicalHeight, 0
         )
         this.projectionDirty = true
+        this.gl.scissor(0, 0, physicalWidth, physicalHeight)
     }
 
     /**
@@ -273,7 +352,7 @@ class Rapid {
     clear() {
         const gl = this.gl
         const c = this.backgroundColor
-        gl.clearColor(c.r, c.g, c.b, c.a);
+        gl.clearColor(c.r / 255, c.g / 255, c.b / 255, c.a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT);
         this.clearMask()
     }
@@ -296,64 +375,86 @@ class Rapid {
     }
 
     /**
-     * Transforms a point by applying the current matrix stack.
-     * @param x - The X coordinate of the point.
-     * @param y - The Y coordinate of the point.
-     * @returns The transformed point as an array `[newX, newY]`.
+     * Draw a mask. Automatically calls startDrawMask.
+     * @param type - The type of mask to draw.
+     * @param cb - The callback function to execute.
      */
-    transformPoint(x: number, y: number) {
-        return this.matrixStack.apply(x, y)
+    drawMask(type: MaskType = MaskType.Include, cb: () => void) {
+        this.startDrawMask(type)
+        cb()
+        this.endDrawMask()
     }
     /**
-     * Starts drawing a mask using the stencil buffer.
-     * This method sets up the WebGL context to begin defining a mask area.
+     * Start drawing a mask using the stencil buffer.
+     * This method configures the WebGL context to begin defining a mask area.
      */
-    startDrawMask() {
+    startDrawMask(type: MaskType = MaskType.Include) {
         const gl = this.gl;
-        this.quitCurrentRegion()
-        gl.clearStencil(0);
-        gl.clear(gl.STENCIL_BUFFER_BIT);
-        gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+        this.currentMaskType = type;
+        this.setMaskType(type, true);
+
         gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
         gl.colorMask(false, false, false, false);
     }
 
     /**
-     * Ends the mask drawing process.
+     * End the mask drawing process.
      * This method configures the WebGL context to use the defined mask for subsequent rendering.
      */
-    endDrawMask(type = MaskType.Normal) {
-        const gl = this.gl;
-        this.quitCurrentRegion()
-        this.setMaskType(type)
-        gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-        gl.colorMask(true, true, true, true);
-    }
-
-    /**
-     * Sets the mask type for rendering
-     * @param type - The type of mask to apply
-     */
-    setMaskType(type: MaskType) {
+    endDrawMask() {
         const gl = this.gl;
         this.quitCurrentRegion();
 
-        switch (type) {
-            case MaskType.Normal:
-                gl.stencilFunc(gl.EQUAL, 1, 0xFF);
-                break;
-            case MaskType.Inverse:
-                gl.stencilFunc(gl.NOTEQUAL, 1, 0xFF);
-                break;
+        gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+        gl.colorMask(true, true, true, true);
+        this.setMaskType(this.currentMaskType, false);
+    }
+
+    /**
+     * Set the mask type for rendering
+     * @param type - The mask type to apply
+     * @param start - Whether this is the start of mask drawing
+     */
+    private setMaskType(type: MaskType, start: boolean = false) {
+        const gl = this.gl;
+        this.quitCurrentRegion();
+        if (start) {
+            this.clearMask();
+            gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+        } else {
+            switch (type) {
+                case MaskType.Include:
+                    gl.stencilFunc(gl.EQUAL, 1, 0xFF);
+                    break;
+                case MaskType.Exclude:
+                    gl.stencilFunc(gl.NOTEQUAL, 1, 0xFF);
+                    break;
+            }
         }
     }
+
     /**
-     * Clears the current mask by clearing the stencil buffer.
+     * Clear the current mask by clearing the stencil buffer.
      * This effectively removes any previously defined mask.
      */
     clearMask() {
         const gl = this.gl;
+        this.quitCurrentRegion();
+        gl.clearStencil(0);
         gl.clear(gl.STENCIL_BUFFER_BIT);
+        gl.stencilFunc(gl.ALWAYS, 1, 0xFF);
+    }
+
+    /**
+     * Creates a custom shader.
+     * @param vs - Vertex shader code.
+     * @param fs - Fragment shader code.
+     * @param type - Shader type.
+     * @param textureUnit - The number of textures used by the shader
+     * @returns The created shader object.
+     */
+    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit: number = 0) {
+        return GLShader.createCostumShader(this, vs, fs, type, textureUnit)
     }
 }
 

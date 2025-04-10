@@ -1,35 +1,15 @@
-import { Rapid, Texture } from "..";
+import type Rapid from "../render";
+import { Uniform } from "../webgl/uniform";
 import RenderRegion from "./region";
+import { Texture } from "../texture";
 declare class GraphicRegion extends RenderRegion {
     private vertex;
     private texture?;
+    private offset;
     drawType: number;
     constructor(rapid: Rapid);
-    startRender(texture?: Texture): void;
+    startRender(offsetX: number, offsetY: number, texture?: Texture, uniforms?: Uniform): void;
     addVertex(x: number, y: number, u: number, v: number, color: number): void;
     protected executeRender(): void;
 }
-declare const graphicAttributes: ({
-    name: string;
-    size: number;
-    type: number;
-    stride: number;
-    offset?: undefined;
-    normalized?: undefined;
-} | {
-    name: string;
-    size: number;
-    type: number;
-    stride: number;
-    offset: number;
-    normalized: boolean;
-} | {
-    name: string;
-    size: number;
-    type: number;
-    stride: number;
-    offset: number;
-    normalized?: undefined;
-})[];
-export { graphicAttributes };
 export default GraphicRegion;

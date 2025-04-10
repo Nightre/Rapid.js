@@ -2,11 +2,13 @@ import Rapid from "./render";
 import { Images, ITextOptions } from "./interface";
 /**
  * texture manager
+ * @ignore
  */
 declare class TextureCache {
     private render;
     private cache;
-    constructor(render: Rapid);
+    private antialias;
+    constructor(render: Rapid, antialias: boolean);
     /**
      * create texture from url
      * Equivalent to {@link Texture.fromUrl} method
@@ -15,7 +17,13 @@ declare class TextureCache {
      * @returns
      */
     textureFromUrl(url: string, antialias?: boolean): Promise<Texture>;
+    textureFromSource(source: Images, antialias?: boolean): Promise<Texture>;
     loadImage(url: string): Promise<HTMLImageElement>;
+    /**
+     * Create a new `Text` instance.
+     * @param options - The options for rendering the text, such as font, size, color, etc.
+     * @returns A new `Text` instance.
+     */
     createText(options: ITextOptions): Text;
 }
 /**
@@ -79,7 +87,7 @@ declare class Texture {
      * @param w - The width of the region.
      * @param h - The height of the region.
      */
-    setClipRegion(x: number, y: number, w: number, h: number): void;
+    setClipRegion(x: number, y: number, w: number, h: number): this | undefined;
     /**
      * Creates a new `Texture` instance from the specified image source.
      * @param rapid - The Rapid instance to use.
@@ -95,7 +103,23 @@ declare class Texture {
      * @returns A new `Texture` instance created from the specified URL.
      */
     static fromUrl(rapid: Rapid, url: string): Promise<Texture>;
+    /**
+     * Converts the current texture into a spritesheet.
+     * @param rapid - The Rapid instance to use.
+     * @param spriteWidth - The width of each sprite in the spritesheet.
+     * @param spriteHeight - The height of each sprite in the spritesheet.
+     * @returns An array of `Texture` instances representing the sprites in the spritesheet.
+     */
+    createSpritesHeet(spriteWidth: number, spriteHeight: number): Texture[];
+    /**
+     * Clone the current texture
+     * @returns A new `Texture` instance with the same base texture reference.
+     */
+    clone(): Texture;
 }
+/**
+ * @ignore
+ */
 export declare const SCALEFACTOR = 2;
 declare class Text extends Texture {
     private options;
@@ -108,6 +132,10 @@ declare class Text extends Texture {
      */
     constructor(rapid: Rapid, options: ITextOptions);
     private updateTextImage;
+    /**
+     * Creates a canvas element for rendering text.
+     * @returns HTMLCanvasElement - The created canvas element.
+     */
     private createTextCanvas;
     /**
      * Update the displayed text

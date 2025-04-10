@@ -9,5 +9,5 @@ void main(void) {
     vec4 color;
     %GET_COLOR%
 
-    gl_FragColor = color*vColor;
+    gl_FragColor = color * vColor;
 }

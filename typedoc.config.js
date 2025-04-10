@@ -3,5 +3,5 @@ export default {
     "entryPoints": [
         "./src/index.ts",
     ],
-    "out": "./docs/",
+    "out": "./docs/api/",
 }

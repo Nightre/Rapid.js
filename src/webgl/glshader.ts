@@ -1,85 +1,49 @@
-import { IAttribute, UniformType, WebGLContext } from "../interface"
+import { IAttribute, ShaderType, UniformType, WebGLContext } from "../interface"
 import Rapid from "../render"
 import { Texture } from "../texture"
+import { Uniform } from "./uniform"
 import { createShaderProgram, generateFragShader } from "./utils"
+
+import graphicFragString from "../shader/graphic.frag";
+import graphicVertString from "../shader/graphic.vert";
+import spriteFragString from "../shader/sprite.frag";
+import spriteVertString from "../shader/sprite.vert";
+import { spriteAttributes } from "../regions/attributes"
+import { graphicAttributes } from "../regions/attributes"
 
 class GLShader {
     attributeLoc: Record<string, number> = {}
     uniformLoc: Record<string, WebGLUniformLocation> = {}
     program: WebGLProgram
-    private gl: WebGLContext
 
-    constructor(rapid: Rapid, vs: string, fs: string) {
-        const processedFragmentShaderSource = generateFragShader(fs, rapid.maxTextureUnits)
+    private attributes: IAttribute[] = []
+    private gl: WebGLContext
+    usedTexture: number
+    
+    constructor(rapid: Rapid, vs: string, fs: string, attributes?: IAttribute[], usedTexture = 0) {
+        const processedFragmentShaderSource = generateFragShader(fs, rapid.maxTextureUnits - usedTexture)
         this.program = createShaderProgram(rapid.gl, vs, processedFragmentShaderSource)
         this.gl = rapid.gl
+        this.usedTexture = usedTexture
         this.parseShader(vs);
         this.parseShader(processedFragmentShaderSource);
+        if (attributes) {
+            this.setAttributes(attributes)
+        }
     }
     /**
      * Set the uniform of this shader
      * @param uniforms 
      * @param usedTextureUnit How many texture units have been used
      */
-    setUniforms(uniforms: UniformType, usedTextureUnit: number) {
+    setUniforms(uniform: Uniform, usedTextureUnit: number) {
         const gl = this.gl;
-        for (const uniformName in uniforms) {
-            const value = uniforms[uniformName];
+        for (const uniformName of uniform.getUnifromNames()) {
             const loc = this.getUniform(uniformName);
-            
-            if (value instanceof Texture && value.base?.texture) {
-                gl.activeTexture(gl.TEXTURE0 + usedTextureUnit);
-                gl.bindTexture(gl.TEXTURE_2D, value.base.texture);
-                gl.uniform1i(loc, usedTextureUnit);
-                usedTextureUnit += 1
-            } else if (typeof value === 'number') {
-                gl.uniform1f(loc, value);
-            } else if (Array.isArray(value)) {
-                switch (value.length) {
-                    case 1:
-                        if (Number.isInteger(value[0])) {
-                            gl.uniform1i(loc, value[0]);
-                        } else {
-                            gl.uniform1f(loc, value[0]);
-                        }
-                        break;
-                    case 2:
-                        if (Number.isInteger(value[0])) {
-                            gl.uniform2iv(loc, value);
-                        } else {
-                            gl.uniform2fv(loc, value);
-                        }
-                        break;
-                    case 3:
-                        if (Number.isInteger(value[0])) {
-                            gl.uniform3iv(loc, value);
-                        } else {
-                            gl.uniform3fv(loc, value);
-                        }
-                        break;
-                    case 4:
-                        if (Number.isInteger(value[0])) {
-                            gl.uniform4iv(loc, value);
-                        } else {
-                            gl.uniform4fv(loc, value);
-                        }
-                        break;
-                    case 9:
-                        gl.uniformMatrix3fv(loc, false, value);
-                        break;
-                    case 16:
-                        gl.uniformMatrix4fv(loc, false, value);
-                        break;
-                    default:
-                        console.error(`Unsupported uniform array length for ${uniformName}:`, value.length);
-                        break;
-                }
-            } else if (typeof value === 'boolean') {
-                gl.uniform1i(loc, value ? 1 : 0);
-            } else {
-                console.error(`Unsupported uniform type for ${uniformName}:`, typeof value);
-            }
+
+            usedTextureUnit = uniform.bind(gl, uniformName, loc, usedTextureUnit)
         }
+        return usedTextureUnit
     }
 
     private getUniform(name: string) {
@@ -112,7 +76,7 @@ class GLShader {
         }
     }
     /**
-     * Set vertex attributes in glsl shader
+     * Set vertex attribute in glsl shader
      * @param element 
      */
     setAttribute(element: IAttribute) {
@@ -129,6 +93,47 @@ class GLShader {
             );
             gl.enableVertexAttribArray(loc);
         }
+    }
+
+    /**
+     * Set vertex attributes in glsl shader
+     * @param elements 
+     */
+    setAttributes(elements: IAttribute[]) {
+        this.attributes = elements
+        for (const element of elements) {
+            this.setAttribute(element)
+        }
+    }
+
+    updateAttributes() {
+        this.setAttributes(this.attributes)
+    }
+
+    static createCostumShader(rapid: Rapid, vs: string, fs: string, type: ShaderType, usedTexture: number = 0) {
+        let baseFs = {
+            [ShaderType.SPRITE]: spriteFragString,
+            [ShaderType.GRAPHIC]: graphicFragString,
+        }[type]
+        let baseVs = {
+            [ShaderType.SPRITE]: spriteVertString,
+            [ShaderType.GRAPHIC]: graphicVertString,
+        }[type]
+        const attribute = {
+            [ShaderType.SPRITE]: spriteAttributes,
+            [ShaderType.GRAPHIC]: graphicAttributes,
+        }[type]
+
+        baseFs = baseFs.replace('void main(void) {', fs + '\nvoid main(void) {')
+        baseVs = baseVs.replace('void main(void) {', vs + '\nvoid main(void) {')
+        baseFs = baseFs.replace('gl_FragColor = ', 'fragment(color);\ngl_FragColor = ')
+        baseVs = baseVs.replace(
+            'gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);',
+`vec2 position = aPosition;
+vertex(position, vRegion);
+gl_Position = uProjectionMatrix * vec4(position, 0.0, 1.0);`
+        )
+        return new GLShader(rapid, baseVs, baseFs, attribute, usedTexture)
     }
 }
 

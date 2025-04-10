@@ -1,27 +1,34 @@
-# 🚀 Rapid.js
+<p align="center">
+  <img src="./screenshot/logo.png" alt="Rapid.js Logo" width="100" style="image-rendering: pixelated;">
+</p>
 
-A highly efficient and lightweight WebGL renderer
+<a href="https://nightre.github.io/Rapid.js/docs/index.html"><h1 align="center">Rapid.js</h1></a>
 
-## [API Docs](https://nightre.github.io/Rapid.js/docs/)
+A highly efficient ([stress-test](./docs/examples.html)) and lightweight WebGL-based 2D rendering engine focused on rendering capabilities. Rapid.js provides a simple and intuitive API for developers to quickly build high-performance 2D 
+games, while staying completely independent from your game's architecture and logic.
 
-[stress test demo](https://nightre.github.io/Rapid.js/demo/) ( [source code](./demo/index.js) )
 
-[render demo](https://nightre.github.io/Rapid.js/demo/matrix_stack.html) ( [source code](./demo/matrix_stack.js) )
+### [Website](https://nightre.github.io/Rapid.js/docs/index.html)
 
-[custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
+#### [Document](https://nightre.github.io/Rapid.js/docs/docs.html)
 
-[mask demo](https://nightre.github.io/Rapid.js/demo/mask.html) ( [source code](./demo/mask.js) )
+#### [API Docs](https://nightre.github.io/Rapid.js/docs/api/index.html)
 
+#### [Examples](https://nightre.github.io/Rapid.js/demo/)
 
 # Features
-* **Fast Rendering**: Render 10,000 sprites at 60fps
-* **Multi-Texture Support**: Batch rendering using GPU's maximum texture units
+
+* **Fast Rendering**
+* **TileMap** - YSort, isometric
 * **Graphics Drawing**
-* **Matrix Stack**
 * **Text Rendering**
 * **Line Drawing**
 * **Custom Shaders**
 * **Mask**
+
+> [!WARNING]  
+> This project is under active development! Please expect bugs, report any issues you find, and contributions are welcome.
+
 
 # Install
 
@@ -41,84 +48,69 @@ Or use unpkg
 import { Rapid } from "rapid-render"
 ```
 
-# Useage
+# Usage
 
-```js
-let rapid = new Rapid({
-    canvas: document.getElementById("game"),
-    backgroundColor: Color.fromHex("FFFFFF")
-});
+Rapid.js is a focused WebGL-based 2D rendering engine that provides rendering capabilities only. It does not include any game architecture, state management, physics, or other game-related systems - it's purely a rendering engine. This intentional design choice means you have complete freedom to structure your game however you want.
 
-// Create texture
-const cat = await rapid.textures.textureFromUrl("./cat.png");
-//                      R   G   B   A
-const color = new Color(255, 255, 255, 255); // Or use Color.fromHex
+Here's a simple example showing how to use Rapid.js to create a bouncing box:
 
-// Call before rendering
-rapid.startRender();
+First, create a canvas element in your HTML:
 
-// Render here...
-
-// Call after rendering
-rapid.endRender();
-
-// Set canvas size
-rapid.resize(100, 100);
+```html
+<canvas id="gameCanvas" width="500" height="500"></canvas>
 ```
 
-# Render
+Then, add the following JavaScript code:
 
 ```js
-const text = rapid.textures.createText({ text: "Hello!", fontSize: 30 })
+import { Rapid, Color, Vec2 } from "rapid-render"
 
-rapid.save() // Save state
-rapid.matrixStack.translate(0,0)
-rapid.matrixStack.scale(1)
-rapid.matrixStack.rotate(0)
+// Initialize Rapid
+const rapid = new Rapid({
+    canvas: document.getElementById("gameCanvas"),
+    backgroundColor: Color.fromHex("E6F0FF")
+})
 
-// Render Sprit
-rapid.renderSprite(cat, 0, 0, color) // or rapid.renderSprite(cat, 0, 0, { color })
+// Position and velocity
+let position = new Vec2(100, 100)
+let velocity = new Vec2(2, 2)
 
-// Rendr Graphic
-const path = Vec2.FormArray([[0, 0], [100, 0], [100, 100]])
-rapid.renderGraphic(0,0,{points:path, color:green})
-// or
-// rapid.startGraphicDraw()
-// rapid.addGraphicVertex(0, 0, color)
-// rapid.endGraphicDraw()
+function gameLoop() {
+    // Update position
+    position.x += velocity.x
+    position.y += velocity.y
+    
+    // Simple collision with boundaries
+    if (position.x < 0 || position.x > 400) velocity.x *= -1
+    if (position.y < 0 || position.y > 400) velocity.y *= -1
+    
+    // Render using the recommended render callback method
+    rapid.render(() => {
+        rapid.renderRect({ 
+            offset: position, 
+            width: 50, 
+            height: 50, 
+            color: Color.Red 
+        })
+    })
+    // rapid.startRender();
+    // ...
+    // rapid.endRender();
+    requestAnimationFrame(gameLoop);
+}
 
-// Render Text
-rapid.renderSprite(text, 200, 0)
-text.setText("time:" + Math.round(time))
-
-rapid.restore() // back to the previous saved state
+gameLoop()
 ```
 
-# Custom Shader
+This will create a red square that bounces around the canvas, demonstrating basic animation and collision detection.
 
-View demo and watch detailed shader code [custom shader demo](https://nightre.github.io/Rapid.js/demo/custom-shader.html) ( [source code](./demo/custom-shader.js) )
+Note: All rendering operations must be performed within a render context, either:
+- Inside a `rapid.render(() => { ... })` callback (Recommended), or
+- Between `rapid.startRender()` and `rapid.endRender()` calls
 
-```js
-const vertexShaderSource = `...`
-const fragmentShaderSource = `...`
+# Road Map
 
-const customShader = new GLShader(rapid, vertexShaderSource, fragmentShaderSource)
-rapid.startRender()
-
-rapid.renderSprite(plane, 100, 100, {
-    shader: customShader, // shader
-    uniforms: {
-        // Set custom uniform (You can set mat3, vec2, texture and so on here)
-        uCustomUniform: Number(costumUniformValue)
-        //  uVec2Uniform: [0,2] // recognized as vec2
-        //  uMat3Uniform: [
-        //     [0,0,0],
-        //     [0,0,0],
-        //     [0,0,0],
-        //  ]
-        // recognized as mat3
-    }
-});
-
-rapid.endRender()
-```
+* Frame Buffer Object (allows rendering to a texture instead of screen) [Under development]
+* Light system
+* Line Texture 
+* Particle system

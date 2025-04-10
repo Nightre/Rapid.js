@@ -1,23 +1,28 @@
 
-import { Rapid, Texture } from "..";
+import type Rapid from "../render";
 import fragString from "../shader/graphic.frag";
 import vertString from "../shader/graphic.vert";
-import { FLOAT, UNSIGNED_BYTE } from "../webgl/utils";
+import { Uniform } from "../webgl/uniform";
 import RenderRegion from "./region";
+import { graphicAttributes } from "./attributes";
+import { Texture } from "../texture";
+import { Vec2 } from "../math";
 
 //                       aPosition  aColor
-const BYTES_PER_VERTEX = 2 * 4 + 4 + 2 * 4
 const FLOAT32_PER_VERTEX = 3
 class GraphicRegion extends RenderRegion {
     private vertex: number = 0
     private texture?: number
+    private offset = Vec2.ZERO 
     drawType: number
     constructor(rapid: Rapid) {
-        super(rapid, graphicAttributes)
+        super(rapid)
         this.drawType = rapid.gl.TRIANGLE_FAN
-        this.initDefaultShader(vertString, fragString)
+        this.setShader('default', vertString, fragString, graphicAttributes)
     }
-    startRender(texture?: Texture) {
+    startRender(offsetX: number, offsetY: number, texture?: Texture, uniforms?:Uniform) {
+        uniforms && this.currentShader?.setUniforms(uniforms, 1)
+        this.offset = new Vec2(offsetX, offsetY)
         this.vertex = 0
         this.webglArrayBuffer.clear()
         if (texture && texture.base) {
@@ -26,10 +31,10 @@ class GraphicRegion extends RenderRegion {
     }
     override addVertex(x: number, y: number, u: number, v: number, color: number): void {
         this.webglArrayBuffer.resize(FLOAT32_PER_VERTEX)
-        super.addVertex(x, y)
-        this.webglArrayBuffer.pushUint(color)
-        this.webglArrayBuffer.push(u)
-        this.webglArrayBuffer.push(v)
+        super.addVertex(x + this.offset.x, y + this.offset.y)
+        this.webglArrayBuffer.pushUint32(color)
+        this.webglArrayBuffer.pushFloat32(u)
+        this.webglArrayBuffer.pushFloat32(v)
         this.vertex += 1
     }
 
@@ -49,11 +54,4 @@ class GraphicRegion extends RenderRegion {
     }
 }
 
-const stride = BYTES_PER_VERTEX
-const graphicAttributes = [
-    { name: "aPosition", size: 2, type: FLOAT, stride },
-    { name: "aColor", size: 4, type: UNSIGNED_BYTE, stride, offset: 2 * Float32Array.BYTES_PER_ELEMENT, normalized: true },
-    { name: "aRegion", size: 2, type: FLOAT, stride, offset: 3 * Float32Array.BYTES_PER_ELEMENT }
-]
-export { graphicAttributes }
 export default GraphicRegion

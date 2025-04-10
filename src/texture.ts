@@ -1,14 +1,19 @@
 import Rapid from "./render"
 import { Images, ITextOptions } from "./interface"
 import { createTexture } from "./webgl/utils"
+
 /**
  * texture manager
+ * @ignore
  */
 class TextureCache {
     private render: Rapid
-    private cache: Map<string, BaseTexture> = new Map
-    constructor(render: Rapid) {
+    private cache: Map<string | Images, BaseTexture> = new Map
+    private antialias: boolean
+    
+    constructor(render: Rapid, antialias: boolean) {
         this.render = render
+        this.antialias = antialias
     }
     /**
      * create texture from url
@@ -17,7 +22,7 @@ class TextureCache {
      * @param antialias 
      * @returns 
      */
-    async textureFromUrl(url: string, antialias: boolean = false) {
+    async textureFromUrl(url: string, antialias: boolean = this.antialias) {
         let base = this.cache.get(url)
         if (!base) {
             const image = await this.loadImage(url)
@@ -26,6 +31,16 @@ class TextureCache {
         }
         return new Texture(base)
     }
+
+    async textureFromSource(source: Images, antialias: boolean = this.antialias) {
+        let base = this.cache.get(source)
+        if (!base) {
+            base = BaseTexture.fromImageSource(this.render, source, antialias)
+            this.cache.set(source, base)
+        }
+        return new Texture(base)
+    }
+
     async loadImage(url: string): Promise<HTMLImageElement> {
         return new Promise((resolve) => {
             const image = new Image();
@@ -35,6 +50,11 @@ class TextureCache {
             image.src = url;
         });
     };
+    /**
+     * Create a new `Text` instance.
+     * @param options - The options for rendering the text, such as font, size, color, etc.
+     * @returns A new `Text` instance.
+     */
     createText(options: ITextOptions) {
         return new Text(this.render, options)
     }
@@ -128,11 +148,13 @@ class Texture {
     setClipRegion(x: number, y: number, w: number, h: number) {
         if (!this.base) return
         this.clipX = x / this.base.width
-        this.clipY = y / this.base.width
+        this.clipY = y / this.base.height
         this.clipW = this.clipX + (w / this.base.width)
         this.clipH = this.clipY + (h / this.base.height)
         this.width = w * this.scale
         this.height = h * this.scale
+
+        return this
     }
     /**
      * Creates a new `Texture` instance from the specified image source.
@@ -155,7 +177,44 @@ class Texture {
     static fromUrl(rapid: Rapid, url: string) {
         return rapid.textures.textureFromUrl(url)
     }
+    /**
+     * Converts the current texture into a spritesheet.
+     * @param rapid - The Rapid instance to use.
+     * @param spriteWidth - The width of each sprite in the spritesheet.
+     * @param spriteHeight - The height of each sprite in the spritesheet.
+     * @returns An array of `Texture` instances representing the sprites in the spritesheet.
+     */
+    createSpritesHeet(spriteWidth: number, spriteHeight: number): Texture[] {
+        if (!this.base) return [];
+        const sprites: Texture[] = [];
+        const columns = Math.floor(this.base.width / spriteWidth);
+        const rows = Math.floor(this.base.height / spriteHeight);
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < columns; x++) {
+                const sprite = this.clone();
+                sprite.setClipRegion(
+                    x * spriteWidth,
+                    y * spriteHeight,
+                    spriteWidth,
+                    spriteHeight
+                );
+                sprites.push(sprite); 
+            }
+        }
+        return sprites;
+    }
+    /**
+     * Clone the current texture
+     * @returns A new `Texture` instance with the same base texture reference.
+     */
+    clone() {
+        return new Texture(this.base)
+    }
 }
+
+/**
+ * @ignore
+ */
 export const SCALEFACTOR = 2
 class Text extends Texture {
     private options: ITextOptions;
@@ -171,14 +230,17 @@ class Text extends Texture {
         super()
         this.rapid = rapid
         this.options = options;
-        this.text = options.text || ''
+        this.text = options.text || ' '
         this.updateTextImage()
     }
     private updateTextImage() {
         const canvas = this.createTextCanvas();
         this.setBaseTextur(BaseTexture.fromImageSource(this.rapid, canvas, true))
     }
-
+    /**
+     * Creates a canvas element for rendering text.
+     * @returns HTMLCanvasElement - The created canvas element.
+     */
     private createTextCanvas(): HTMLCanvasElement {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -225,7 +287,7 @@ class Text extends Texture {
      */
     setText(text: string) {
         if (this.text == text) return
-        
+
         this.text = text
         this.updateTextImage()
     }

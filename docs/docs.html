@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Js</title>
+    <link rel="icon" href="./assets/logo.png">
+    <link rel="stylesheet" href="./assets/main.css">
+    <script src="./js/main.js"></script>
+    <script src="./js/sidebar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+        .doc {
+            display: flex;
+            flex-direction: row;
+            gap: 2rem;
+        }
+
+        /* Markdown样式 */
+        #content {
+            max-width: 800px;
+            line-height: 1.6;
+            padding: 1rem;
+        }
+
+        #content h1 {
+            border-bottom: 2px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+
+        #content h2 {
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+            margin-top: 1.5em;
+        }
+
+        #content p {
+            margin: 1em 0;
+        }
+
+        #content code:not([class*="language-"]) {
+            background-color: rgba(27,31,35,.05);
+            border-radius: 3px;
+            padding: 0.2em 0.4em;
+            font-size: 85%;
+            font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;
+        }
+
+        #content pre {
+            background-color: #282c34;
+            border-radius: 6px;
+            padding: 16px;
+            overflow: auto;
+            margin: 1em 0;
+        }
+
+        #content blockquote {
+            border-left: 4px solid #dfe2e5;
+            color: #6a737d;
+            margin: 1em 0;
+            padding: 0 1em;
+        }
+
+        #content ul, #content ol {
+            padding-left: 2em;
+        }
+
+        #content img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container doc">
+        <div>
+            <div class="sidebar">
+                <div class="list-nav" id="sidebar-container">
+                    <h3>Document</h3>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div id="content">
+                <h1>Loading...</h1>
+                <p>Loading documentation content...</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const chapters = {
+            'Getting Started': 'getting-started',
+            'Core Concepts': 'core-concepts',
+            'Rendering': 'rendering',
+            'Textures': 'textures',
+            'Text': 'text',
+            'Tile Maps': 'tilemaps',
+            'Shaders': 'shaders',
+            'Masks': 'masks',
+        }
+
+        const contentDom = document.getElementById('content');
+
+        const fetchChapter = async (key) => {
+            try {
+                const res = await (await fetch(`./docs-md/${key}.md`)).text();
+                contentDom.innerHTML = marked.parse(res);
+                // 高亮代码块
+                Prism.highlightAllUnder(contentDom);
+            } catch (error) {
+                contentDom.innerHTML = `<h1>Loading Failed</h1><p>Could not load documentation: ${error.message}</p>`;
+            }
+        }
+
+        createSidebar({
+            containerId: 'sidebar-container',
+            items: chapters,
+            urlParam: 'doc',
+            defaultItem: 'getting-started',
+            onSelect: (value) => {
+                fetchChapter(value);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,15 +1,28 @@
-import { WebGLContext } from "./interface";
-type ArrayType = typeof Float32Array | typeof Uint16Array;
+import { IMathStruct as IMathObject, ITransform, WebGLContext } from "./interface";
+/**
+ * @ignore
+ */
+export declare enum ArrayType {
+    Float32 = 0,
+    Uint32 = 1,
+    Uint16 = 2
+}
+/**
+ * @ignore
+ */
 export declare class DynamicArrayBuffer {
     usedElemNum: number;
-    protected typedArray: Float32Array | Uint16Array;
+    protected typedArray: Float32Array | Uint32Array | Uint16Array;
     private arrayType;
     protected maxElemNum: number;
     readonly bytePerElem: number;
     private arraybuffer;
-    /** if typedArray is Float32Array*/
     private uint32?;
+    private float32?;
+    private uint16?;
     constructor(arrayType: ArrayType);
+    getArrayType(arrayType: ArrayType): Float32ArrayConstructor | Uint32ArrayConstructor | Uint16ArrayConstructor;
+    updateTypedArray(): void;
     clear(): void;
     /**
      * resize the array
@@ -18,12 +31,9 @@ export declare class DynamicArrayBuffer {
      */
     resize(size?: number): void;
     protected setMaxSize(size?: number): void;
-    /**
-     * push a new element
-     * @param value
-     */
-    push(value: number): void;
-    pushUint(value: number): void;
+    pushUint32(value: number): void;
+    pushFloat32(value: number): void;
+    pushUint16(value: number): void;
     /**
      * pop a element
      * @param num
@@ -35,12 +45,15 @@ export declare class DynamicArrayBuffer {
      * @param end
      * @returns
      */
-    getArray(begin?: number, end?: number): Uint16Array | Float32Array;
+    getArray(begin?: number, end?: number): Uint32Array | Float32Array | Uint16Array;
     /**
      * length of the array
      */
     get length(): number;
 }
+/**
+ * @ignore
+ */
 export declare class WebglBufferArray extends DynamicArrayBuffer {
     buffer: WebGLBuffer;
     gl: WebGLContext;
@@ -51,7 +64,9 @@ export declare class WebglBufferArray extends DynamicArrayBuffer {
      */
     private webglBufferSize;
     constructor(gl: WebGLContext, arrayType: ArrayType, type?: number);
-    push(value: number): void;
+    pushFloat32(value: number): void;
+    pushUint32(value: number): void;
+    pushUint16(value: number): void;
     /**
      * bind buffer to gpu
      */
@@ -80,7 +95,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param x - The amount to translate horizontally.
      * @param y - The amount to translate vertically.
      */
-    translate(x: number | Vec2, y: number): void;
+    translate(x: number | Vec2, y?: number): void;
     /**
      * Rotates the current matrix by the specified angle.
      * @param angle - The angle, in radians, to rotate the matrix by.
@@ -96,7 +111,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * Transforms a point by applying the current matrix stack.
      * @returns The transformed point as an array `[newX, newY]`.
      */
-    apply(x: number | Vec2, y: number): Vec2 | number[];
+    apply(x: number | Vec2, y?: number): Vec2 | number[];
     /**
      * Obtain the inverse matrix of the current matrix
      * @returns inverse matrix
@@ -112,7 +127,63 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param array
      */
     setTransform(array: Float32Array | number[]): void;
+    /**
+     * Get the global position in world space
+     * @returns The current matrix position in world space
+     */
+    getGlobalPosition(): Vec2;
+    /**
+     * Set the global position in world space
+     * @param x - x coordinate or Vec2 object
+     * @param y - y coordinate (ignored if first parameter is Vec2)
+     */
+    setGlobalPosition(x: number | Vec2, y?: number): void;
+    /**
+     * Get the global rotation angle
+     * @returns The current matrix rotation angle in radians
+     */
+    getGlobalRotation(): number;
+    /**
+     * Set the global rotation angle
+     * @param angle - rotation angle in radians
+     */
+    setGlobalRotation(angle: number): void;
+    /**
+     * Get the global scale
+     * @returns The current matrix scale values
+     */
+    getGlobalScale(): Vec2;
+    /**
+     * Set the global scale
+     * @param x - x scale or Vec2 object
+     * @param y - y scale (ignored if first parameter is Vec2)
+     */
+    setGlobalScale(x: number | Vec2, y?: number): void;
+    globalToLocal(global: Vec2): Vec2;
+    localToGlobal(local: Vec2): Vec2;
+    /**
+     * Convert the current matrix to a CSS transform string
+     * @returns CSS transform string representation of the matrix
+     */
+    toCSSTransform(): string;
+    /**
+     * Reset the current matrix to identity matrix
+     */
+    identity(): void;
+    /**
+     * Apply the transform to the current matrix
+     * @param transform - The transform to apply
+     * @returns offset position
+     */
+    applyTransform(transform: ITransform, width?: number, height?: number): {
+        offsetX: number;
+        offsetY: number;
+    };
+    applyTransformAfter(transform: ITransform): void;
 }
+/**
+ * @ignore
+ */
 export declare class WebglElementBufferArray extends WebglBufferArray {
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number);
     protected addObject(_vertex?: number): void;
@@ -120,7 +191,7 @@ export declare class WebglElementBufferArray extends WebglBufferArray {
 /**
  * Represents a color with red, green, blue, and alpha (transparency) components.
  */
-export declare class Color {
+export declare class Color implements IMathObject<Color> {
     private _r;
     private _g;
     private _b;
@@ -133,7 +204,7 @@ export declare class Color {
      * @param b - The blue component (0-255).
      * @param a - The alpha component (0-255).
      */
-    constructor(r: number, g: number, b: number, a: number);
+    constructor(r: number, g: number, b: number, a?: number);
     /**
      * Gets the red component.
      */
@@ -189,11 +260,16 @@ export declare class Color {
      */
     copy(color: Color): void;
     /**
+     * Clone the current color
+     * @returns A new `Color` instance with the same RGBA values.
+     */
+    clone(): Color;
+    /**
      * Checks if the current color is equal to another color.
      * @param color - The color to compare with.
      * @returns True if the colors are equal, otherwise false.
      */
-    equals(color: Color): boolean;
+    equal(color: Color): boolean;
     /**
      * Creates a Color instance from a hexadecimal color string.
      * @param hexString - The hexadecimal color string, e.g., '#RRGGBB' or '#RRGGBBAA'.
@@ -212,13 +288,33 @@ export declare class Color {
      * @returns A new Color instance with the result of the subtraction.
      */
     subtract(color: Color): Color;
+    static Red: Color;
+    static Green: Color;
+    static Blue: Color;
+    static Yellow: Color;
+    static Purple: Color;
+    static Orange: Color;
+    static Pink: Color;
+    static Gray: Color;
+    static Brown: Color;
+    static Cyan: Color;
+    static Magenta: Color;
+    static Lime: Color;
+    static White: Color;
+    static Black: Color;
 }
 /**
  * Represents a 2D vector with x and y components.
  */
-export declare class Vec2 {
+export declare class Vec2 implements IMathObject<Vec2> {
     x: number;
     y: number;
+    static ZERO: Vec2;
+    static ONE: Vec2;
+    static UP: Vec2;
+    static DOWN: Vec2;
+    static LEFT: Vec2;
+    static RIGHT: Vec2;
     /**
      * Creates an instance of Vec2.
      * @param x - The x coordinate (default is 0).
@@ -226,11 +322,63 @@ export declare class Vec2 {
      */
     constructor(x?: number, y?: number);
     /**
-     * Multiplies the vector by a scalar.
-     * @param f - The scalar value to multiply by.
-     * @returns The current instance with updated values.
+     * Adds another vector to this vector.
+     * @param v - The vector to add.
+     * @returns A new Vec2 instance with the result of the addition.
      */
-    scalarMult(f: number): this;
+    add(v: Vec2): Vec2;
+    /**
+     * Subtracts another vector from this vector.
+     * @param v - The vector to subtract.
+     * @returns A new Vec2 instance with the result of the subtraction.
+     */
+    subtract(v: Vec2): Vec2;
+    /**
+     * Multiplies the vector by a scalar or another vector.
+     * @param f - The scalar value or vector to multiply by.
+     * @returns A new Vec2 instance with the result of the multiplication.
+     */
+    multiply(f: number | Vec2): Vec2;
+    /**
+     * Divides the vector by a scalar or another vector.
+     * @param f - The scalar value or vector to divide by.
+     * @returns A new Vec2 instance with the result of the division.
+     */
+    divide(f: number | Vec2): Vec2;
+    /**
+     * Calculates the dot product of this vector with another vector.
+     * @param v - The other vector.
+     * @returns The dot product result.
+     */
+    dot(v: Vec2): number;
+    /**
+     * Calculates the cross product of this vector with another vector.
+     * @param v - The other vector.
+     * @returns The cross product result.
+     */
+    cross(v: Vec2): number;
+    /**
+     * Calculates the distance to another point.
+     * @param v - The other point.
+     * @returns The distance between the two points.
+     */
+    distanceTo(v: Vec2): number;
+    /**
+     * Clones the vector.
+     * @returns A new Vec2 instance with the same x and y values.
+     */
+    clone(): Vec2;
+    /**
+     * Copy the vector
+     * @param vec - The vector to copy.
+     */
+    copy(vec: Vec2): void;
+    /**
+     * Check if the vector is equal to another vector.
+     * @param vec - The vector to compare with.
+     * @returns True if the vectors are equal, otherwise false.
+     */
+    equal(vec: Vec2): boolean;
     /**
      * Rotates the vector 90 degrees counterclockwise.
      * @returns The current instance with updated values.
@@ -257,38 +405,64 @@ export declare class Vec2 {
      */
     angle(): number;
     /**
-     * Computes the angle between two vectors.
-     * @param p0 - The starting vector.
-     * @param p1 - The ending vector.
-     * @returns The angle between the two vectors in radians.
+     * Calculates the middle point between the current vector and another vector.
+     * @param other - The other vector.
+     * @returns A new vector representing the middle point between the current vector and the other vector.
      */
-    static Angle(p0: Vec2, p1: Vec2): number;
+    middle(other: Vec2): Vec2;
     /**
-     * Adds two vectors together.
-     * @param p0 - The first vector.
-     * @param p1 - The second vector.
-     * @returns A new vector representing the sum of p0 and p1.
+     * Returns a new vector with the absolute values of the components.
+     * @returns A new vector with absolute values.
      */
-    static Add(p0: Vec2, p1: Vec2): Vec2;
+    abs(): Vec2;
     /**
-     * Subtracts one vector from another.
-     * @param p1 - The vector to subtract from.
-     * @param p0 - The vector to subtract.
-     * @returns A new vector representing the difference between p1 and p0.
+     * Returns a new vector with floored components.
+     * @returns A new vector with components rounded down to the nearest integer.
      */
-    static Sub(p1: Vec2, p0: Vec2): Vec2;
+    floor(): Vec2;
     /**
-     * Finds the midpoint between two vectors.
-     * @param p0 - The first vector.
-     * @param p1 - The second vector.
-     * @returns A new vector representing the midpoint between p0 and p1.
+     * Returns a new vector with ceiled components.
+     * @returns A new vector with components rounded up to the nearest integer.
      */
-    static Middle(p0: Vec2, p1: Vec2): Vec2;
+    ceil(): Vec2;
+    /**
+     * Snaps the vector components to the nearest increment.
+     * @param increment - The increment to snap to.
+     * @returns A new vector with components snapped to the nearest increment.
+     */
+    snap(increment: number): Vec2;
+    /**
+     * Converts the vector to a string representation.
+     * @returns A string containing the vector's x and y coordinates.
+     */
+    stringify(): string;
     /**
      * Converts an array of coordinate pairs into an array of Vec2 instances.
      * @param array - An array of [x, y] coordinate pairs.
      * @returns An array of Vec2 instances.
      */
-    static FormArray(array: number[][]): Vec2[];
+    static FromArray(array: number[][]): Vec2[];
 }
-export {};
+/**
+ * Provides utility methods for mathematical conversions.
+ */
+export declare class MathUtils {
+    /**
+     * Converts degrees to radians.
+     * @param degrees - The angle in degrees.
+     * @returns The equivalent angle in radians.
+     */
+    static deg2rad(degrees: number): number;
+    /**
+     * Converts radians to degrees.
+     * @param rad - The angle in radians.
+     * @returns The equivalent angle in degrees.
+     */
+    static rad2deg(rad: number): number;
+    /**
+     * Normalizes an angle in degrees to be within the range of 0 to 360 degrees.
+     * @param degrees - The angle in degrees to be normalized.
+     * @returns The normalized angle in degrees.
+     */
+    static normalizeDegrees(degrees: number): number;
+}

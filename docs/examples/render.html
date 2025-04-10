@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid.js 渲染演示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #demo-buttons {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 15px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            background-color: #f8f8f8;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        .demo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>Rapid.js 渲染演示</h1>
+        <div id="demo-buttons"></div>
+        <canvas id="game" width="500" height="500"></canvas>
+        <div class="description">
+            <h3>可用的演示:</h3>
+            <ul>
+                <li><strong>matrixStack</strong> - 展示矩阵堆栈变换</li>
+                <li><strong>line</strong> - 展示线条渲染</li>
+                <li><strong>graphic</strong> - 展示图形渲染</li>
+                <li><strong>text</strong> - 展示文本渲染</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="./js/stats.js"></script>
+    <script src="./js/main.js"></script>
+    <script type="module" src="./js/render.js"></script>
+</body>
+</html>

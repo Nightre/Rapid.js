@@ -7,7 +7,6 @@
     "strict": true,
     "esModuleInterop": true,
     "noImplicitOverride": true,
-    "noUnusedLocals": true,
     "resolveJsonModule": true,
     "useUnknownInCatchVariables": false,
     "declaration": true,

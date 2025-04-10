@@ -1,27 +1,65 @@
-import { WebGLContext } from "./interface";
+import { IMathStruct as IMathObject, ITransform, WebGLContext } from "./interface";
 
 const MATRIX_SIZE = 6
-type ArrayType = typeof Float32Array | typeof Uint16Array
 
+/**
+ * @ignore
+ */
+export enum ArrayType {
+    Float32,
+    Uint32,
+    Uint16
+}
+
+/**
+ * @ignore
+ */
 export class DynamicArrayBuffer {
     usedElemNum: number
-    protected typedArray: Float32Array | Uint16Array
+    protected typedArray!: Float32Array | Uint32Array | Uint16Array
     private arrayType: ArrayType
     protected maxElemNum: number
     readonly bytePerElem: number
     private arraybuffer: ArrayBuffer
-    /** if typedArray is Float32Array*/
+
     private uint32?: Uint32Array
+    private float32?: Float32Array
+    private uint16?: Uint16Array
 
     constructor(arrayType: ArrayType) {
         this.usedElemNum = 0;
         this.maxElemNum = 512;
-        this.bytePerElem = arrayType.BYTES_PER_ELEMENT
+        this.bytePerElem = this.getArrayType(arrayType).BYTES_PER_ELEMENT
         this.arrayType = arrayType
         this.arraybuffer = new ArrayBuffer(this.maxElemNum * this.bytePerElem)
-        this.typedArray = new arrayType(this.arraybuffer)
-        if (arrayType == Float32Array) {
-            this.uint32 = new Uint32Array(this.arraybuffer)
+
+        this.updateTypedArray()
+    }
+    getArrayType(arrayType: ArrayType) {
+        switch (arrayType) {
+            case ArrayType.Float32:
+                return Float32Array
+            case ArrayType.Uint32:
+                return Uint32Array
+            case ArrayType.Uint16:
+                return Uint16Array
+        }
+    }
+    updateTypedArray() {
+        this.uint32 = new Uint32Array(this.arraybuffer)
+        this.float32 = new Float32Array(this.arraybuffer)
+        this.uint16 = new Uint16Array(this.arraybuffer)
+
+        switch (this.arrayType) {
+            case ArrayType.Float32:
+                this.typedArray = this.float32!
+                break
+            case ArrayType.Uint32:
+                this.typedArray = this.uint32!
+                break
+            case ArrayType.Uint16:
+                this.typedArray = this.uint16!
+                break
         }
     }
 
@@ -39,7 +77,6 @@ export class DynamicArrayBuffer {
             while (size > this.maxElemNum) {
                 this.maxElemNum <<= 1;
             }
-
             this.setMaxSize(this.maxElemNum)
         }
     }
@@ -47,21 +84,19 @@ export class DynamicArrayBuffer {
         const data = this.typedArray;
         this.maxElemNum = size
         this.arraybuffer = new ArrayBuffer(size * this.bytePerElem)
-        this.typedArray = new this.arrayType(this.arraybuffer)
-        if (this.uint32) {
-            this.uint32 = new Uint32Array(this.arraybuffer)
-        }
+
+        this.updateTypedArray()
         this.typedArray.set(data);
     }
-    /**
-     * push a new element
-     * @param value 
-     */
-    push(value: number) {
-        this.typedArray[this.usedElemNum++] = value
-    }
-    pushUint(value: number) {
+
+    pushUint32(value: number) {
         this.uint32![this.usedElemNum++] = value
+    }
+    pushFloat32(value: number) {
+        this.float32![this.usedElemNum++] = value
+    }
+    pushUint16(value: number) {
+        this.uint16![this.usedElemNum++] = value
     }
     /**
      * pop a element
@@ -90,6 +125,9 @@ export class DynamicArrayBuffer {
     }
 }
 
+/**
+ * @ignore
+ */
 export class WebglBufferArray extends DynamicArrayBuffer {
     buffer: WebGLBuffer
     gl: WebGLContext
@@ -106,8 +144,16 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         this.buffer = gl.createBuffer()!;
         this.type = type
     }
-    override push(value: number): void {
-        super.push(value)
+    override pushFloat32(value: number): void {
+        super.pushFloat32(value)
+        this.dirty = true
+    }
+    override pushUint32(value: number): void {
+        super.pushUint32(value)
+        this.dirty = true
+    }
+    override pushUint16(value: number): void {
+        super.pushUint16(value)
         this.dirty = true
     }
     /**
@@ -135,7 +181,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
 
 export class MatrixStack extends DynamicArrayBuffer {
     constructor() {
-        super(Float32Array)
+        super(ArrayType.Float32)
     }
     /**
      * push a matrix to the stack
@@ -144,12 +190,12 @@ export class MatrixStack extends DynamicArrayBuffer {
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         this.resize(6)
-        this.push(arr[offset + 0])
-        this.push(arr[offset + 1])
-        this.push(arr[offset + 2])
-        this.push(arr[offset + 3])
-        this.push(arr[offset + 4])
-        this.push(arr[offset + 5])
+        this.pushFloat32(arr[offset + 0])
+        this.pushFloat32(arr[offset + 1])
+        this.pushFloat32(arr[offset + 2])
+        this.pushFloat32(arr[offset + 3])
+        this.pushFloat32(arr[offset + 4])
+        this.pushFloat32(arr[offset + 5])
     }
     /**
      * pop a matrix from the stack
@@ -162,26 +208,26 @@ export class MatrixStack extends DynamicArrayBuffer {
      */
     pushIdentity() {
         this.resize(6)
-        this.push(1)
-        this.push(0)
-        this.push(0)
-        this.push(1)
-        this.push(0)
-        this.push(0)
+        this.pushFloat32(1)
+        this.pushFloat32(0)
+        this.pushFloat32(0)
+        this.pushFloat32(1)
+        this.pushFloat32(0)
+        this.pushFloat32(0)
     }
     /**
      * Translates the current matrix by the specified x and y values.
      * @param x - The amount to translate horizontally.
      * @param y - The amount to translate vertically.
      */
-    translate(x: number | Vec2, y: number): void {
-        if (x instanceof Vec2) {
+    translate(x: number | Vec2, y?: number): void {
+        if (typeof x !== "number") {
             return this.translate(x.x, x.y)
         }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
-        arr[offset + 4] = arr[offset + 0] * x + arr[offset + 2] * y + arr[offset + 4];
-        arr[offset + 5] = arr[offset + 1] * x + arr[offset + 3] * y + arr[offset + 5];
+        arr[offset + 4] = arr[offset + 0] * x + arr[offset + 2] * y! + arr[offset + 4];
+        arr[offset + 5] = arr[offset + 1] * x + arr[offset + 3] * y! + arr[offset + 5];
     }
     /**
      * Rotates the current matrix by the specified angle.
@@ -209,7 +255,7 @@ export class MatrixStack extends DynamicArrayBuffer {
      * @param y - The amount to scale the matrix vertically. If not specified, x is used for both horizontal and vertical scaling.
      */
     scale(x: number | Vec2, y?: number): void {
-        if (x instanceof Vec2) {
+        if (typeof x !== "number") {
             return this.scale(x.x, x.y)
         }
         if (!y) y = x
@@ -224,15 +270,15 @@ export class MatrixStack extends DynamicArrayBuffer {
      * Transforms a point by applying the current matrix stack.
      * @returns The transformed point as an array `[newX, newY]`.
      */
-    apply(x: number | Vec2, y: number): Vec2 | number[] {
-        if (x instanceof Vec2) {
+    apply(x: number | Vec2, y?: number): Vec2 | number[] {
+        if (typeof x !== "number") {
             return new Vec2(...this.apply(x.x, x.y) as number[])
         }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
         return [
-            arr[offset + 0] * x + arr[offset + 2] * y + arr[offset + 4],
-            arr[offset + 1] * x + arr[offset + 3] * y + arr[offset + 5]
+            arr[offset + 0] * x + arr[offset + 2] * y! + arr[offset + 4],
+            arr[offset + 1] * x + arr[offset + 3] * y! + arr[offset + 5]
         ];
     }
     /**
@@ -289,11 +335,198 @@ export class MatrixStack extends DynamicArrayBuffer {
         arr[offset + 4] = array[4]
         arr[offset + 5] = array[5]
     }
+
+    /**
+     * Get the global position in world space
+     * @returns The current matrix position in world space
+     */
+    getGlobalPosition(): Vec2 {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        return new Vec2(arr[offset + 4], arr[offset + 5]);
+    }
+
+    /**
+     * Set the global position in world space
+     * @param x - x coordinate or Vec2 object
+     * @param y - y coordinate (ignored if first parameter is Vec2)
+     */
+    setGlobalPosition(x: number | Vec2, y?: number): void {
+        if (typeof x !== "number") {
+            this.setGlobalPosition(x.x, x.y);
+            return;
+        }
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        arr[offset + 4] = x;
+        arr[offset + 5] = y!;
+    }
+
+    /**
+     * Get the global rotation angle
+     * @returns The current matrix rotation angle in radians
+     */
+    getGlobalRotation(): number {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        return Math.atan2(arr[offset + 1], arr[offset + 0]);
+    }
+
+    /**
+     * Set the global rotation angle
+     * @param angle - rotation angle in radians
+     */
+    setGlobalRotation(angle: number): void {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        const scale = this.getGlobalScale();
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+
+        arr[offset + 0] = cos * scale.x;
+        arr[offset + 1] = sin * scale.x;
+        arr[offset + 2] = -sin * scale.y;
+        arr[offset + 3] = cos * scale.y;
+    }
+
+    /**
+     * Get the global scale
+     * @returns The current matrix scale values
+     */
+    getGlobalScale(): Vec2 {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        const scaleX = Math.sqrt(arr[offset + 0] * arr[offset + 0] + arr[offset + 1] * arr[offset + 1]);
+        const scaleY = Math.sqrt(arr[offset + 2] * arr[offset + 2] + arr[offset + 3] * arr[offset + 3]);
+        return new Vec2(scaleX, scaleY);
+    }
+
+    /**
+     * Set the global scale
+     * @param x - x scale or Vec2 object
+     * @param y - y scale (ignored if first parameter is Vec2)
+     */
+    setGlobalScale(x: number | Vec2, y?: number): void {
+        if (typeof x !== "number") {
+            this.setGlobalScale(x.x, x.y);
+            return;
+        }
+        const rotation = this.getGlobalRotation();
+        const cos = Math.cos(rotation);
+        const sin = Math.sin(rotation);
+
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        arr[offset + 0] = cos * x;
+        arr[offset + 1] = sin * x;
+        arr[offset + 2] = -sin * y!;
+        arr[offset + 3] = cos * y!;
+    }
+
+    globalToLocal(global: Vec2): Vec2 {
+        const inv = this.getInverse();
+        return new Vec2(
+            inv[0] * global.x + inv[2] * global.y + inv[4],
+            inv[1] * global.x + inv[3] * global.y + inv[5]
+        );
+    }
+
+    localToGlobal(local: Vec2): Vec2 {
+        return this.apply(local) as Vec2;
+    }
+
+    /**
+     * Convert the current matrix to a CSS transform string
+     * @returns CSS transform string representation of the matrix
+     */
+    toCSSTransform(): string {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        return `matrix(${arr[offset + 0]}, ${arr[offset + 1]}, ${arr[offset + 2]}, ${arr[offset + 3]}, ${arr[offset + 4]}, ${arr[offset + 5]})`;
+    }
+
+    /**
+     * Reset the current matrix to identity matrix
+     */
+    identity(): void {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+        arr[offset + 0] = 1;
+        arr[offset + 1] = 0;
+        arr[offset + 2] = 0;
+        arr[offset + 3] = 1;
+        arr[offset + 4] = 0;
+        arr[offset + 5] = 0;
+    }
+    /**
+     * Apply the transform to the current matrix
+     * @param transform - The transform to apply
+     * @returns offset position
+     */
+    applyTransform(transform: ITransform, width: number = 0, height: number = 0) {
+        if (transform.saveTransform ?? true) {
+            this.pushMat()
+        }
+        transform.afterSave && transform.afterSave()
+
+        if (transform.x || transform.y) {
+            this.translate(transform.x || 0, transform.y || 0)
+        }
+
+        transform.position && this.translate(transform.position)
+        transform.rotation && this.rotate(transform.rotation)
+        transform.scale && this.scale(transform.scale)
+
+        if (transform.flipX) {
+            this.scale(-1, 1)
+        }
+        if (transform.flipY) {
+            this.scale(1, -1)
+        }
+
+        let offsetX = 0
+        let offsetY = 0
+
+        if (transform.offsetX || transform.offsetY) {
+            offsetX = transform.offsetX || 0
+            offsetY = transform.offsetY || 0
+        }
+        if (transform.offset) {
+            offsetX += transform.offset.x
+            offsetY += transform.offset.y
+        }
+
+        if (transform.origin) {
+            if (typeof transform.origin == "number") {
+                offsetX -= transform.origin * width
+                offsetY -= transform.origin * height
+            } else {
+                offsetX -= transform.origin.x * width
+                offsetY -= transform.origin.y * height
+            }
+        }
+
+        return {
+            offsetX,
+            offsetY
+        }
+    }
+    applyTransformAfter(transform: ITransform) {
+        if (transform.beforRestore) {
+            transform.beforRestore()
+        }
+        if (transform.restoreTransform ?? true) {
+            this.popMat()
+        }
+    }
 }
 
+/**
+ * @ignore
+ */
 export class WebglElementBufferArray extends WebglBufferArray {
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number) {
-        super(gl, Uint16Array, gl.ELEMENT_ARRAY_BUFFER)
+        super(gl, ArrayType.Uint16, gl.ELEMENT_ARRAY_BUFFER)
         this.setMaxSize(elemVertPerObj * maxBatch)
         for (let index = 0; index < maxBatch; index++) {
             this.addObject(index * vertexPerObject)
@@ -307,7 +540,7 @@ export class WebglElementBufferArray extends WebglBufferArray {
 /**
  * Represents a color with red, green, blue, and alpha (transparency) components.
  */
-export class Color {
+export class Color implements IMathObject<Color> {
     private _r: number;
     private _g: number;
     private _b: number;
@@ -321,7 +554,7 @@ export class Color {
      * @param b - The blue component (0-255).
      * @param a - The alpha component (0-255).
      */
-    constructor(r: number, g: number, b: number, a: number) {
+    constructor(r: number, g: number, b: number, a: number = 255) {
         this._r = r;
         this._g = g;
         this._b = b;
@@ -425,11 +658,19 @@ export class Color {
     }
 
     /**
+     * Clone the current color
+     * @returns A new `Color` instance with the same RGBA values.
+     */
+    clone() {
+        return new Color(this._r, this._g, this._b, this._a)
+    }
+
+    /**
      * Checks if the current color is equal to another color.
      * @param color - The color to compare with.
      * @returns True if the colors are equal, otherwise false.
      */
-    equals(color: Color) {
+    equal(color: Color) {
         return color.r === this.r &&
             color.g === this.g &&
             color.b === this.b &&
@@ -482,14 +723,36 @@ export class Color {
             Math.max(this.a - color.a, 0)
         );
     }
+
+    static Red = new Color(255, 0, 0, 255)
+    static Green = new Color(0, 255, 0, 255)
+    static Blue = new Color(0, 0, 255, 255)
+    static Yellow = new Color(255, 255, 0, 255)
+    static Purple = new Color(128, 0, 128, 255)
+    static Orange = new Color(255, 165, 0, 255)
+    static Pink = new Color(255, 192, 203, 255)
+    static Gray = new Color(128, 128, 128, 255)
+    static Brown = new Color(139, 69, 19, 255)
+    static Cyan = new Color(0, 255, 255, 255)
+    static Magenta = new Color(255, 0, 255, 255)
+    static Lime = new Color(192, 255, 0, 255)
+    static White = new Color(255, 255, 255, 255)
+    static Black = new Color(0, 0, 0, 255)
 }
 
 /**
  * Represents a 2D vector with x and y components.
  */
-export class Vec2 {
+export class Vec2 implements IMathObject<Vec2> {
     x: number;
     y: number;
+
+    static ZERO = new Vec2(0, 0);
+    static ONE = new Vec2(1, 1);
+    static UP = new Vec2(0, 1);
+    static DOWN = new Vec2(0, -1);
+    static LEFT = new Vec2(-1, 0);
+    static RIGHT = new Vec2(1, 0);
 
     /**
      * Creates an instance of Vec2.
@@ -502,16 +765,99 @@ export class Vec2 {
     }
 
     /**
-     * Multiplies the vector by a scalar.
-     * @param f - The scalar value to multiply by.
-     * @returns The current instance with updated values.
+     * Adds another vector to this vector.
+     * @param v - The vector to add.
+     * @returns A new Vec2 instance with the result of the addition.
      */
-    scalarMult(f: number): this {
-        this.x *= f;
-        this.y *= f;
-        return this;
+    add(v: Vec2): Vec2 {
+        return new Vec2(this.x + v.x, this.y + v.y);
     }
 
+    /**
+     * Subtracts another vector from this vector.
+     * @param v - The vector to subtract.
+     * @returns A new Vec2 instance with the result of the subtraction.
+     */
+    subtract(v: Vec2): Vec2 {
+        return new Vec2(this.x - v.x, this.y - v.y);
+    }
+
+    /**
+     * Multiplies the vector by a scalar or another vector.
+     * @param f - The scalar value or vector to multiply by.
+     * @returns A new Vec2 instance with the result of the multiplication.
+     */
+    multiply(f: number | Vec2): Vec2 {
+        if (f instanceof Vec2) {
+            return new Vec2(this.x * f.x, this.y * f.y);
+        }
+        return new Vec2(this.x * f, this.y * f);
+    }
+
+    /**
+     * Divides the vector by a scalar or another vector.
+     * @param f - The scalar value or vector to divide by.
+     * @returns A new Vec2 instance with the result of the division.
+     */
+    divide(f: number | Vec2): Vec2 {
+        if (f instanceof Vec2) {
+            return new Vec2(this.x / f.x, this.y / f.y);
+        }
+        return new Vec2(this.x / f, this.y / f);
+    }
+
+    /**
+     * Calculates the dot product of this vector with another vector.
+     * @param v - The other vector.
+     * @returns The dot product result.
+     */
+    dot(v: Vec2): number {
+        return this.x * v.x + this.y * v.y;
+    }
+
+    /**
+     * Calculates the cross product of this vector with another vector.
+     * @param v - The other vector.
+     * @returns The cross product result.
+     */
+    cross(v: Vec2): number {
+        return this.x * v.y - this.y * v.x;
+    }
+
+    /**
+     * Calculates the distance to another point.
+     * @param v - The other point.
+     * @returns The distance between the two points.
+     */
+    distanceTo(v: Vec2): number {
+        const dx = this.x - v.x;
+        const dy = this.y - v.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Clones the vector.
+     * @returns A new Vec2 instance with the same x and y values.
+     */
+    clone(): Vec2 {
+        return new Vec2(this.x, this.y);
+    }
+    /**
+     * Copy the vector
+     * @param vec - The vector to copy.
+     */
+    copy(vec: Vec2) {
+        this.x = vec.x
+        this.y = vec.y
+    }
+    /**
+     * Check if the vector is equal to another vector.
+     * @param vec - The vector to compare with.
+     * @returns True if the vectors are equal, otherwise false.
+     */
+    equal(vec: Vec2) {
+        return vec.x == this.x && vec.y == this.y
+    }
     /**
      * Rotates the vector 90 degrees counterclockwise.
      * @returns The current instance with updated values.
@@ -547,8 +893,8 @@ export class Vec2 {
      */
     normalize(): this {
         const mod = this.length();
-        this.x /= mod;
-        this.y /= mod;
+        this.x = this.x / mod || 0;
+        this.y = this.y / mod || 0;
         return this;
     }
 
@@ -557,47 +903,59 @@ export class Vec2 {
      * @returns The angle of the vector.
      */
     angle(): number {
-        return this.y / this.x;
+        return Math.atan2(this.y, this.x);
+    }
+    /**
+     * Calculates the middle point between the current vector and another vector.
+     * @param other - The other vector.
+     * @returns A new vector representing the middle point between the current vector and the other vector.
+     */
+    middle(other: Vec2): Vec2 {
+        return new Vec2((this.x + other.x) / 2, (this.y + other.y) / 2);
     }
 
     /**
-     * Computes the angle between two vectors.
-     * @param p0 - The starting vector.
-     * @param p1 - The ending vector.
-     * @returns The angle between the two vectors in radians.
+     * Returns a new vector with the absolute values of the components.
+     * @returns A new vector with absolute values.
      */
-    static Angle(p0: Vec2, p1: Vec2): number {
-        return Math.atan2(p1.y - p0.y, p1.x - p0.x);
+    abs(): Vec2 {
+        return new Vec2(Math.abs(this.x), Math.abs(this.y));
     }
 
     /**
-     * Adds two vectors together.
-     * @param p0 - The first vector.
-     * @param p1 - The second vector.
-     * @returns A new vector representing the sum of p0 and p1.
+     * Returns a new vector with floored components.
+     * @returns A new vector with components rounded down to the nearest integer.
      */
-    static Add(p0: Vec2, p1: Vec2): Vec2 {
-        return new Vec2(p0.x + p1.x, p0.y + p1.y);
+    floor(): Vec2 {
+        return new Vec2(Math.floor(this.x), Math.floor(this.y));
     }
 
     /**
-     * Subtracts one vector from another.
-     * @param p1 - The vector to subtract from.
-     * @param p0 - The vector to subtract.
-     * @returns A new vector representing the difference between p1 and p0.
+     * Returns a new vector with ceiled components.
+     * @returns A new vector with components rounded up to the nearest integer.
      */
-    static Sub(p1: Vec2, p0: Vec2): Vec2 {
-        return new Vec2(p1.x - p0.x, p1.y - p0.y);
+    ceil(): Vec2 {
+        return new Vec2(Math.ceil(this.x), Math.ceil(this.y));
     }
 
     /**
-     * Finds the midpoint between two vectors.
-     * @param p0 - The first vector.
-     * @param p1 - The second vector.
-     * @returns A new vector representing the midpoint between p0 and p1.
+     * Snaps the vector components to the nearest increment.
+     * @param increment - The increment to snap to.
+     * @returns A new vector with components snapped to the nearest increment.
      */
-    static Middle(p0: Vec2, p1: Vec2): Vec2 {
-        return Vec2.Add(p0, p1).scalarMult(0.5);
+    snap(increment: number): Vec2 {
+        return new Vec2(
+            Math.round(this.x / increment) * increment,
+            Math.round(this.y / increment) * increment
+        );
+    }
+
+    /**
+     * Converts the vector to a string representation.
+     * @returns A string containing the vector's x and y coordinates.
+     */
+    stringify(): string {
+        return `Vec2(${this.x}, ${this.y})`;
     }
 
     /**
@@ -605,7 +963,39 @@ export class Vec2 {
      * @param array - An array of [x, y] coordinate pairs.
      * @returns An array of Vec2 instances.
      */
-    static FormArray(array: number[][]): Vec2[] {
+    static FromArray(array: number[][]): Vec2[] {
         return array.map(pair => new Vec2(pair[0], pair[1]));
+    }
+}
+
+/**
+ * Provides utility methods for mathematical conversions.
+ */
+export class MathUtils {
+    /**
+     * Converts degrees to radians.
+     * @param degrees - The angle in degrees.
+     * @returns The equivalent angle in radians.
+     */
+    static deg2rad(degrees: number) {
+        return degrees * (Math.PI / 180);
+    }
+    /**
+     * Converts radians to degrees.
+     * @param rad - The angle in radians.
+     * @returns The equivalent angle in degrees.
+     */
+    static rad2deg(rad: number) {
+        return rad / (Math.PI / 180);
+    }
+
+
+    /**
+     * Normalizes an angle in degrees to be within the range of 0 to 360 degrees.
+     * @param degrees - The angle in degrees to be normalized.
+     * @returns The normalized angle in degrees.
+     */
+    static normalizeDegrees(degrees: number) {
+        return ((degrees % 360) + 360) % 360;
     }
 }

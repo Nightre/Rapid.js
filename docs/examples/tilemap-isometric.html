@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TileMap 演示</title>
+</head>
+<body>
+    <canvas id="game" width="500" height="500"></canvas>
+    <div class="instructions">
+        <p>Click on the tilemap to place tiles.</p>
+        <label for="x">X:</label>
+        <input type="range" name="x" id="x" min="0" max="500" value="250" step="8">
+        <label for="y">Y:</label>
+        <input type="range" name="y" id="y" min="0" max="500" value="250" step="8">
+        <label for="scale">Scale:</label>
+        <input type="range" name="scale" id="scale" min="0.5" max="2.0" value="1" step="0.1">
+    </div>
+    <img src="./assets/iso.png" alt="">
+
+    <script src="./js/stats.js"></script>
+    <script type="module" src="./js/tilemap-isometric.js"></script>
+    <script src="./js/main.js"></script>
+    <div id="global"></div>
+</body>
+</html> 

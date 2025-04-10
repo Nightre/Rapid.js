@@ -11,6 +11,7 @@ varying vec2 vRegion;
 
 void main(void) {
     gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
+    
     vColor = aColor;
     vRegion = aRegion;
 }

@@ -1,0 +1,137 @@
+:root {
+    --primary-color: #4a6bfd;
+    --primary-hover: #3251d5;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --code-bg: #2d2d2d;
+    --text-color: #333333;
+    --border-color: #e5e7eb;
+    --border-radius: 6px;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.2s ease;
+}
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    display: flex;
+    padding: 1rem;
+    gap: 1rem;
+    flex: 1;
+}
+
+.small-container {
+    width: 60%;
+    min-width: 35rem;
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    padding: 2rem 0rem;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+
+.nav {
+    width: 100%;
+    height: 4rem;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 2rem;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+}
+body {
+    padding-top: 4rem;
+}
+.nav a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.nav a:hover {
+    color: var(--primary-color);
+}
+
+.nav a.active {
+    color: var(--primary-color);
+}
+
+.logo-title {
+    align-items: center;
+    font-size: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+
+.sidebar {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.list-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.list-btn {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding: 0.7rem 1rem;
+    border-radius: var(--border-radius);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: var(--transition);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.list-btn:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.list-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.list-section {
+    margin-top: 1rem;
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+}
+
+footer {
+    width: 100%;
+    display: flex;
+    padding: 2rem 0;
+    justify-content: center;
+    background-color: #333333;
+    color: white;
+}

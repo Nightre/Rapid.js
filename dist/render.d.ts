@@ -1,7 +1,8 @@
-import { IGraphicOptions, IRapiadOptions, IRenderLineOptions, IRenderSpriteOptions, MaskType, WebGLContext } from "./interface";
+import { ICircleOptions, IGraphicOptions, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, IRenderSpriteOptions, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { Texture, TextureCache } from "./texture";
+import { TileMapRender, TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
 /**
  * The `Rapid` class provides a WebGL-based rendering engine.
@@ -15,6 +16,7 @@ declare class Rapid {
     textures: TextureCache;
     width: number;
     height: number;
+    tileMap: TileMapRender;
     backgroundColor: Color;
     readonly devicePixelRatio: number;
     readonly maxTextureUnits: number;
@@ -22,11 +24,19 @@ declare class Rapid {
     private currentRegion?;
     private currentRegionName?;
     private regions;
+    private currentMaskType;
+    private currentTransformOptions?;
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
      */
-    constructor(options: IRapiadOptions);
+    constructor(options: IRapidOptions);
+    /**
+     * Render a tile map layer.
+     * @param data - The map data to render.
+     * @param options - The options for rendering the tile map layer.
+     */
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRender | TileSet): void;
     /**
      * Initializes WebGL context settings.
      * @param gl - The WebGL context.
@@ -47,6 +57,7 @@ declare class Rapid {
      * Sets the current render region by name and optionally a custom shader.
      * @param regionName - The name of the region to set as current.
      * @param customShader - An optional custom shader to use with the region.
+     * @param hasUnifrom - have costum unifrom
      */
     setRegion(regionName: string, customShader?: GLShader): void;
     /**
@@ -58,6 +69,11 @@ declare class Rapid {
      */
     restore(): void;
     /**
+     * Executes a callback function within a saved and restored matrix state scope.
+     * @param cb - The callback function to execute within the saved and restored matrix state scope.
+     */
+    withTransform(cb: () => void): void;
+    /**
      * Starts the rendering process, resetting the matrix stack and clearing the current region.
      * @param clear - Whether to clear the matrix stack. Defaults to true.
      */
@@ -67,57 +83,74 @@ declare class Rapid {
      */
     endRender(): void;
     /**
-     * Renders a sprite with the specified texture, offset, and options.
-     * @param texture - The texture to render.
-     * @param offsetX - The X offset for the sprite. Defaults to 0.
-     * @param offsetY - The Y offset for the sprite. Defaults to 0.
-     * @param options - Rendering options including color and custom shader.
+     * Render
+     * @param cb - The function to render.
      */
-    renderSprite(texture: Texture, offsetX?: number, offsetY?: number, options?: IRenderSpriteOptions | Color): void;
+    render(cb: () => void): void;
+    /**
+     * Renders a sprite with the specified options.
+     *
+     * @param options - The rendering options for the sprite, including texture, position, color, and shader.
+     */
+    renderSprite(options: IRenderSpriteOptions): void;
+    /**
+     * Renders a texture directly without additional options.
+     * This is a convenience method that calls renderSprite with just the texture.
+     *
+     * @param texture - The texture to render at the current transformation position.
+     */
+    renderTexture(texture: Texture): void;
     /**
      * Renders a line with the specified options.
      *
-     * @param offsetX - The X offset to apply when rendering the line. Defaults to 0.
-     * @param offsetY - The Y offset to apply when rendering the line. Defaults to 0.
-     * @param options - The options for rendering the line, including points and color.
+     * @param options - The options for rendering the line, including points, color, width, and join/cap types.
      */
-    renderLine(offsetX: number | undefined, offsetY: number | undefined, options: IRenderLineOptions): void;
+    renderLine(options: IRenderLineOptions): void;
     /**
-     * Renders graphics based on the provided options or array of Vec2 points.
+     * Renders graphics based on the provided options.
      *
-     * @param offsetX - The X offset to apply when rendering the graphics. Defaults to 0.
-     * @param offsetY - The Y offset to apply when rendering the graphics. Defaults to 0.
-     * @param options - Either an object containing graphic options or an array of Vec2 points.
+     * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
+     */
+    renderGraphic(options: IGraphicOptions): void;
+    /**
+     * Starts the graphic drawing process.
      *
-     * @remarks
-     * If `options` is an array of `Vec2`, it will be converted to an object with `points` property.
-     * If `options` is an object, it should contain `points` (array of `Vec2`) and optionally `color` and `drawType`.
+     * @param options - The options for the graphic drawing, including shader, texture, and draw type.
      */
-    renderGraphic(offsetX: number | undefined, offsetY: number | undefined, options: IGraphicOptions | Vec2[]): void;
+    startGraphicDraw(options: IGraphicOptions): void;
     /**
-     * Renders a rectangle
-     * @param offsetX - The X coordinate of the top-left corner of the rectangle
-     * @param offsetY - The Y coordinate of the top-left corner of the rectangle
-     * @param width - The width of the rectangle
-     * @param height - The height of the rectangle
-     * @param color - The color of the rectangle
+     * Adds a vertex to the current graphic being drawn.
+     *
+     * @param offsetX - The X coordinate of the vertex.
+     * @param offsetY - The Y coordinate of the vertex.
+     * @param uv - The texture UV coordinates for the vertex.
+     * @param color - The color of the vertex. Defaults to the renderer's default color.
      */
-    renderRect(offsetX: number, offsetY: number, width: number, height: number, color?: Color): void;
+    addGraphicVertex(offsetX: number, offsetY: number, uv: Vec2, color?: Color): void;
     /**
-     * Renders a circle
-     * @param offsetX - The X coordinate of the circle's center
-     * @param offsetY - The Y coordinate of the circle's center
-     * @param radius - The radius of the circle
-     * @param color - The color of the circle
-     * @param segments - The number of segments to use when rendering the circle, default is 32
+     * Completes the graphic drawing process and renders the result.
      */
-    renderCircle(offsetX: number, offsetY: number, radius: number, color?: Color, segments?: number): void;
+    endGraphicDraw(): void;
+    private startDraw;
+    private afterDraw;
+    /**
+     * Renders a rectangle with the specified options.
+     *
+     * @param options - The options for rendering the rectangle, including width, height, position, and color.
+     */
+    renderRect(options: IRectOptions): void;
+    /**
+     * Renders a circle with the specified options.
+     *
+     * @param options - The options for rendering the circle, including radius, position, color, and segment count.
+     */
+    renderCircle(options: ICircleOptions): void;
     /**
      * Resizes the canvas and updates the viewport and projection matrix.
      * @param width - The new width of the canvas.
      * @param height - The new height of the canvas.
      */
-    resize(width: number, height: number): void;
+    resize(logicalWidth: number, logicalHeight: number): void;
     /**
      * Clears the canvas with the background color.
      */
@@ -132,31 +165,40 @@ declare class Rapid {
      */
     private createOrthMatrix;
     /**
-     * Transforms a point by applying the current matrix stack.
-     * @param x - The X coordinate of the point.
-     * @param y - The Y coordinate of the point.
-     * @returns The transformed point as an array `[newX, newY]`.
+     * Draw a mask. Automatically calls startDrawMask.
+     * @param type - The type of mask to draw.
+     * @param cb - The callback function to execute.
      */
-    transformPoint(x: number, y: number): number[] | Vec2;
+    drawMask(type: MaskType | undefined, cb: () => void): void;
     /**
-     * Starts drawing a mask using the stencil buffer.
-     * This method sets up the WebGL context to begin defining a mask area.
+     * Start drawing a mask using the stencil buffer.
+     * This method configures the WebGL context to begin defining a mask area.
      */
-    startDrawMask(): void;
+    startDrawMask(type?: MaskType): void;
     /**
-     * Ends the mask drawing process.
+     * End the mask drawing process.
      * This method configures the WebGL context to use the defined mask for subsequent rendering.
      */
-    endDrawMask(type?: MaskType): void;
+    endDrawMask(): void;
     /**
-     * Sets the mask type for rendering
-     * @param type - The type of mask to apply
+     * Set the mask type for rendering
+     * @param type - The mask type to apply
+     * @param start - Whether this is the start of mask drawing
      */
-    setMaskType(type: MaskType): void;
+    private setMaskType;
     /**
-     * Clears the current mask by clearing the stencil buffer.
+     * Clear the current mask by clearing the stencil buffer.
      * This effectively removes any previously defined mask.
      */
     clearMask(): void;
+    /**
+     * Creates a custom shader.
+     * @param vs - Vertex shader code.
+     * @param fs - Fragment shader code.
+     * @param type - Shader type.
+     * @param textureUnit - The number of textures used by the shader
+     * @returns The created shader object.
+     */
+    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit?: number): GLShader;
 }
 export default Rapid;

@@ -6,9 +6,11 @@ uniform sampler2D uTexture;
 uniform int uUseTexture;
 
 void main(void) {
+    vec4 color;
     if(uUseTexture > 0){
-        gl_FragColor = texture2D(uTexture, vRegion) * vColor;
+        color = texture2D(uTexture, vRegion) * vColor;
     }else{
-        gl_FragColor = vColor;
+        color = vColor;
     }
+    gl_FragColor = color;
 }
