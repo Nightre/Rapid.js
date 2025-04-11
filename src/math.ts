@@ -469,40 +469,32 @@ export class MatrixStack extends DynamicArrayBuffer {
         }
         transform.afterSave && transform.afterSave()
 
-        if (transform.x || transform.y) {
-            this.translate(transform.x || 0, transform.y || 0)
+        const x = transform.x || 0
+        const y = transform.y || 0
+        if (x || y) {
+            this.translate(x, y)
         }
 
         transform.position && this.translate(transform.position)
         transform.rotation && this.rotate(transform.rotation)
         transform.scale && this.scale(transform.scale)
 
-        // if (transform.flipX) {
-        //     this.scale(-1, 1)
-        // }
-        // if (transform.flipY) {
-        //     this.scale(1, -1)
-        // }
+        let offsetX = transform.offsetX || 0
+        let offsetY = transform.offsetY|| 0
 
-        let offsetX = 0
-        let offsetY = 0
-
-        if (transform.offsetX || transform.offsetY) {
-            offsetX = transform.offsetX || 0
-            offsetY = transform.offsetY || 0
-        }
         if (transform.offset) {
             offsetX += transform.offset.x
             offsetY += transform.offset.y
         }
 
-        if (transform.origin) {
-            if (typeof transform.origin == "number") {
-                offsetX -= transform.origin * width
-                offsetY -= transform.origin * height
+        const origin = transform.origin
+        if (origin) {
+            if (typeof origin == "number") {
+                offsetX -= origin * width
+                offsetY -= origin * height
             } else {
-                offsetX -= transform.origin.x * width
-                offsetY -= transform.origin.y * height
+                offsetX -= origin.x * width
+                offsetY -= origin.y * height
             }
         }
 

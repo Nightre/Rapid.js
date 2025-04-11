@@ -35,6 +35,8 @@ export default {
                 "**/*.vert"
             ]
         }),
-        terser()
+        terser({
+            ecma: 2020,
+        })
     ],
 };

@@ -68,36 +68,39 @@ class SpriteRegion extends RenderRegion {
         flipX?: boolean,
         flipY?: boolean,
     ) {
-        let rendered = false
-        if (this.batchSprite >= MAX_BATCH) {
-            !rendered && this.render()
-            rendered = true
-        }
-        if (uniforms && this.setCostumUnifrom(uniforms)) {
-            !rendered && this.render()
-            this.currentShader!.setUniforms(uniforms, 0)
-            rendered = true
-        }
-        if (this.rapid.projectionDirty) {
-            !rendered && this.render()
-            this.updateProjection()
-            rendered = true
+        // let rendered = false
+        // if (this.batchSprite >= MAX_BATCH) {
+        //     !rendered && this.render()
+        //     rendered = true
+        // }
+        // if (uniforms && this.setCostumUnifrom(uniforms)) {
+        //     !rendered && this.render()
+        //     this.currentShader!.setUniforms(uniforms, 0)
+        //     rendered = true
+        // }
+        // if (this.rapid.projectionDirty) {
+        //     !rendered && this.render()
+        //     this.updateProjection()
+        //     rendered = true
+        // }
+
+        if (this.batchSprite >= MAX_BATCH || this.rapid.projectionDirty ||
+            (uniforms && this.setCostumUnifrom(uniforms))
+        ) {
+
+            this.render();
+
+            if (uniforms) this.currentShader!.setUniforms(uniforms, 0)
+            if (this.rapid.projectionDirty) this.updateProjection()
         }
 
-        if (flipX) {
-            const temp = u0;
-            u0 = u1;
-            u1 = temp;
-        }
-        if (flipY) {
-            const temp = v0;
-            v0 = v1;
-            v1 = temp;
-        }
+        //if (flipX) [u0, u1] = [u1, u0]
+        //if (flipY) [v0, v1] = [v1, v0]
+
         this.batchSprite++
         this.webglArrayBuffer.resize(FLOAT32_PER_SPRITE)
 
-        const textureUnit = this.useTexture(texture)
+        const texUnit = this.useTexture(texture)
 
         /**
          * 0-----1
@@ -105,13 +108,29 @@ class SpriteRegion extends RenderRegion {
          * |   \ |
          * 3-----2
          */
-        const posX = offsetX + width
-        const posY = offsetY + height
 
-        this.addVertex(offsetX, offsetY, u0, v0, textureUnit, color) // 0
-        this.addVertex(posX, offsetY, u1, v0, textureUnit, color) // 1
-        this.addVertex(posX, posY, u1, v1, textureUnit, color) // 2
-        this.addVertex(offsetX, posY, u0, v1, textureUnit, color) // 3
+        const uA = flipX ? u1 : u0
+        const uB = flipX ? u0 : u1
+        const vA = flipY ? v1 : v0
+        const vB = flipY ? v0 : v1
+
+        const x1 = offsetX
+        const x2 = offsetX + width
+        const y1 = offsetY
+        const y2 = offsetY + height
+    
+        this.addVertex(x1, y1, uA, vA, texUnit, color)
+        this.addVertex(x2, y1, uB, vA, texUnit, color)
+        this.addVertex(x2, y2, uB, vB, texUnit, color)
+        this.addVertex(x1, y2, uA, vB, texUnit, color)
+
+        // const posX = offsetX + width
+        // const posY = offsetY + height
+
+        // this.addVertex(offsetX, offsetY, u0, v0, textureUnit, color) // 0
+        // this.addVertex(posX, offsetY, u1, v0, textureUnit, color) // 1
+        // this.addVertex(posX, posY, u1, v1, textureUnit, color) // 2
+        // this.addVertex(offsetX, posY, u0, v1, textureUnit, color) // 3
     }
     protected override executeRender(): void {
         super.executeRender()

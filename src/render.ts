@@ -76,8 +76,6 @@ class Rapid {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.enable(gl.STENCIL_TEST);
         gl.enable(gl.SCISSOR_TEST);
-        //@ts-ignore
-        window.rapid = this
     }
     /**
      * @ignore
@@ -364,9 +362,9 @@ class Rapid {
         this.width = logicalWidth
         this.height = logicalHeight
     }
-    private resizeWebglSize(width: number, height: number) {
-        const physicalWidth = width * this.devicePixelRatio
-        const physicalHeight = height * this.devicePixelRatio
+    private resizeWebglSize(width: number, height: number, devicePixelRatio?: number) {
+        const physicalWidth = width * (devicePixelRatio || this.devicePixelRatio)
+        const physicalHeight = height * (devicePixelRatio || this.devicePixelRatio)
         this.gl.viewport(0, 0, physicalWidth, physicalHeight)
         this.updateProjection(0, width, height, 0)
         this.gl.scissor(0, 0, physicalWidth, physicalHeight)
@@ -494,11 +492,11 @@ class Rapid {
      */
     startFBO(fbo: FrameBufferObject) {
         this.quitCurrentRegion()
-        
+
         fbo.bind()
         this.clearTextureUnit()
 
-        this.resizeWebglSize(fbo.width, fbo.height)
+        this.resizeWebglSize(fbo.width, fbo.height, 1)
         this.updateProjection(0, fbo.width, 0, fbo.height)
         this.save()
         this.matrixStack.identity()
