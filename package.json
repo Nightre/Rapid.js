@@ -15,7 +15,7 @@
   },
   "scripts": {
     "dev:build": "rollup -c rollup.config.dev.js -w",
-    "dev:serve": "node dev-server.js",
+    "dev:serve": "node ./scripts/dev-server.js",
     "dev": "concurrently \"npm run dev:build\" \"npm run dev:serve\"",
     "build": "rollup -c rollup.config.prod.js && tsc",
     "docs": "typedoc"
