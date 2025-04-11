@@ -1,5 +1,4 @@
 import typescript from 'rollup-plugin-typescript2';
-import server from 'rollup-plugin-server'
 import { string } from "rollup-plugin-string";
 
 export default {
@@ -25,10 +24,5 @@ export default {
                 "**/*.vert"
             ]
         }),
-        server({
-            open: true,
-            contentBase: '.',
-            port: 8080
-        })
     ],
 };

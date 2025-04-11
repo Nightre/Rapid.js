@@ -1,5 +1,5 @@
 import { Color, Vec2 } from "./math";
-import { Texture } from "./texture";
+import { FrameBufferObject, Texture } from "./texture";
 import { TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
 import { Uniform } from "./webgl/uniform";
@@ -38,8 +38,7 @@ export interface ITransform {
     position?: Vec2,
     scale?: Vec2 | number,
     rotation?: number,
-    flipX?: boolean,
-    flipY?: boolean,
+
     offset?: Vec2,
 
     x?: number,
@@ -60,6 +59,9 @@ export interface IRenderSpriteOptions extends ITransform, IShader {
     color?: Color;
     texture?: Texture,
     offset?: Vec2,
+
+    flipX?: boolean,
+    flipY?: boolean,
 }
 export interface ITextOptions {
     /**

@@ -1,3 +1,7 @@
+
+> [!WARNING]  
+> This project is a work in progress! Expect bugs, report issues, and feel free to contribute.
+
 # Rapid.js
 
 A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/examples.htm)) and lightweight WebGL-based 2D rendering engine focused on rendering capabilities.
@@ -15,6 +19,7 @@ A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/exampl
 * **Line Drawing**
 * **Custom Shaders**
 * **Mask**
+* **Frame Buffer Object**
 
 ## Install
 
@@ -54,7 +59,6 @@ For more examples and detailed documentation, visit our [website](https://nightr
 
 ## Roadmap
 
-* Frame Buffer Object (FBO)
 * Light System
 * Line Texture
 * Particle System

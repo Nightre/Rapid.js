@@ -21,7 +21,17 @@ export declare const compileShader: (gl: WebGLContext, source: string, type: num
  * @returns
  */
 export declare const createShaderProgram: (gl: WebGLContext, vsSource: string, fsSource: string) => WebGLProgram;
-export declare function createTexture(gl: WebGLRenderingContext, image: TexImageSource, antialias: boolean): WebGLTexture;
+/**
+ * Creates a WebGL texture either from an image source or as a blank texture
+ * @param gl - The WebGL rendering context
+ * @param source - The image source or dimensions for a blank texture
+ * @param antialias - Whether to enable antialiasing
+ * @returns A WebGL texture
+ */
+export declare function createTexture(gl: WebGLContext, source: TexImageSource | {
+    width: number;
+    height: number;
+}, antialias: boolean, withSize?: boolean, flipY?: boolean): WebGLTexture;
 export declare function generateFragShader(fs: string, max: number): string;
 export declare const FLOAT = 5126;
 export declare const UNSIGNED_BYTE = 5121;

@@ -302,6 +302,7 @@ export declare class Color implements IMathObject<Color> {
     static Lime: Color;
     static White: Color;
     static Black: Color;
+    static TRANSPARENT: Color;
 }
 /**
  * Represents a 2D vector with x and y components.

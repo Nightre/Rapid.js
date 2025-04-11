@@ -71,3 +71,9 @@ const fullTexture = await rapid.textures.textureFromUrl("./assets/character.png"
 const headTexture = fullTexture.clone().setClipRegion(0, 0, 32, 32);
 const bodyTexture = fullTexture.clone().setClipRegion(0, 32, 32, 64);
 ```
+
+## Deleting Textures
+
+```js
+rapid.textures.destroy(texture);
+```

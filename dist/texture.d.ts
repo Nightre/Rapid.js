@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { Images, ITextOptions } from "./interface";
+import { Images, ITextOptions, WebGLContext } from "./interface";
 /**
  * texture manager
  * @ignore
@@ -17,7 +17,24 @@ declare class TextureCache {
      * @returns
      */
     textureFromUrl(url: string, antialias?: boolean): Promise<Texture>;
+    /**
+     * Create a new `Texture` instance from a FrameBufferObject.
+     * @param fbo - The FrameBufferObject to create the texture from.
+     * @returns A new `Texture` instance created from the specified FrameBufferObject.
+     */
+    textureFromFrameBufferObject(fbo: FrameBufferObject): Texture;
+    /**
+     * Create a new `Texture` instance from an image source.
+     * @param source - The image source to create the texture from.
+     * @param antialias - Whether to enable antialiasing.
+     * @returns A new `Texture` instance created from the specified image source.
+     */
     textureFromSource(source: Images, antialias?: boolean): Promise<Texture>;
+    /**
+     * Load an image from the specified URL.
+     * @param url - The URL of the image to load.
+     * @returns A promise that resolves to the loaded HTMLImageElement.
+     */
     loadImage(url: string): Promise<HTMLImageElement>;
     /**
      * Create a new `Text` instance.
@@ -25,6 +42,20 @@ declare class TextureCache {
      * @returns A new `Text` instance.
      */
     createText(options: ITextOptions): Text;
+    /**
+     * Destroy the texture
+     * @param texture
+     */
+    destroy(texture: Texture | BaseTexture): void;
+    /**
+     * Create a new FrameBufferObject instance
+     * @param width - Width of the framebuffer
+     * @param height - Height of the framebuffer
+     * @param antialias - Whether to enable antialiasing
+     * @returns A new FrameBufferObject instance
+     */
+    createFrameBufferObject(width: number, height: number, antialias?: boolean): FrameBufferObject;
+    private removeCache;
 }
 /**
  * Each {@link Texture} references a baseTexture, and different textures may have the same baseTexture
@@ -35,6 +66,12 @@ declare class BaseTexture {
     height: number;
     constructor(texture: WebGLTexture, width: number, height: number);
     static fromImageSource(r: Rapid, image: Images, antialias?: boolean): BaseTexture;
+    /**
+     * Destroy the texture
+     * @param gl
+     * @ignore
+     */
+    destroy(gl: WebGLContext): void;
 }
 declare class Texture {
     /**
@@ -143,4 +180,37 @@ declare class Text extends Texture {
      */
     setText(text: string): void;
 }
-export { Text, Texture, BaseTexture, TextureCache };
+declare class FrameBufferObject extends BaseTexture {
+    private framebuffer;
+    private gl;
+    /**
+     * Creates a new FrameBufferObject instance
+     * @param render - The Rapid instance to use
+     * @param width - Width of the framebuffer
+     * @param height - Height of the framebuffer
+     * @param antialias - Whether to enable antialiasing
+     */
+    constructor(render: Rapid, width: number, height: number, antialias?: boolean);
+    /**
+     * Bind the framebuffer for rendering
+     * @ignore
+     */
+    bind(): void;
+    /**
+     * Unbind the framebuffer and restore default framebuffer
+     * @ignore
+     */
+    unbind(): void;
+    /**
+     * Resize the framebuffer
+     * @param width - New width
+     * @param height - New height
+     */
+    resize(width: number, height: number): void;
+    /**
+     * Override destroy method to clean up framebuffer resources
+     * @param gl - WebGL context
+     */
+    destroy(gl: WebGLContext): void;
+}
+export { Text, Texture, BaseTexture, TextureCache, FrameBufferObject };

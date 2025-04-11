@@ -1,5 +1,5 @@
 import Rapid from "./render"
-import { Images, ITextOptions } from "./interface"
+import { Images, ITextOptions, WebGLContext } from "./interface"
 import { createTexture } from "./webgl/utils"
 
 /**
@@ -10,7 +10,7 @@ class TextureCache {
     private render: Rapid
     private cache: Map<string | Images, BaseTexture> = new Map
     private antialias: boolean
-    
+
     constructor(render: Rapid, antialias: boolean) {
         this.render = render
         this.antialias = antialias
@@ -31,7 +31,21 @@ class TextureCache {
         }
         return new Texture(base)
     }
+    /**
+     * Create a new `Texture` instance from a FrameBufferObject.
+     * @param fbo - The FrameBufferObject to create the texture from.
+     * @returns A new `Texture` instance created from the specified FrameBufferObject.
+     */
+    textureFromFrameBufferObject(fbo: FrameBufferObject) {
+        return new Texture(fbo)
+    }
 
+    /**
+     * Create a new `Texture` instance from an image source.
+     * @param source - The image source to create the texture from.
+     * @param antialias - Whether to enable antialiasing.
+     * @returns A new `Texture` instance created from the specified image source.
+     */
     async textureFromSource(source: Images, antialias: boolean = this.antialias) {
         let base = this.cache.get(source)
         if (!base) {
@@ -40,7 +54,12 @@ class TextureCache {
         }
         return new Texture(base)
     }
-
+    
+    /**
+     * Load an image from the specified URL.
+     * @param url - The URL of the image to load.
+     * @returns A promise that resolves to the loaded HTMLImageElement.
+     */
     async loadImage(url: string): Promise<HTMLImageElement> {
         return new Promise((resolve) => {
             const image = new Image();
@@ -57,6 +76,40 @@ class TextureCache {
      */
     createText(options: ITextOptions) {
         return new Text(this.render, options)
+    }
+    /**
+     * Destroy the texture
+     * @param texture 
+     */
+    destroy(texture: Texture | BaseTexture) {
+        if (texture instanceof Texture) {
+            texture.base?.destroy(this.render.gl)
+            this.removeCache(texture)
+        } else {
+            texture.destroy(this.render.gl)
+            this.removeCache(texture)
+        }
+    }
+    /**
+     * Create a new FrameBufferObject instance
+     * @param width - Width of the framebuffer
+     * @param height - Height of the framebuffer
+     * @param antialias - Whether to enable antialiasing
+     * @returns A new FrameBufferObject instance
+     */
+    createFrameBufferObject(width: number, height: number, antialias: boolean = this.antialias) {
+        return new FrameBufferObject(this.render, width, height, antialias)
+    }
+
+    private removeCache(texture: Texture | BaseTexture) {
+        const key = texture instanceof Texture ? texture.base?.texture : texture.texture;
+        if (key) {
+            this.cache.forEach((value, mapKey) => {
+                if (value === key) {
+                    this.cache.delete(mapKey);
+                }
+            });
+        }
     }
 }
 
@@ -78,6 +131,14 @@ class BaseTexture {
             image.width,
             image.height
         )
+    }
+    /**
+     * Destroy the texture
+     * @param gl 
+     * @ignore
+     */
+    destroy(gl: WebGLContext) {
+        gl.deleteTexture(this.texture)
     }
 }
 
@@ -156,6 +217,7 @@ class Texture {
 
         return this
     }
+
     /**
      * Creates a new `Texture` instance from the specified image source.
      * @param rapid - The Rapid instance to use.
@@ -198,7 +260,7 @@ class Texture {
                     spriteWidth,
                     spriteHeight
                 );
-                sprites.push(sprite); 
+                sprites.push(sprite);
             }
         }
         return sprites;
@@ -293,9 +355,124 @@ class Text extends Texture {
     }
 }
 
+class FrameBufferObject extends BaseTexture {
+    private framebuffer: WebGLFramebuffer;
+    private gl: WebGLContext;
+
+    /**
+     * Creates a new FrameBufferObject instance
+     * @param render - The Rapid instance to use
+     * @param width - Width of the framebuffer
+     * @param height - Height of the framebuffer
+     * @param antialias - Whether to enable antialiasing
+     */
+    constructor(render: Rapid, width: number, height: number, antialias: boolean = false) {
+        // Create the texture first
+        const gl = render.gl;
+        const texture = createTexture(gl, { width, height }, antialias, true, false)
+
+        // Create and setup framebuffer
+        const framebuffer = gl.createFramebuffer();
+        if (!framebuffer) {
+            gl.deleteTexture(texture);
+            throw new Error('Failed to create WebGL framebuffer');
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            texture,
+            0
+        );
+
+        const stencilBuffer = gl.createRenderbuffer();
+        if (!stencilBuffer) {
+            gl.deleteFramebuffer(framebuffer);
+            gl.deleteTexture(texture);
+            throw new Error("Failed to create depth-stencil renderbuffer");
+        }
+
+        gl.bindRenderbuffer(gl.RENDERBUFFER, stencilBuffer);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, width, height);
+        gl.framebufferRenderbuffer(
+            gl.FRAMEBUFFER,
+            gl.STENCIL_ATTACHMENT,
+            gl.RENDERBUFFER,
+            stencilBuffer
+        );
+
+        super(texture, width, height);
+
+        this.gl = gl;
+        this.framebuffer = framebuffer;
+
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    /**
+     * Bind the framebuffer for rendering
+     * @ignore
+     */
+    bind() {
+        const gl = this.gl
+
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+
+        gl.clearColor(0.5, 0.2, 0.5, 0.5);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+
+    /**
+     * Unbind the framebuffer and restore default framebuffer
+     * @ignore
+     */
+    unbind() {
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    }
+
+    /**
+     * Resize the framebuffer
+     * @param width - New width
+     * @param height - New height
+     */
+    resize(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        this.gl.texImage2D(
+            this.gl.TEXTURE_2D,
+            0,
+            this.gl.RGBA,
+            width,
+            height,
+            0,
+            this.gl.RGBA,
+            this.gl.UNSIGNED_BYTE,
+            null
+        );
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    }
+
+    /**
+     * Override destroy method to clean up framebuffer resources
+     * @param gl - WebGL context
+     */
+    override destroy(gl: WebGLContext) {
+        gl.deleteFramebuffer(this.framebuffer);
+        super.destroy(gl);
+    }
+}
+
 export {
     Text,
     Texture,
     BaseTexture,
-    TextureCache
+    TextureCache,
+    FrameBufferObject
 }

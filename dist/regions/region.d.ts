@@ -21,6 +21,7 @@ declare class RenderRegion {
     protected addVertex(x: number, y: number, ..._: unknown[]): void;
     protected useTexture(texture: WebGLTexture): number;
     enterRegion(customShader?: GLShader): void;
+    updateProjection(): void;
     setCostumUnifrom(newCurrentUniform: Uniform): boolean;
     exitRegion(): void;
     protected initDefaultShader(vs: string, fs: string, attributes?: IAttribute[]): void;

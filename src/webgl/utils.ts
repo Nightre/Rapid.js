@@ -65,21 +65,42 @@ export const createShaderProgram = (gl: WebGLContext, vsSource: string, fsSource
     return program;
 }
 
-export function createTexture(gl: WebGLRenderingContext, image: TexImageSource, antialias: boolean): WebGLTexture {
+/**
+ * Creates a WebGL texture either from an image source or as a blank texture
+ * @param gl - The WebGL rendering context
+ * @param source - The image source or dimensions for a blank texture
+ * @param antialias - Whether to enable antialiasing
+ * @returns A WebGL texture
+ */
+export function createTexture(
+    gl: WebGLContext,
+    source: TexImageSource | { width: number; height: number },
+    antialias: boolean,
+    withSize: boolean = false,
+    flipY: boolean = false
+): WebGLTexture {
     const texture = gl.createTexture();
+    if (!texture) {
+        throw new Error("unable to create texture");
+    }
+
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, antialias ? gl.LINEAR : gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, antialias ? gl.LINEAR : gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
 
-    if (!texture) {
-        throw new Error("unable to create texture");
+    if (withSize) {
+        source = source as { width: number; height: number };
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, source.width, source.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    } else {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
     }
-    return texture
+
+    return texture;
 }
+
 export function generateFragShader(fs: string, max: number) {
     if (fs.includes("%TEXTURE_NUM%")) fs = fs.replace("%TEXTURE_NUM%", max.toString())
     if (fs.includes("%GET_COLOR%")) {

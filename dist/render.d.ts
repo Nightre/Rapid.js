@@ -1,7 +1,7 @@
 import { ICircleOptions, IGraphicOptions, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, IRenderSpriteOptions, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
-import { Texture, TextureCache } from "./texture";
+import { FrameBufferObject, Texture, TextureCache } from "./texture";
 import { TileMapRender, TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
 /**
@@ -25,7 +25,8 @@ declare class Rapid {
     private currentRegionName?;
     private regions;
     private currentMaskType;
-    private currentTransformOptions?;
+    private currentTransform;
+    private currentFBO;
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -42,6 +43,10 @@ declare class Rapid {
      * @param gl - The WebGL context.
      */
     private initWebgl;
+    /**
+     * @ignore
+     */
+    clearTextureUnit(): void;
     /**
      * Registers built-in regions such as sprite and graphic regions.
      */
@@ -151,10 +156,13 @@ declare class Rapid {
      * @param height - The new height of the canvas.
      */
     resize(logicalWidth: number, logicalHeight: number): void;
+    private resizeWebglSize;
+    private updateProjection;
     /**
      * Clears the canvas with the background color.
+     * @param bgColor - The background color to clear the canvas with.
      */
-    clear(): void;
+    clear(bgColor?: Color): void;
     /**
      * Creates an orthogonal projection matrix.
      * @param left - The left bound of the projection.
@@ -200,5 +208,24 @@ declare class Rapid {
      * @returns The created shader object.
      */
     createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit?: number): GLShader;
+    /**
+     * Starts rendering to a Frame Buffer Object (FBO)
+     * Sets up the FBO for rendering by binding it, adjusting viewport size and projection
+     * @param fbo - The Frame Buffer Object to render to
+     */
+    startFBO(fbo: FrameBufferObject): void;
+    /**
+     * Ends rendering to a Frame Buffer Object
+     * Restores the default framebuffer and original viewport settings
+     * @param fbo - The Frame Buffer Object to unbind
+     */
+    endFBO(): void;
+    /**
+     * Convenience method to render to a Frame Buffer Object
+     * Handles starting and ending the FBO rendering automatically
+     * @param fbo - The Frame Buffer Object to render to
+     * @param cb - Callback function containing render commands to execute on the FBO
+     */
+    drawToFBO(fbo: FrameBufferObject, cb: () => void): void;
 }
 export default Rapid;

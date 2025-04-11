@@ -26,11 +26,11 @@ class SpriteElementArray extends WebglElementBufferArray {
     protected override addObject(vertex: number): void {
         super.addObject()
         this.pushUint16(vertex)
-        this.pushUint16(vertex + 3)
+        this.pushUint16(vertex + 1)
         this.pushUint16(vertex + 2)
 
         this.pushUint16(vertex)
-        this.pushUint16(vertex + 1)
+        this.pushUint16(vertex + 3)
         this.pushUint16(vertex + 2)
     }
 }
@@ -65,15 +65,35 @@ class SpriteRegion extends RenderRegion {
         offsetY: number,
         color: number,
         uniforms?: Uniform,
+        flipX?: boolean,
+        flipY?: boolean,
     ) {
+        let rendered = false
         if (this.batchSprite >= MAX_BATCH) {
-            this.render()
+            !rendered && this.render()
+            rendered = true
         }
         if (uniforms && this.setCostumUnifrom(uniforms)) {
-            this.render() 
+            !rendered && this.render()
             this.currentShader!.setUniforms(uniforms, 0)
+            rendered = true
+        }
+        if (this.rapid.projectionDirty) {
+            !rendered && this.render()
+            this.updateProjection()
+            rendered = true
         }
 
+        if (flipX) {
+            const temp = u0;
+            u0 = u1;
+            u1 = temp;
+        }
+        if (flipY) {
+            const temp = v0;
+            v0 = v1;
+            v1 = temp;
+        }
         this.batchSprite++
         this.webglArrayBuffer.resize(FLOAT32_PER_SPRITE)
 

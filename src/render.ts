@@ -4,7 +4,7 @@ import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
 import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
-import { Texture, TextureCache } from "./texture"
+import { FrameBufferObject, Texture, TextureCache } from "./texture"
 import { TileMapRender, TileSet } from "./tilemap"
 import { getSize } from "./utils"
 import GLShader from "./webgl/glshader"
@@ -33,8 +33,10 @@ class Rapid {
     private currentRegion?: RenderRegion
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
-    private currentMaskType: MaskType = MaskType.Include
-    private currentTransformOptions?: ITransform
+    private currentMaskType: MaskType[] = []
+    private currentTransform: ITransform[] = []
+    private currentFBO: FrameBufferObject[] = []
+
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -51,7 +53,7 @@ class Rapid {
 
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
         this.registerBuildInRegion()
-        this.initWebgl(gl, options)
+        this.initWebgl(gl)
     }
 
     /**
@@ -67,15 +69,25 @@ class Rapid {
      * Initializes WebGL context settings.
      * @param gl - The WebGL context.
      */
-    private initWebgl(gl: WebGLContext, options: IRapidOptions) {
+    private initWebgl(gl: WebGLContext) {
         this.resize(this.width, this.height)
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.enable(gl.STENCIL_TEST);
         gl.enable(gl.SCISSOR_TEST);
+        //@ts-ignore
+        window.rapid = this
     }
-
+    /**
+     * @ignore
+     */
+    clearTextureUnit() {
+        for (let i = 0; i < this.maxTextureUnits; i++) {
+            this.gl.activeTexture(this.gl.TEXTURE0 + i);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        }
+    }
     /**
      * Registers built-in regions such as sprite and graphic regions.
      */
@@ -194,8 +206,11 @@ class Rapid {
             offsetX,
             offsetY,
             (options.color || this.defaultColor).uint32,
-            options.uniforms
+            options.uniforms,
+            options.flipX,
+            options.flipY
         )
+
         this.afterDraw()
     }
 
@@ -274,13 +289,13 @@ class Rapid {
     }
 
     private startDraw(options: ITransform, width: number = 0, height: number = 0) {
-        this.currentTransformOptions = options
+        this.currentTransform.push(options)
         return this.matrixStack.applyTransform(options, width, height)
     }
 
     private afterDraw() {
-        if (this.currentTransformOptions) {
-            this.matrixStack.applyTransformAfter(this.currentTransformOptions)
+        if (this.currentTransform.length > 0) {
+            this.matrixStack.applyTransformAfter(this.currentTransform.pop()!)
         }
     }
 
@@ -326,32 +341,48 @@ class Rapid {
      * @param height - The new height of the canvas.
      */
     resize(logicalWidth: number, logicalHeight: number) {
-        this.width = logicalWidth
-        this.height = logicalHeight
         const physicalWidth = logicalWidth * this.devicePixelRatio
         const physicalHeight = logicalHeight * this.devicePixelRatio
         this.canvas.width = physicalWidth
         this.canvas.height = physicalHeight
 
+        this.resizeWebglSize(logicalWidth, logicalHeight)
+        // this.gl.viewport(
+        //     0, 0, physicalWidth, physicalHeight
+        // )
+        // this.projection = this.createOrthMatrix(
+        //     0, logicalWidth, logicalHeight, 0
+        // )
+
+        // this.projectionDirty = true
+
+        // this.gl.scissor(0, 0, physicalWidth, physicalHeight)
+
         this.canvas.style.width = logicalWidth + 'px'
         this.canvas.style.height = logicalHeight + 'px'
 
-        this.gl.viewport(
-            0, 0, physicalWidth, physicalHeight
-        )
-        this.projection = this.createOrthMatrix(
-            0, logicalWidth, logicalHeight, 0
-        )
-        this.projectionDirty = true
+        this.width = logicalWidth
+        this.height = logicalHeight
+    }
+    private resizeWebglSize(width: number, height: number) {
+        const physicalWidth = width * this.devicePixelRatio
+        const physicalHeight = height * this.devicePixelRatio
+        this.gl.viewport(0, 0, physicalWidth, physicalHeight)
+        this.updateProjection(0, width, height, 0)
         this.gl.scissor(0, 0, physicalWidth, physicalHeight)
+    }
+    private updateProjection(left: number, right: number, bottom: number, top: number) {
+        this.projection = this.createOrthMatrix(left, right, bottom, top)
+        this.projectionDirty = true
     }
 
     /**
      * Clears the canvas with the background color.
+     * @param bgColor - The background color to clear the canvas with.
      */
-    clear() {
+    clear(bgColor?: Color) {
         const gl = this.gl
-        const c = this.backgroundColor
+        const c = bgColor || this.backgroundColor
         gl.clearColor(c.r / 255, c.g / 255, c.b / 255, c.a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT);
         this.clearMask()
@@ -390,7 +421,7 @@ class Rapid {
      */
     startDrawMask(type: MaskType = MaskType.Include) {
         const gl = this.gl;
-        this.currentMaskType = type;
+        this.currentMaskType.push(type);
         this.setMaskType(type, true);
 
         gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
@@ -407,7 +438,7 @@ class Rapid {
 
         gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
         gl.colorMask(true, true, true, true);
-        this.setMaskType(this.currentMaskType, false);
+        this.setMaskType(this.currentMaskType.pop() ?? MaskType.Include, false);
     }
 
     /**
@@ -455,6 +486,53 @@ class Rapid {
      */
     createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit: number = 0) {
         return GLShader.createCostumShader(this, vs, fs, type, textureUnit)
+    }
+    /**
+     * Starts rendering to a Frame Buffer Object (FBO)
+     * Sets up the FBO for rendering by binding it, adjusting viewport size and projection
+     * @param fbo - The Frame Buffer Object to render to
+     */
+    startFBO(fbo: FrameBufferObject) {
+        this.quitCurrentRegion()
+        
+        fbo.bind()
+        this.clearTextureUnit()
+
+        this.resizeWebglSize(fbo.width, fbo.height)
+        this.updateProjection(0, fbo.width, 0, fbo.height)
+        this.save()
+        this.matrixStack.identity()
+        this.currentFBO.push(fbo)
+    }
+
+    /**
+     * Ends rendering to a Frame Buffer Object
+     * Restores the default framebuffer and original viewport settings
+     * @param fbo - The Frame Buffer Object to unbind
+     */
+    endFBO() {
+        if (this.currentFBO.length > 0) {
+            const fbo = this.currentFBO.pop()!
+            this.quitCurrentRegion()
+            fbo.unbind()
+            this.clearTextureUnit()
+
+            this.resizeWebglSize(this.width, this.height)
+            this.updateProjection(0, this.width, this.height, 0)
+            this.restore()
+        }
+    }
+
+    /**
+     * Convenience method to render to a Frame Buffer Object
+     * Handles starting and ending the FBO rendering automatically
+     * @param fbo - The Frame Buffer Object to render to
+     * @param cb - Callback function containing render commands to execute on the FBO
+     */
+    drawToFBO(fbo: FrameBufferObject, cb: () => void) {
+        this.startFBO(fbo)
+        cb()
+        this.endFBO()
     }
 }
 

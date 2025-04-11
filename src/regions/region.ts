@@ -53,11 +53,14 @@ class RenderRegion {
         // this.currentShader.setAttributes(this.attribute)
         this.currentShader.updateAttributes()
 
+        this.updateProjection()
+        this.isCostumShader = Boolean(customShader)
+    }
+    updateProjection() {
         this.gl.uniformMatrix4fv(
-            this.currentShader.uniformLoc["uProjectionMatrix"],
+            this.currentShader!.uniformLoc["uProjectionMatrix"],
             false, this.rapid.projection
         )
-        this.isCostumShader = Boolean(customShader)
     }
 
     setCostumUnifrom(newCurrentUniform: Uniform) {

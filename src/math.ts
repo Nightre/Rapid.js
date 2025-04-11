@@ -477,12 +477,12 @@ export class MatrixStack extends DynamicArrayBuffer {
         transform.rotation && this.rotate(transform.rotation)
         transform.scale && this.scale(transform.scale)
 
-        if (transform.flipX) {
-            this.scale(-1, 1)
-        }
-        if (transform.flipY) {
-            this.scale(1, -1)
-        }
+        // if (transform.flipX) {
+        //     this.scale(-1, 1)
+        // }
+        // if (transform.flipY) {
+        //     this.scale(1, -1)
+        // }
 
         let offsetX = 0
         let offsetY = 0
@@ -738,6 +738,7 @@ export class Color implements IMathObject<Color> {
     static Lime = new Color(192, 255, 0, 255)
     static White = new Color(255, 255, 255, 255)
     static Black = new Color(0, 0, 0, 255)
+    static TRANSPARENT = new Color(0, 0, 0, 0)
 }
 
 /**

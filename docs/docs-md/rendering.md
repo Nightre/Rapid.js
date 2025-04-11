@@ -35,6 +35,9 @@ const texture = await rapid.textures.textureFromUrl("./assets/character.png");
 rapid.renderSprite({
     texture: texture,               // Texture to render
     position: new Vec2(100, 100),   // Position
+    scale: 2,                       // Scale
+    flipX: true,                    // Horizontal flip texture
+    flipY: true,                    // Vertical flip texture
     /** ... */
 });
 ```
