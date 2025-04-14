@@ -158,3 +158,8 @@ export declare enum ShaderType {
 export interface IParticleEmitterOptions extends ITransformOptions, IShaderRenderOptions {
     texture: Texture | Texture[] | [Texture, number][];
 }
+export declare enum BlendMode {
+    Additive = "additive",
+    Subtractive = "subtractive",
+    Mix = "mix"
+}

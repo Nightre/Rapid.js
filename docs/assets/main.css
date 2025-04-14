@@ -95,6 +95,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    overflow-y: auto;
+    height: 100%;
 }
 
 .list-btn {

@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
@@ -229,5 +229,10 @@ declare class Rapid {
      * @param cb - Callback function containing render commands to execute on the FBO
      */
     drawToFBO(fbo: FrameBufferObject, cb: () => void): void;
+    /**
+     * Set the blend mode for rendering
+     * @param mode - The blend mode to apply
+     */
+    setBlendMode(mode: BlendMode): void;
 }
 export default Rapid;

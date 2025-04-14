@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -534,6 +534,25 @@ class Rapid {
         this.startFBO(fbo)
         cb()
         this.endFBO()
+    }
+    /**
+     * Set the blend mode for rendering
+     * @param mode - The blend mode to apply
+     */
+    setBlendMode(mode: BlendMode) {
+        switch (mode) {
+            case BlendMode.Additive:
+                this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
+                break;
+            case BlendMode.Subtractive:
+                this.gl.blendFunc(this.gl.ZERO, this.gl.ONE_MINUS_SRC_COLOR);
+                break;
+            case BlendMode.Mix:
+                this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+                break;
+            default:
+                break;
+        }
     }
 }
 
