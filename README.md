@@ -59,7 +59,8 @@ For more examples and detailed documentation, visit our [website](https://nightr
 
 ## Roadmap
 
-* Light System
+* Light System 🚧 (In Progress)
+* Nodejs Support
 
 ## Contributing
 
