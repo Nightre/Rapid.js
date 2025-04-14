@@ -129,3 +129,38 @@ rapid.renderLine({
 });
 ```
 Currently, lines do not support textures, but this is planned and will be supported soon.
+
+### Line Textures
+
+Lines now support textures with two different texture modes:
+
+```javascript
+// Define line points
+const linePoints = [
+    new Vec2(0, 0),
+    new Vec2(100, 50),
+    new Vec2(150, 200),
+    new Vec2(50, 250),
+];
+
+// Load texture with REPEAT wrap mode
+const roadTexture = await rapid.textures.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
+
+// Render textured line with REPEAT mode
+rapid.renderLine({
+    position: new Vec2(100, 100),
+    points: linePoints,
+    width: 30,                          // Line width
+    texture: roadTexture,               // Line texture
+    textureMode: LineTextureMode.REPEAT // Texture repeats along the line
+});
+
+// Render textured line with STRETCH mode
+rapid.renderLine({
+    position: new Vec2(300, 100),
+    points: linePoints,
+    width: 30,                           // Line width
+    texture: roadTexture,                // Line texture
+    textureMode: LineTextureMode.STRETCH // Texture stretches along the line
+});
+```

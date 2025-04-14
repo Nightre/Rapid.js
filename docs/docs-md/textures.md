@@ -72,6 +72,24 @@ const headTexture = fullTexture.clone().setClipRegion(0, 0, 32, 32);
 const bodyTexture = fullTexture.clone().setClipRegion(0, 32, 32, 64);
 ```
 
+## Texture Wrap Modes
+
+Rapid.js supports different texture wrap modes that control how textures behave when texture coordinates go outside the 0-1 range:
+
+```javascript
+// Available wrap modes:
+// TextureWrapMode.REPEAT - Repeats the texture (tiling)
+// TextureWrapMode.CLAMP - Clamps to edge (stretches the edge pixels)
+// TextureWrapMode.MIRROR - Mirrors the texture at each repeat
+
+// Load texture with specific wrap mode
+const tilingTexture = await rapid.textures.textureFromUrl(
+    "./assets/pattern.png", 
+    true,  // antialias
+    TextureWrapMode.REPEAT  // wrap mode
+);
+```
+
 ## Deleting Textures
 
 ```js
