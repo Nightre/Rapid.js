@@ -1,7 +1,7 @@
 
 # Rapid.js
 
-A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/examples.htm)) and lightweight WebGL-based 2D rendering engine focused on rendering capabilities.
+A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/examples.html)) and lightweight WebGL-based 2D rendering engine focused on rendering capabilities.
 
 ### [Website](https://nightre.github.io/Rapid.js/docs/index.html)
 
