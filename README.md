@@ -13,7 +13,7 @@ A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/exampl
 * **TileMap** - YSort, isometric
 * **Graphics Drawing**
 * **Text Rendering**
-* **Line Drawing**
+* **Line Drawing** - line texture
 * **Custom Shaders**
 * **Mask**
 * **Frame Buffer Object**
@@ -59,7 +59,6 @@ For more examples and detailed documentation, visit our [website](https://nightr
 
 ## Roadmap
 
-* Line Texture
 * Light System
 
 ## Contributing

@@ -233,8 +233,8 @@ class Rapid {
      */
     renderLine(options: IRenderLineOptions): void {
         const linePoints = options.closed ? [...options.points, options.points[0]] : options.points;
-        const points = getLineGeometry({ ...options, points: linePoints })!;
-        this.renderGraphic({ ...options, drawType: this.gl.TRIANGLES, points });
+        const { vertices, uv } = getLineGeometry({ ...options, points: linePoints })!;
+        this.renderGraphic({ ...options, drawType: this.gl.TRIANGLES, points: vertices, uv });
     }
 
     /**

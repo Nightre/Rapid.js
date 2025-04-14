@@ -1,5 +1,5 @@
 import Rapid from "./render"
-import { Images, ITextTextureOptions, WebGLContext } from "./interface"
+import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from "./interface"
 import { createTexture } from "./webgl/utils"
 
 /**
@@ -22,11 +22,11 @@ class TextureCache {
      * @param antialias 
      * @returns 
      */
-    async textureFromUrl(url: string, antialias: boolean = this.antialias) {
+    async textureFromUrl(url: string, antialias: boolean = this.antialias, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
         let base = this.cache.get(url)
         if (!base) {
             const image = await this.loadImage(url)
-            base = BaseTexture.fromImageSource(this.render, image, antialias)
+            base = BaseTexture.fromImageSource(this.render, image, antialias, wrapMode)
             this.cache.set(url, base)
         }
         return new Texture(base)
@@ -46,10 +46,10 @@ class TextureCache {
      * @param antialias - Whether to enable antialiasing.
      * @returns A new `Texture` instance created from the specified image source.
      */
-    async textureFromSource(source: Images, antialias: boolean = this.antialias) {
+    async textureFromSource(source: Images, antialias: boolean = this.antialias, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
         let base = this.cache.get(source)
         if (!base) {
-            base = BaseTexture.fromImageSource(this.render, source, antialias)
+            base = BaseTexture.fromImageSource(this.render, source, antialias, wrapMode)
             this.cache.set(source, base)
         }
         return new Texture(base)
@@ -120,14 +120,16 @@ class BaseTexture {
     texture: WebGLTexture
     width: number
     height: number
-    constructor(texture: WebGLTexture, width: number, height: number) {
+    wrapMode: TextureWrapMode
+    constructor(texture: WebGLTexture, width: number, height: number, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
         this.texture = texture
         this.width = width
         this.height = height
+        this.wrapMode = wrapMode
     }
-    static fromImageSource(r: Rapid, image: Images, antialias: boolean = false) {
+    static fromImageSource(r: Rapid, image: Images, antialias: boolean = false, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
         return new BaseTexture(
-            createTexture(r.gl, image, antialias),
+            createTexture(r.gl, image, antialias, false, false, wrapMode),
             image.width,
             image.height
         )

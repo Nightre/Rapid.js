@@ -1,10 +1,12 @@
-import { Color, Rapid, Vec2 } from "/Rapid.js/dist/rapid.js"
+import { Color, Rapid, Vec2, LineTextureMode, TextureWrapMode } from "/Rapid.js/dist/rapid.js"
 
 
 const rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("FFFFFF")
 })
+const road = await rapid.textures.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
+let lineMod = LineTextureMode.REPEAT;
 
 const linePath = [
     new Vec2(0, 0),
@@ -24,7 +26,7 @@ const linePath2 = [
 
 let linePath3 = [];
 let time = 0;
-
+let linePath4 = [];
 animate();
 
 function animate() {
@@ -35,13 +37,17 @@ function animate() {
     linePath3 = Array.from({ length: 40 }, (_, i) => 
         new Vec2(i * 10, Math.sin(i * 0.2 + time) * 100)
     );
+    linePath4 = Array.from({ length: 40 }, (_, i) => 
+        new Vec2(i * 10, Math.sin(i * 0.2 + time) * 100)
+    );
     
     rapid.renderLine({
         position: new Vec2(80, 40),
         points: linePath,
         width: 50,
-        color: new Color(0, 0, 255, 255),
         roundCap: true,
+
+        color: new Color(0, 50, 50, 155),
     });
     
     rapid.renderLine({
@@ -56,12 +62,26 @@ function animate() {
         position: new Vec2(30, 300),
         points: linePath3,
         width: 20,
-        color: new Color(0, 50, 50, 155),
         roundCap: true,
+
+        color: new Color(0, 50, 50, 155),
+    });
+
+    rapid.renderLine({
+        position: new Vec2(30, 200),
+        points: linePath4,
+        width: 30,
+
+        texture: road,
+        textureMode: lineMod,
     });
 
     rapid.endRender();
     
     requestAnimationFrame(animate);
 }
+
+document.getElementById("stretch").addEventListener("change", (e) => {
+    lineMod = e.target.checked ? LineTextureMode.STRETCH : LineTextureMode.REPEAT;
+});
 

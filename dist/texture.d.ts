@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { Images, ITextTextureOptions, WebGLContext } from "./interface";
+import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from "./interface";
 /**
  * texture manager
  * @ignore
@@ -16,7 +16,7 @@ declare class TextureCache {
      * @param antialias
      * @returns
      */
-    textureFromUrl(url: string, antialias?: boolean): Promise<Texture>;
+    textureFromUrl(url: string, antialias?: boolean, wrapMode?: TextureWrapMode): Promise<Texture>;
     /**
      * Create a new `Texture` instance from a FrameBufferObject.
      * @param fbo - The FrameBufferObject to create the texture from.
@@ -29,7 +29,7 @@ declare class TextureCache {
      * @param antialias - Whether to enable antialiasing.
      * @returns A new `Texture` instance created from the specified image source.
      */
-    textureFromSource(source: Images, antialias?: boolean): Promise<Texture>;
+    textureFromSource(source: Images, antialias?: boolean, wrapMode?: TextureWrapMode): Promise<Texture>;
     /**
      * Load an image from the specified URL.
      * @param url - The URL of the image to load.
@@ -64,8 +64,9 @@ declare class BaseTexture {
     texture: WebGLTexture;
     width: number;
     height: number;
-    constructor(texture: WebGLTexture, width: number, height: number);
-    static fromImageSource(r: Rapid, image: Images, antialias?: boolean): BaseTexture;
+    wrapMode: TextureWrapMode;
+    constructor(texture: WebGLTexture, width: number, height: number, wrapMode?: TextureWrapMode);
+    static fromImageSource(r: Rapid, image: Images, antialias?: boolean, wrapMode?: TextureWrapMode): BaseTexture;
     /**
      * Destroy the texture
      * @param gl

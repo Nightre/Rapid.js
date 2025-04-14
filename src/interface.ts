@@ -102,12 +102,20 @@ export interface ITextTextureOptions {
     textBaseline?: CanvasTextBaseline;
 }
 
-export interface ILineRenderOptions {
+export interface ILineRenderOptions extends IGraphicRenderOptions {
     width?: number;
     closed?: boolean;
-    points: Vec2[],
     roundCap?: boolean,
-    color?: Color,
+    textureMode?: LineTextureMode,
+}
+export enum LineTextureMode {
+    STRETCH = 'stretch',
+    REPEAT = 'repeat',
+}
+export enum TextureWrapMode {
+    REPEAT = 'repeat',
+    CLAMP = 'clamp',
+    MIRROR = 'mirror',
 }
 export interface IRenderLineOptions extends ILineRenderOptions, ITransformOptions { }
 export interface IGraphicRenderOptions extends ITransformOptions, IShaderRenderOptions {

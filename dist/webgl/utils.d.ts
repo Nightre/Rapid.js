@@ -31,7 +31,7 @@ export declare const createShaderProgram: (gl: WebGLContext, vsSource: string, f
 export declare function createTexture(gl: WebGLContext, source: TexImageSource | {
     width: number;
     height: number;
-}, antialias: boolean, withSize?: boolean, flipY?: boolean): WebGLTexture;
+}, antialias: boolean, withSize?: boolean, flipY?: boolean, wrapMode?: 'repeat' | 'mirror' | 'clamp'): WebGLTexture;
 export declare function generateFragShader(fs: string, max: number): string;
 export declare const FLOAT = 5126;
 export declare const UNSIGNED_BYTE = 5121;

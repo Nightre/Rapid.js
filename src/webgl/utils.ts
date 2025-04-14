@@ -77,7 +77,8 @@ export function createTexture(
     source: TexImageSource | { width: number; height: number },
     antialias: boolean,
     withSize: boolean = false,
-    flipY: boolean = false
+    flipY: boolean = false,
+    wrapMode: 'repeat' | 'mirror' | 'clamp' = 'clamp'
 ): WebGLTexture {
     const texture = gl.createTexture();
     if (!texture) {
@@ -87,8 +88,24 @@ export function createTexture(
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, antialias ? gl.LINEAR : gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, antialias ? gl.LINEAR : gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // 根据不同的环绕模式设置纹理参数
+    let wrapParam: number;
+    switch (wrapMode) {
+        case 'repeat':
+            wrapParam = gl.REPEAT;
+            break;
+        case 'mirror':
+            wrapParam = gl.MIRRORED_REPEAT;
+            break;
+        case 'clamp':
+        default:
+            wrapParam = gl.CLAMP_TO_EDGE;
+            break;
+    }
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapParam);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapParam);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
 
     if (withSize) {
