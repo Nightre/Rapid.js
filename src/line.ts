@@ -1,4 +1,4 @@
-import { ILineOptions } from "./interface";
+import { ILineRenderOptions } from "./interface";
 import { Vec2 } from "./math";
 
 const LINE_ROUND_SEGMENTS = 10;
@@ -85,7 +85,7 @@ export const getLineNormal = (points: Vec2[], closed: boolean = false): { normal
 };
 
 
-export const getLineGeometry = (options: ILineOptions): Vec2[] => {
+export const getLineGeometry = (options: ILineRenderOptions): Vec2[] => {
     const points = options.points;
     if (points.length < 2) return [];
 

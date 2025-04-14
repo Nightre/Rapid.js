@@ -1,4 +1,5 @@
-import { ICircleOptions, IGraphicOptions, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, IRenderSpriteOptions, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
+import { ICircleOptions, IGraphic, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, ISprite, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
+import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { FrameBufferObject, Texture, TextureCache } from "./texture";
@@ -14,9 +15,10 @@ declare class Rapid {
     projectionDirty: boolean;
     matrixStack: MatrixStack;
     textures: TextureCache;
+    tileMap: TileMapRender;
+    light: LightManager;
     width: number;
     height: number;
-    tileMap: TileMapRender;
     backgroundColor: Color;
     readonly devicePixelRatio: number;
     readonly maxTextureUnits: number;
@@ -97,7 +99,7 @@ declare class Rapid {
      *
      * @param options - The rendering options for the sprite, including texture, position, color, and shader.
      */
-    renderSprite(options: IRenderSpriteOptions): void;
+    renderSprite(options: ISprite): void;
     /**
      * Renders a texture directly without additional options.
      * This is a convenience method that calls renderSprite with just the texture.
@@ -116,13 +118,13 @@ declare class Rapid {
      *
      * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(options: IGraphicOptions): void;
+    renderGraphic(options: IGraphic): void;
     /**
      * Starts the graphic drawing process.
      *
      * @param options - The options for the graphic drawing, including shader, texture, and draw type.
      */
-    startGraphicDraw(options: IGraphicOptions): void;
+    startGraphicDraw(options: IGraphic): void;
     /**
      * Adds a vertex to the current graphic being drawn.
      *

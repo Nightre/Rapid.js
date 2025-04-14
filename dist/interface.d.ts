@@ -45,7 +45,7 @@ export interface ITransform {
     afterSave?(): unknown;
     beforRestore?(): unknown;
 }
-export interface IRenderSpriteOptions extends ITransform, IShader {
+export interface ISprite extends ITransform, IShader {
     color?: Color;
     texture?: Texture;
     offset?: Vec2;
@@ -94,18 +94,18 @@ export interface ILineOptions {
 }
 export interface IRenderLineOptions extends ILineOptions, ITransform {
 }
-export interface IGraphicOptions extends ITransform, IShader {
+export interface IGraphic extends ITransform, IShader {
     points: Vec2[];
     color?: Color | Color[];
     drawType?: number;
     uv?: Vec2[];
     texture?: Texture;
 }
-export interface ICircleOptions extends IGraphicOptions {
+export interface ICircleOptions extends IGraphic {
     radius: number;
     segments?: number;
 }
-export interface IRectOptions extends IGraphicOptions {
+export interface IRectOptions extends IGraphic {
     width: number;
     height: number;
 }
@@ -115,7 +115,7 @@ export declare enum MaskType {
 }
 export type UniformType = Record<string, number | Array<any> | boolean | Texture>;
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas;
-export interface IRegisterTileOptions extends IRenderSpriteOptions {
+export interface IRegisterTileOptions extends ISprite {
     texture: Texture;
     offsetX?: number;
     offsetY?: number;
@@ -124,7 +124,7 @@ export interface IRegisterTileOptions extends IRenderSpriteOptions {
 export interface YSortCallback {
     ySort: number;
     render?: () => void;
-    renderSprite?: IRenderSpriteOptions;
+    renderSprite?: ISprite;
 }
 export interface ILayerRender extends ITransform {
     error?: number | Vec2;
@@ -133,7 +133,7 @@ export interface ILayerRender extends ITransform {
     ySortCallback?: Array<YSortCallback>;
     shape?: TilemapShape;
     tileSet: TileSet;
-    eachTile?: (tileId: string | number, mapX: number, mapY: number) => IRenderSpriteOptions | undefined | void;
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISprite | undefined | void;
 }
 export interface IShader {
     shader?: GLShader;
@@ -146,4 +146,7 @@ export declare enum TilemapShape {
 export declare enum ShaderType {
     SPRITE = "sprite",
     GRAPHIC = "graphic"
+}
+export interface IParticleEmitterOptions extends ITransform, IShader {
+    texture: Texture | Texture[] | [Texture, number][];
 }

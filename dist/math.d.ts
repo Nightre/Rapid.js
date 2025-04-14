@@ -21,7 +21,7 @@ export declare class DynamicArrayBuffer {
     private float32?;
     private uint16?;
     constructor(arrayType: ArrayType);
-    getArrayType(arrayType: ArrayType): Uint16ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor;
+    getArrayType(arrayType: ArrayType): Float32ArrayConstructor | Uint32ArrayConstructor | Uint16ArrayConstructor;
     updateTypedArray(): void;
     clear(): void;
     /**
@@ -45,7 +45,7 @@ export declare class DynamicArrayBuffer {
      * @param end
      * @returns
      */
-    getArray(begin?: number, end?: number): Uint16Array | Uint32Array | Float32Array;
+    getArray(begin?: number, end?: number): Uint32Array | Float32Array | Uint16Array;
     /**
      * length of the array
      */
@@ -63,7 +63,8 @@ export declare class WebglBufferArray extends DynamicArrayBuffer {
      * webglbuffer 中的大小
      */
     private webglBufferSize;
-    constructor(gl: WebGLContext, arrayType: ArrayType, type?: number);
+    readonly usage: number;
+    constructor(gl: WebGLContext, arrayType: ArrayType, type?: number, usage?: number);
     pushFloat32(value: number): void;
     pushUint32(value: number): void;
     pushUint16(value: number): void;
@@ -187,6 +188,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
 export declare class WebglElementBufferArray extends WebglBufferArray {
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number);
     protected addObject(_vertex?: number): void;
+    bindBuffer(): void;
 }
 /**
  * Represents a color with red, green, blue, and alpha (transparency) components.

@@ -1,5 +1,5 @@
 import Rapid from "./render"
-import { Images, ITextOptions, WebGLContext } from "./interface"
+import { Images, ITextTextureOptions, WebGLContext } from "./interface"
 import { createTexture } from "./webgl/utils"
 
 /**
@@ -74,7 +74,7 @@ class TextureCache {
      * @param options - The options for rendering the text, such as font, size, color, etc.
      * @returns A new `Text` instance.
      */
-    createText(options: ITextOptions) {
+    createText(options: ITextTextureOptions) {
         return new Text(this.render, options)
     }
     /**
@@ -279,7 +279,7 @@ class Texture {
  */
 export const SCALEFACTOR = 2
 class Text extends Texture {
-    private options: ITextOptions;
+    private options: ITextTextureOptions;
     private rapid: Rapid;
     protected override scale: number = 1 / SCALEFACTOR
     text: string;
@@ -288,7 +288,7 @@ class Text extends Texture {
      * Creates a new `Text` instance.
      * @param options - The options for rendering the text, such as font, size, color, etc.
      */
-    constructor(rapid: Rapid, options: ITextOptions) {
+    constructor(rapid: Rapid, options: ITextTextureOptions) {
         super()
         this.rapid = rapid
         this.options = options;

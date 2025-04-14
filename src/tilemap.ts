@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { IRegisterTileOptions, ILayerRender, YSortCallback, TilemapShape, IRenderSpriteOptions } from "./interface";
+import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions } from "./interface";
 import { Texture } from "./texture";
 import { Vec2 } from "./math";
 import warn from "./log";
@@ -92,7 +92,7 @@ export class TileMapRender {
      * @returns Object containing x and y error offsets.
      * @private
      */
-    private getOffset(options: ILayerRender) {
+    private getOffset(options: ILayerRenderOptions) {
         let errorX = (options.errorX ?? 2) + 1
         let errorY = (options.errorY ?? 2) + 1
         if (typeof options.error === 'number') {
@@ -113,7 +113,7 @@ export class TileMapRender {
      * @returns Object containing calculated tile rendering data.
      * @private
      */
-    private getTileData(tileSet: TileSet, options: ILayerRender) {
+    private getTileData(tileSet: TileSet, options: ILayerRenderOptions) {
         const shape = options.shape ?? TilemapShape.SQUARE
         const width = tileSet.width
         const height = shape === TilemapShape.ISOMETRIC ? tileSet.height / 2 : tileSet.height
@@ -176,7 +176,7 @@ export class TileMapRender {
      * @param options - The rendering options for the tilemap layer.
      * @returns 
      */
-    renderLayer(data: (number | string)[][], options: ILayerRender): void {
+    renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void {
         this.rapid.matrixStack.applyTransform(options)
         const tileSet = options.tileSet
         const {
@@ -247,7 +247,7 @@ export class TileMapRender {
      * @param options - The rendering options.
      * @returns The map coordinates.
      */
-    localToMap(local: Vec2, options: ILayerRender) {
+    localToMap(local: Vec2, options: ILayerRenderOptions) {
         const tileSet = options.tileSet
         if (options.shape === TilemapShape.ISOMETRIC) {
 
@@ -324,7 +324,7 @@ export class TileMapRender {
      * @param options - The rendering options.
      * @returns The local coordinates.
      */
-    mapToLocal(map: Vec2, options: ILayerRender) {
+    mapToLocal(map: Vec2, options: ILayerRenderOptions) {
         const tileSet = options.tileSet
         if (options.shape === TilemapShape.ISOMETRIC) {
             let pos = new Vec2(

@@ -5,7 +5,6 @@ import GLShader from "../webgl/glshader";
 import { Uniform } from "../webgl/uniform";
 declare class RenderRegion {
     currentShader?: GLShader;
-    private currentShaderName;
     protected webglArrayBuffer: WebglBufferArray;
     protected rapid: Rapid;
     protected gl: WebGLContext;

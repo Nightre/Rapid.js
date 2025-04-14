@@ -1,4 +1,4 @@
-import { IMathStruct as IMathObject, ITransform, WebGLContext } from "./interface";
+import { IMathStruct as IMathObject, ITransformOptions, WebGLContext } from "./interface";
 
 const MATRIX_SIZE = 6
 
@@ -137,12 +137,13 @@ export class WebglBufferArray extends DynamicArrayBuffer {
      * webglbuffer 中的大小
      */
     private webglBufferSize: number = 0
-
-    constructor(gl: WebGLContext, arrayType: ArrayType, type: number = gl.ARRAY_BUFFER) {
+    readonly usage: number
+    constructor(gl: WebGLContext, arrayType: ArrayType, type: number = gl.ARRAY_BUFFER, usage:number = gl.STATIC_DRAW) {
         super(arrayType)
         this.gl = gl
         this.buffer = gl.createBuffer()!;
         this.type = type
+        this.usage = usage
     }
     override pushFloat32(value: number): void {
         super.pushFloat32(value)
@@ -169,7 +170,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         if (this.dirty) {
             const gl = this.gl
             if (this.maxElemNum > this.webglBufferSize) {
-                gl.bufferData(this.type, this.getArray(), gl.STATIC_DRAW)
+                gl.bufferData(this.type, this.getArray(), this.usage)
                 this.webglBufferSize = this.maxElemNum
             } else {
                 gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
@@ -463,7 +464,7 @@ export class MatrixStack extends DynamicArrayBuffer {
      * @param transform - The transform to apply
      * @returns offset position
      */
-    applyTransform(transform: ITransform, width: number = 0, height: number = 0) {
+    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0) {
         if (transform.saveTransform ?? true) {
             this.pushMat()
         }
@@ -503,7 +504,7 @@ export class MatrixStack extends DynamicArrayBuffer {
             offsetY
         }
     }
-    applyTransformAfter(transform: ITransform) {
+    applyTransformAfter(transform: ITransformOptions) {
         if (transform.beforRestore) {
             transform.beforRestore()
         }
@@ -518,7 +519,7 @@ export class MatrixStack extends DynamicArrayBuffer {
  */
 export class WebglElementBufferArray extends WebglBufferArray {
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number) {
-        super(gl, ArrayType.Uint16, gl.ELEMENT_ARRAY_BUFFER)
+        super(gl, ArrayType.Uint16, gl.ELEMENT_ARRAY_BUFFER, gl.STATIC_DRAW)
         this.setMaxSize(elemVertPerObj * maxBatch)
         for (let index = 0; index < maxBatch; index++) {
             this.addObject(index * vertexPerObject)

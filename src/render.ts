@@ -1,4 +1,5 @@
-import { ICircleOptions, IGraphicOptions, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, IRenderSpriteOptions, ShaderType as ShaderType, ITransform, MaskType, WebGLContext } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext } from "./interface"
+import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
 import GraphicRegion from "./regions/graphic_region"
@@ -6,7 +7,6 @@ import RenderRegion from "./regions/region"
 import SpriteRegion from "./regions/sprite_region"
 import { FrameBufferObject, Texture, TextureCache } from "./texture"
 import { TileMapRender, TileSet } from "./tilemap"
-import { getSize } from "./utils"
 import GLShader from "./webgl/glshader"
 import { getContext } from "./webgl/utils"
 
@@ -21,9 +21,12 @@ class Rapid {
 
     matrixStack = new MatrixStack()
     textures: TextureCache
+    tileMap = new TileMapRender(this)
+    light = new LightManager(this)
+
     width: number
     height: number
-    tileMap: TileMapRender = new TileMapRender(this)
+
     backgroundColor: Color
     readonly devicePixelRatio = window.devicePixelRatio || 1
     readonly maxTextureUnits: number
@@ -34,7 +37,7 @@ class Rapid {
     private currentRegionName?: string
     private regions: Map<string, RenderRegion> = new Map
     private currentMaskType: MaskType[] = []
-    private currentTransform: ITransform[] = []
+    private currentTransform: ITransformOptions[] = []
     private currentFBO: FrameBufferObject[] = []
 
     /**
@@ -61,7 +64,7 @@ class Rapid {
      * @param data - The map data to render.
      * @param options - The options for rendering the tile map layer.
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRender | TileSet): void {
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void {
         this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
     }
 
@@ -186,7 +189,7 @@ class Rapid {
      * 
      * @param options - The rendering options for the sprite, including texture, position, color, and shader.
      */
-    renderSprite(options: IRenderSpriteOptions): void {
+    renderSprite(options: ISpriteRenderOptions): void {
         const texture = options.texture
         if (!texture || !texture.base) return
 
@@ -239,7 +242,7 @@ class Rapid {
      * 
      * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(options: IGraphicOptions): void {
+    renderGraphic(options: IGraphicRenderOptions): void {
         this.startGraphicDraw(options)
         options.points.forEach((vec, index) => {
             const color = Array.isArray(options.color) ? options.color[index] : options.color
@@ -253,7 +256,7 @@ class Rapid {
      * 
      * @param options - The options for the graphic drawing, including shader, texture, and draw type.
      */
-    startGraphicDraw(options: IGraphicOptions) {
+    startGraphicDraw(options: IGraphicRenderOptions) {
         const { offsetX, offsetY } = this.startDraw(options)
         this.setRegion("graphic", options.shader)
         const currentRegion = this.currentRegion as GraphicRegion
@@ -286,7 +289,7 @@ class Rapid {
         this.afterDraw()
     }
 
-    private startDraw(options: ITransform, width: number = 0, height: number = 0) {
+    private startDraw(options: ITransformOptions, width: number = 0, height: number = 0) {
         this.currentTransform.push(options)
         return this.matrixStack.applyTransform(options, width, height)
     }
@@ -302,7 +305,7 @@ class Rapid {
      * 
      * @param options - The options for rendering the rectangle, including width, height, position, and color.
      */
-    renderRect(options: IRectOptions): void {
+    renderRect(options: IRectRenderOptions): void {
         const { width, height } = options
         const points = [
             new Vec2(0, 0),
@@ -318,7 +321,7 @@ class Rapid {
      * 
      * @param options - The options for rendering the circle, including radius, position, color, and segment count.
      */
-    renderCircle(options: ICircleOptions): void {
+    renderCircle(options: ICircleRenderOptions): void {
         const segments = options.segments || 32
         const radius = options.radius
         const color = options.color || this.defaultColor

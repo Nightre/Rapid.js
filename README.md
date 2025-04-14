@@ -59,7 +59,6 @@ For more examples and detailed documentation, visit our [website](https://nightr
 
 ## Roadmap
 
-* Particle System
 * Line Texture
 * Light System
 

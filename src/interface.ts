@@ -1,5 +1,5 @@
 import { Color, Vec2 } from "./math";
-import { FrameBufferObject, Texture } from "./texture";
+import { Texture } from "./texture";
 import { TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
 import { Uniform } from "./webgl/uniform";
@@ -34,7 +34,7 @@ export interface IAttribute {
     offset?: number
 }
 
-export interface ITransform {
+export interface ITransformOptions {
     position?: Vec2,
     scale?: Vec2 | number,
     rotation?: number,
@@ -55,7 +55,7 @@ export interface ITransform {
     beforRestore?(): unknown,
 }
 
-export interface IRenderSpriteOptions extends ITransform, IShader {
+export interface ISpriteRenderOptions extends ITransformOptions, IShaderRenderOptions {
     color?: Color;
     texture?: Texture,
     offset?: Vec2,
@@ -63,7 +63,7 @@ export interface IRenderSpriteOptions extends ITransform, IShader {
     flipX?: boolean,
     flipY?: boolean,
 }
-export interface ITextOptions {
+export interface ITextTextureOptions {
     /**
      * The text string to be rendered.
      */
@@ -102,15 +102,15 @@ export interface ITextOptions {
     textBaseline?: CanvasTextBaseline;
 }
 
-export interface ILineOptions {
+export interface ILineRenderOptions {
     width?: number;
     closed?: boolean;
     points: Vec2[],
     roundCap?: boolean,
     color?: Color,
 }
-export interface IRenderLineOptions extends ILineOptions, ITransform { }
-export interface IGraphicOptions extends ITransform, IShader {
+export interface IRenderLineOptions extends ILineRenderOptions, ITransformOptions { }
+export interface IGraphicRenderOptions extends ITransformOptions, IShaderRenderOptions {
     points: Vec2[],
     color?: Color | Color[],
     drawType?: number,
@@ -118,12 +118,12 @@ export interface IGraphicOptions extends ITransform, IShader {
     texture?: Texture,
 }
 
-export interface ICircleOptions extends IGraphicOptions {
+export interface ICircleRenderOptions extends IGraphicRenderOptions {
     radius: number,
     segments?: number,
 }
 
-export interface IRectOptions extends IGraphicOptions {
+export interface IRectRenderOptions extends IGraphicRenderOptions {
     width: number,
     height: number,
 }
@@ -134,7 +134,7 @@ export enum MaskType {
 }
 export type UniformType = Record<string, number | Array<any> | boolean | Texture>
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas
-export interface IRegisterTileOptions extends IRenderSpriteOptions {
+export interface IRegisterTileOptions extends ISpriteRenderOptions {
     texture: Texture,
     offsetX?: number,
     offsetY?: number,
@@ -144,9 +144,9 @@ export interface IRegisterTileOptions extends IRenderSpriteOptions {
 export interface YSortCallback {
     ySort: number,
     render?: () => void,
-    renderSprite?: IRenderSpriteOptions
+    renderSprite?: ISpriteRenderOptions
 }
-export interface ILayerRender extends ITransform {
+export interface ILayerRenderOptions extends ITransformOptions {
     error?: number | Vec2,
     errorX?: number,
     errorY?: number,
@@ -155,9 +155,9 @@ export interface ILayerRender extends ITransform {
     shape?: TilemapShape,
     tileSet: TileSet,
 
-    eachTile?: (tileId: string | number, mapX: number, mapY: number) => IRenderSpriteOptions | undefined | void,
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void,
 }
-export interface IShader {
+export interface IShaderRenderOptions {
     shader?: GLShader;
     uniforms?: Uniform,
 }
@@ -169,4 +169,8 @@ export enum TilemapShape {
 export enum ShaderType {
     SPRITE='sprite',
     GRAPHIC='graphic',
+}
+
+export interface IParticleEmitterOptions extends ITransformOptions, IShaderRenderOptions {
+    texture: Texture | Texture[] | [Texture, number][],
 }

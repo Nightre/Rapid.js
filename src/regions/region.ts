@@ -6,7 +6,6 @@ import { Uniform } from "../webgl/uniform";
 
 class RenderRegion {
     currentShader?: GLShader
-    private currentShaderName!: string
     protected webglArrayBuffer: WebglBufferArray
     protected rapid: Rapid
     protected gl: WebGLContext
@@ -17,10 +16,11 @@ class RenderRegion {
     protected readonly MAX_TEXTURE_UNIT_ARRAY: number[]
     private costumUnifrom?: Uniform
     private defaultShader?: GLShader
+
     constructor(rapid: Rapid) {
         this.rapid = rapid
         this.gl = rapid.gl
-        this.webglArrayBuffer = new WebglBufferArray(rapid.gl, ArrayType.Float32, rapid.gl.ARRAY_BUFFER)
+        this.webglArrayBuffer = new WebglBufferArray(rapid.gl, ArrayType.Float32, rapid.gl.ARRAY_BUFFER, rapid.gl.STREAM_DRAW)
         this.MAX_TEXTURE_UNIT_ARRAY = Array.from({ length: rapid.maxTextureUnits },
             (_, index) => index);
     }
