@@ -1,4 +1,4 @@
-import { ICircleOptions, IGraphic, ILayerRender, IRapidOptions, IRectOptions, IRenderLineOptions, ISprite, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
@@ -39,7 +39,7 @@ declare class Rapid {
      * @param data - The map data to render.
      * @param options - The options for rendering the tile map layer.
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRender | TileSet): void;
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void;
     /**
      * Initializes WebGL context settings.
      * @param gl - The WebGL context.
@@ -99,7 +99,7 @@ declare class Rapid {
      *
      * @param options - The rendering options for the sprite, including texture, position, color, and shader.
      */
-    renderSprite(options: ISprite): void;
+    renderSprite(options: ISpriteRenderOptions): void;
     /**
      * Renders a texture directly without additional options.
      * This is a convenience method that calls renderSprite with just the texture.
@@ -118,13 +118,13 @@ declare class Rapid {
      *
      * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(options: IGraphic): void;
+    renderGraphic(options: IGraphicRenderOptions): void;
     /**
      * Starts the graphic drawing process.
      *
      * @param options - The options for the graphic drawing, including shader, texture, and draw type.
      */
-    startGraphicDraw(options: IGraphic): void;
+    startGraphicDraw(options: IGraphicRenderOptions): void;
     /**
      * Adds a vertex to the current graphic being drawn.
      *
@@ -145,13 +145,13 @@ declare class Rapid {
      *
      * @param options - The options for rendering the rectangle, including width, height, position, and color.
      */
-    renderRect(options: IRectOptions): void;
+    renderRect(options: IRectRenderOptions): void;
     /**
      * Renders a circle with the specified options.
      *
      * @param options - The options for rendering the circle, including radius, position, color, and segment count.
      */
-    renderCircle(options: ICircleOptions): void;
+    renderCircle(options: ICircleRenderOptions): void;
     /**
      * Resizes the canvas and updates the viewport and projection matrix.
      * @param width - The new width of the canvas.

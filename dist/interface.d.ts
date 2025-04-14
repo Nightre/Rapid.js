@@ -30,7 +30,7 @@ export interface IAttribute {
     stride: number;
     offset?: number;
 }
-export interface ITransform {
+export interface ITransformOptions {
     position?: Vec2;
     scale?: Vec2 | number;
     rotation?: number;
@@ -45,14 +45,14 @@ export interface ITransform {
     afterSave?(): unknown;
     beforRestore?(): unknown;
 }
-export interface ISprite extends ITransform, IShader {
+export interface ISpriteRenderOptions extends ITransformOptions, IShaderRenderOptions {
     color?: Color;
     texture?: Texture;
     offset?: Vec2;
     flipX?: boolean;
     flipY?: boolean;
 }
-export interface ITextOptions {
+export interface ITextTextureOptions {
     /**
      * The text string to be rendered.
      */
@@ -85,27 +85,27 @@ export interface ITextOptions {
      */
     textBaseline?: CanvasTextBaseline;
 }
-export interface ILineOptions {
+export interface ILineRenderOptions {
     width?: number;
     closed?: boolean;
     points: Vec2[];
     roundCap?: boolean;
     color?: Color;
 }
-export interface IRenderLineOptions extends ILineOptions, ITransform {
+export interface IRenderLineOptions extends ILineRenderOptions, ITransformOptions {
 }
-export interface IGraphic extends ITransform, IShader {
+export interface IGraphicRenderOptions extends ITransformOptions, IShaderRenderOptions {
     points: Vec2[];
     color?: Color | Color[];
     drawType?: number;
     uv?: Vec2[];
     texture?: Texture;
 }
-export interface ICircleOptions extends IGraphic {
+export interface ICircleRenderOptions extends IGraphicRenderOptions {
     radius: number;
     segments?: number;
 }
-export interface IRectOptions extends IGraphic {
+export interface IRectRenderOptions extends IGraphicRenderOptions {
     width: number;
     height: number;
 }
@@ -115,7 +115,7 @@ export declare enum MaskType {
 }
 export type UniformType = Record<string, number | Array<any> | boolean | Texture>;
 export type Images = ImageBitmap | ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas;
-export interface IRegisterTileOptions extends ISprite {
+export interface IRegisterTileOptions extends ISpriteRenderOptions {
     texture: Texture;
     offsetX?: number;
     offsetY?: number;
@@ -124,18 +124,18 @@ export interface IRegisterTileOptions extends ISprite {
 export interface YSortCallback {
     ySort: number;
     render?: () => void;
-    renderSprite?: ISprite;
+    renderSprite?: ISpriteRenderOptions;
 }
-export interface ILayerRender extends ITransform {
+export interface ILayerRenderOptions extends ITransformOptions {
     error?: number | Vec2;
     errorX?: number;
     errorY?: number;
     ySortCallback?: Array<YSortCallback>;
     shape?: TilemapShape;
     tileSet: TileSet;
-    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISprite | undefined | void;
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
 }
-export interface IShader {
+export interface IShaderRenderOptions {
     shader?: GLShader;
     uniforms?: Uniform;
 }
@@ -147,6 +147,6 @@ export declare enum ShaderType {
     SPRITE = "sprite",
     GRAPHIC = "graphic"
 }
-export interface IParticleEmitterOptions extends ITransform, IShader {
+export interface IParticleEmitterOptions extends ITransformOptions, IShaderRenderOptions {
     texture: Texture | Texture[] | [Texture, number][];
 }

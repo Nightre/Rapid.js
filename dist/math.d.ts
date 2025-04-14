@@ -1,4 +1,4 @@
-import { IMathStruct as IMathObject, ITransform, WebGLContext } from "./interface";
+import { IMathStruct as IMathObject, ITransformOptions, WebGLContext } from "./interface";
 /**
  * @ignore
  */
@@ -21,7 +21,7 @@ export declare class DynamicArrayBuffer {
     private float32?;
     private uint16?;
     constructor(arrayType: ArrayType);
-    getArrayType(arrayType: ArrayType): Float32ArrayConstructor | Uint32ArrayConstructor | Uint16ArrayConstructor;
+    getArrayType(arrayType: ArrayType): Uint16ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor;
     updateTypedArray(): void;
     clear(): void;
     /**
@@ -45,7 +45,7 @@ export declare class DynamicArrayBuffer {
      * @param end
      * @returns
      */
-    getArray(begin?: number, end?: number): Uint32Array | Float32Array | Uint16Array;
+    getArray(begin?: number, end?: number): Uint16Array | Uint32Array | Float32Array;
     /**
      * length of the array
      */
@@ -176,11 +176,11 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * @param transform - The transform to apply
      * @returns offset position
      */
-    applyTransform(transform: ITransform, width?: number, height?: number): {
+    applyTransform(transform: ITransformOptions, width?: number, height?: number): {
         offsetX: number;
         offsetY: number;
     };
-    applyTransformAfter(transform: ITransform): void;
+    applyTransformAfter(transform: ITransformOptions): void;
 }
 /**
  * @ignore
@@ -188,7 +188,6 @@ export declare class MatrixStack extends DynamicArrayBuffer {
 export declare class WebglElementBufferArray extends WebglBufferArray {
     constructor(gl: WebGLContext, elemVertPerObj: number, vertexPerObject: number, maxBatch: number);
     protected addObject(_vertex?: number): void;
-    bindBuffer(): void;
 }
 /**
  * Represents a color with red, green, blue, and alpha (transparency) components.

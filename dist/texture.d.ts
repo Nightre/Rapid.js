@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { Images, ITextOptions, WebGLContext } from "./interface";
+import { Images, ITextTextureOptions, WebGLContext } from "./interface";
 /**
  * texture manager
  * @ignore
@@ -41,7 +41,7 @@ declare class TextureCache {
      * @param options - The options for rendering the text, such as font, size, color, etc.
      * @returns A new `Text` instance.
      */
-    createText(options: ITextOptions): Text;
+    createText(options: ITextTextureOptions): Text;
     /**
      * Destroy the texture
      * @param texture
@@ -167,7 +167,7 @@ declare class Text extends Texture {
      * Creates a new `Text` instance.
      * @param options - The options for rendering the text, such as font, size, color, etc.
      */
-    constructor(rapid: Rapid, options: ITextOptions);
+    constructor(rapid: Rapid, options: ITextTextureOptions);
     private updateTextImage;
     /**
      * Creates a canvas element for rendering text.

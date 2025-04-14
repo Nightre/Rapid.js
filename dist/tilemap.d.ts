@@ -1,5 +1,5 @@
 import Rapid from "./render";
-import { IRegisterTileOptions, ILayerRender } from "./interface";
+import { IRegisterTileOptions, ILayerRenderOptions } from "./interface";
 import { Texture } from "./texture";
 import { Vec2 } from "./math";
 /**
@@ -79,19 +79,19 @@ export declare class TileMapRender {
      * @param options - The rendering options for the tilemap layer.
      * @returns
      */
-    renderLayer(data: (number | string)[][], options: ILayerRender): void;
+    renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void;
     /**
      * Converts local coordinates to map coordinates.
      * @param local - The local coordinates.
      * @param options - The rendering options.
      * @returns The map coordinates.
      */
-    localToMap(local: Vec2, options: ILayerRender): Vec2;
+    localToMap(local: Vec2, options: ILayerRenderOptions): Vec2;
     /**
      * Converts map coordinates to local coordinates.
      * @param map - The map coordinates.
      * @param options - The rendering options.
      * @returns The local coordinates.
      */
-    mapToLocal(map: Vec2, options: ILayerRender): Vec2;
+    mapToLocal(map: Vec2, options: ILayerRenderOptions): Vec2;
 }
