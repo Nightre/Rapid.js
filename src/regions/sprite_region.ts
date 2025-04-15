@@ -38,6 +38,8 @@ class SpriteElementArray extends WebglElementBufferArray {
 class SpriteRegion extends RenderRegion {
     private batchSprite: number = 0
     private indexBuffer: SpriteElementArray
+    private spriteTextureUnits: number[] = []
+    private spriteTextureUnitIndexOffset: number = 0
 
     constructor(rapid: Rapid) {
         const gl = rapid.gl
@@ -67,41 +69,29 @@ class SpriteRegion extends RenderRegion {
         uniforms?: Uniform,
         flipX?: boolean,
         flipY?: boolean,
+        additionalTexturenit: number = 0
     ) {
-        // let rendered = false
-        // if (this.batchSprite >= MAX_BATCH) {
-        //     !rendered && this.render()
-        //     rendered = true
-        // }
-        // if (uniforms && this.setCostumUnifrom(uniforms)) {
-        //     !rendered && this.render()
-        //     this.currentShader!.setUniforms(uniforms, 0)
-        //     rendered = true
-        // }
-        // if (this.rapid.projectionDirty) {
-        //     !rendered && this.render()
-        //     this.updateProjection()
-        //     rendered = true
-        // }
-
-        if (this.batchSprite >= MAX_BATCH || this.rapid.projectionDirty ||
-            (uniforms && this.setCostumUnifrom(uniforms))
+        if (
+            1 + additionalTexturenit > this.freeTextureUnitNum()
+            || this.batchSprite >= MAX_BATCH
+            || (uniforms && this.setCostumUnifrom(uniforms))
+            || this.rapid.projectionDirty
         ) {
+            this.render()
 
-            this.render();
-
-            if (uniforms) this.currentShader!.setUniforms(uniforms, 0)
+            if (uniforms) this.currentShader!.setUniforms(uniforms, this)
             if (this.rapid.projectionDirty) this.updateProjection()
         }
-
-        //if (flipX) [u0, u1] = [u1, u0]
-        //if (flipY) [v0, v1] = [v1, v0]
 
         this.batchSprite++
         this.webglArrayBuffer.resize(FLOAT32_PER_SPRITE)
 
-        const texUnit = this.useTexture(texture)
-
+        const [textureUnit, isNew] = this.useTexture(texture)
+        if (isNew) {
+            this.spriteTextureUnits.push(textureUnit)
+            this.spriteTextureUnitIndexOffset = this.spriteTextureUnits[0]
+        }
+        const textureIndex = textureUnit - this.spriteTextureUnitIndexOffset
         /**
          * 0-----1
          * | \   |
@@ -118,37 +108,34 @@ class SpriteRegion extends RenderRegion {
         const x2 = offsetX + width
         const y1 = offsetY
         const y2 = offsetY + height
-    
-        this.addVertex(x1, y1, uA, vA, texUnit, color)
-        this.addVertex(x2, y1, uB, vA, texUnit, color)
-        this.addVertex(x2, y2, uB, vB, texUnit, color)
-        this.addVertex(x1, y2, uA, vB, texUnit, color)
 
-        // const posX = offsetX + width
-        // const posY = offsetY + height
-
-        // this.addVertex(offsetX, offsetY, u0, v0, textureUnit, color) // 0
-        // this.addVertex(posX, offsetY, u1, v0, textureUnit, color) // 1
-        // this.addVertex(posX, posY, u1, v1, textureUnit, color) // 2
-        // this.addVertex(offsetX, posY, u0, v1, textureUnit, color) // 3
+        this.addVertex(x1, y1, uA, vA, textureIndex, color)
+        this.addVertex(x2, y1, uB, vA, textureIndex, color)
+        this.addVertex(x2, y2, uB, vB, textureIndex, color)
+        this.addVertex(x1, y2, uA, vB, textureIndex, color)
     }
+
     protected override executeRender(): void {
         super.executeRender()
+        if (this.batchSprite <= 0) return
+
         const gl = this.gl
+        if (this.spriteTextureUnits.length > 0) {
+            this.gl.uniform1iv(
+                this.currentShader!.uniformLoc["uTextures"],
+                this.spriteTextureUnits
+            )
+        }
         gl.drawElements(gl.TRIANGLES, this.batchSprite * INDEX_PER_SPRITE, gl.UNSIGNED_SHORT, 0)
     }
     override enterRegion(customShader?: GLShader | undefined): void {
         super.enterRegion(customShader)
         this.indexBuffer.bindBuffer()
-
-        this.gl.uniform1iv(
-            this.currentShader!.uniformLoc["uTextures"],
-            this.setTextureUnits(this.currentShader!.usedTexture)
-        )
     }
     protected override initializeForNextRender(): void {
         super.initializeForNextRender()
         this.batchSprite = 0
+        this.spriteTextureUnits.length = 0
     }
     override hasPendingContent(): boolean {
         return this.batchSprite > 0

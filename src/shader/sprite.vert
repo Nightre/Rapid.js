@@ -16,5 +16,7 @@ void main(void) {
     vTextureId = aTextureId;
     vColor = aColor;
 
+    // vertex s
     gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
+    // vertex e
 }

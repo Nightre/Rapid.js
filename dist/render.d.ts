@@ -206,10 +206,9 @@ declare class Rapid {
      * @param vs - Vertex shader code.
      * @param fs - Fragment shader code.
      * @param type - Shader type.
-     * @param textureUnit - The number of textures used by the shader
      * @returns The created shader object.
      */
-    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit?: number): GLShader;
+    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnitNum?: number): GLShader;
     /**
      * Starts rendering to a Frame Buffer Object (FBO)
      * Sets up the FBO for rendering by binding it, adjusting viewport size and projection

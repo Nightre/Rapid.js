@@ -1,16 +1,9 @@
 import { Color, Rapid, Uniform, Vec2, ShaderType } from "/Rapid.js/dist/rapid.js"
 
-
 const rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("FFFFFF")
 })
-
-
-
-let customUniformValue = 1
-
-
 
 const plane = await rapid.textures.textureFromUrl("./assets/plane.png")
 const cat = await rapid.textures.textureFromUrl("./assets/cat.png")
@@ -39,6 +32,7 @@ void vertex(inout vec2 position, inout vec2 region) {
 
 const fragmentShaderSource = `
 uniform float uCustomUniform;
+uniform sampler2D uCatTexture;
 varying vec2 vPosition;
 void fragment(inout vec4 color) {
     color.r = vPosition.x / 100.0 - uCustomUniform;
@@ -47,9 +41,7 @@ void fragment(inout vec4 color) {
 `;
 
 
-
 const customShader = rapid.createCostumShader(vertexShaderSource, fragmentShaderSource, ShaderType.GRAPHIC, 1)
-
 const graphic2UV = Vec2.FromArray([
     [0, 0],
     [1, 0],
@@ -77,8 +69,6 @@ const render = () => {
         uniforms: uniform
     });
 
-    
-    
     rapid.renderSprite({
         texture: plane,
         position: new Vec2(50, 0),

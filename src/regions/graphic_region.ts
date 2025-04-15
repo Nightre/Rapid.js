@@ -21,12 +21,12 @@ class GraphicRegion extends RenderRegion {
         this.setShader('default', vertString, fragString, graphicAttributes)
     }
     startRender(offsetX: number, offsetY: number, texture?: Texture, uniforms?:Uniform) {
-        uniforms && this.currentShader?.setUniforms(uniforms, 1)
+        uniforms && this.currentShader?.setUniforms(uniforms, this)
         this.offset = new Vec2(offsetX, offsetY)
         this.vertex = 0
         this.webglArrayBuffer.clear()
         if (texture && texture.base) {
-            this.texture = this.useTexture(texture.base.texture)
+            this.texture = this.useTexture(texture.base.texture)[0]
         }
     }
     override addVertex(x: number, y: number, u: number, v: number, color: number): void {

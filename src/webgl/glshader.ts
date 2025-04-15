@@ -10,21 +10,23 @@ import spriteFragString from "../shader/sprite.frag";
 import spriteVertString from "../shader/sprite.vert";
 import { spriteAttributes } from "../regions/attributes"
 import { graphicAttributes } from "../regions/attributes"
+import SpriteRegion from "../regions/sprite_region"
+import RenderRegion from "../regions/region"
 
 class GLShader {
     attributeLoc: Record<string, number> = {}
     uniformLoc: Record<string, WebGLUniformLocation> = {}
     program: WebGLProgram
+    textureUnitNum: number = 0
 
     private attributes: IAttribute[] = []
     private gl: WebGLContext
-    usedTexture: number
-    
-    constructor(rapid: Rapid, vs: string, fs: string, attributes?: IAttribute[], usedTexture = 0) {
-        const processedFragmentShaderSource = generateFragShader(fs, rapid.maxTextureUnits - usedTexture)
+
+    constructor(rapid: Rapid, vs: string, fs: string, attributes?: IAttribute[], textureUnitNum: number = 0) {
+        const processedFragmentShaderSource = generateFragShader(fs, rapid.maxTextureUnits - textureUnitNum)
         this.program = createShaderProgram(rapid.gl, vs, processedFragmentShaderSource)
         this.gl = rapid.gl
-        this.usedTexture = usedTexture
+        this.textureUnitNum = textureUnitNum
         this.parseShader(vs);
         this.parseShader(processedFragmentShaderSource);
         if (attributes) {
@@ -36,14 +38,13 @@ class GLShader {
      * @param uniforms 
      * @param usedTextureUnit How many texture units have been used
      */
-    setUniforms(uniform: Uniform, usedTextureUnit: number) {
+    setUniforms(uniform: Uniform, region: RenderRegion) {
         const gl = this.gl;
         for (const uniformName of uniform.getUnifromNames()) {
             const loc = this.getUniform(uniformName);
 
-            usedTextureUnit = uniform.bind(gl, uniformName, loc, usedTextureUnit)
+            uniform.bind(gl, uniformName, loc, region)
         }
-        return usedTextureUnit
     }
 
     private getUniform(name: string) {
@@ -110,7 +111,7 @@ class GLShader {
         this.setAttributes(this.attributes)
     }
 
-    static createCostumShader(rapid: Rapid, vs: string, fs: string, type: ShaderType, usedTexture: number = 0) {
+    static createCostumShader(rapid: Rapid, vs: string, fs: string, type: ShaderType, textureUnitNum: number = 0) {
         let baseFs = {
             [ShaderType.SPRITE]: spriteFragString,
             [ShaderType.GRAPHIC]: graphicFragString,
@@ -126,14 +127,13 @@ class GLShader {
 
         baseFs = baseFs.replace('void main(void) {', fs + '\nvoid main(void) {')
         baseVs = baseVs.replace('void main(void) {', vs + '\nvoid main(void) {')
-        baseFs = baseFs.replace('gl_FragColor = ', 'fragment(color);\ngl_FragColor = ')
-        baseVs = baseVs.replace(
-            'gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);',
-`vec2 position = aPosition;
-vertex(position, vRegion);
-gl_Position = uProjectionMatrix * vec4(position, 0.0, 1.0);`
+        baseFs = baseFs.replace('// fragment', 'fragment(color);')
+        baseVs = baseVs.replace(/\/\/ vertex s[\s\S]*?\/\/ vertex e/,
+            `vec2 position = aPosition;
+            vertex(position, vRegion);
+            gl_Position = uProjectionMatrix * vec4(position, 0.0, 1.0);`
         )
-        return new GLShader(rapid, baseVs, baseFs, attribute, usedTexture)
+        return new GLShader(rapid, baseVs, baseFs, attribute, textureUnitNum)
     }
 }
 

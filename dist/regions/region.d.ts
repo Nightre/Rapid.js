@@ -9,16 +9,21 @@ declare class RenderRegion {
     protected rapid: Rapid;
     protected gl: WebGLContext;
     protected usedTextures: WebGLTexture[];
-    protected needBind: Set<number>;
     protected shaders: Map<string, GLShader>;
     protected isCostumShader: boolean;
-    protected readonly MAX_TEXTURE_UNIT_ARRAY: number[];
     private costumUnifrom?;
     private defaultShader?;
+    private maxTextureUnits;
     constructor(rapid: Rapid);
-    setTextureUnits(usedTexture: number): number[];
+    getTextureUnitList(): number[];
     protected addVertex(x: number, y: number, ..._: unknown[]): void;
-    protected useTexture(texture: WebGLTexture): number;
+    /**
+     * 使用纹理，必须在渲染操作之前
+     * @param texture
+     * @returns
+     */
+    useTexture(texture: WebGLTexture): [number, boolean];
+    freeTextureUnitNum(): number;
     enterRegion(customShader?: GLShader): void;
     updateProjection(): void;
     setCostumUnifrom(newCurrentUniform: Uniform): boolean;

@@ -12,5 +12,6 @@ void main(void) {
     }else{
         color = vColor;
     }
+    // fragment
     gl_FragColor = color;
 }

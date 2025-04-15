@@ -1,8 +1,10 @@
 import { UniformType, WebGLContext } from '../interface';
+import RenderRegion from '../regions/region';
 
 export class Uniform {
     private data: UniformType
     isDirty: boolean = false
+
     constructor(data: UniformType) {
         this.data = data
     }
@@ -21,7 +23,8 @@ export class Uniform {
     getUnifromNames(){
         return Object.keys(this.data)
     }
-    bind(gl: WebGLContext, uniformName: string, loc: WebGLUniformLocation, usedTextureUnit: number) {
+    bind(gl: WebGLContext, uniformName: string, loc: WebGLUniformLocation, region: RenderRegion) {
+        if (!loc) return
         const value = this.data[uniformName];
         if (typeof value === 'number') {
             gl.uniform1f(loc, value);
@@ -68,13 +71,10 @@ export class Uniform {
         } else if (typeof value === 'boolean') {
             gl.uniform1i(loc, value ? 1 : 0);
         } else if (value.base?.texture) {
-            gl.activeTexture(gl.TEXTURE0 + usedTextureUnit);
-            gl.bindTexture(gl.TEXTURE_2D, value.base.texture);
+            const usedTextureUnit = region.useTexture(value.base.texture)[0]
             gl.uniform1i(loc, usedTextureUnit);
-            usedTextureUnit += 1
         } else {
             console.error(`Unsupported uniform type for ${uniformName}:`, typeof value);
         }
-        return usedTextureUnit
     }
 }

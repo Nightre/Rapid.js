@@ -57,6 +57,7 @@ class Rapid {
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
         this.registerBuildInRegion()
         this.initWebgl(gl)
+        this.projectionDirty = false
     }
 
     /**
@@ -482,11 +483,10 @@ class Rapid {
      * @param vs - Vertex shader code.
      * @param fs - Fragment shader code.
      * @param type - Shader type.
-     * @param textureUnit - The number of textures used by the shader
      * @returns The created shader object.
      */
-    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnit: number = 0) {
-        return GLShader.createCostumShader(this, vs, fs, type, textureUnit)
+    createCostumShader(vs: string, fs: string, type: ShaderType, textureUnitNum: number = 0) {
+        return GLShader.createCostumShader(this, vs, fs, type, textureUnitNum)
     }
     /**
      * Starts rendering to a Frame Buffer Object (FBO)

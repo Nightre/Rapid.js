@@ -1,4 +1,5 @@
 import { UniformType, WebGLContext } from '../interface';
+import RenderRegion from '../regions/region';
 export declare class Uniform {
     private data;
     isDirty: boolean;
@@ -9,5 +10,5 @@ export declare class Uniform {
      */
     clearDirty(): void;
     getUnifromNames(): string[];
-    bind(gl: WebGLContext, uniformName: string, loc: WebGLUniformLocation, usedTextureUnit: number): number;
+    bind(gl: WebGLContext, uniformName: string, loc: WebGLUniformLocation, region: RenderRegion): void;
 }

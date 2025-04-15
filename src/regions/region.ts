@@ -10,41 +10,51 @@ class RenderRegion {
     protected rapid: Rapid
     protected gl: WebGLContext
     protected usedTextures: WebGLTexture[] = []
-    protected needBind: Set<number> = new Set
     protected shaders: Map<string, GLShader> = new Map()
     protected isCostumShader: boolean = false
-    protected readonly MAX_TEXTURE_UNIT_ARRAY: number[]
+    //protected readonly MAX_TEXTURE_UNIT_ARRAY: number[]
     private costumUnifrom?: Uniform
     private defaultShader?: GLShader
+    private maxTextureUnits: number
 
     constructor(rapid: Rapid) {
         this.rapid = rapid
         this.gl = rapid.gl
         this.webglArrayBuffer = new WebglBufferArray(rapid.gl, ArrayType.Float32, rapid.gl.ARRAY_BUFFER, rapid.gl.STREAM_DRAW)
-        this.MAX_TEXTURE_UNIT_ARRAY = Array.from({ length: rapid.maxTextureUnits },
+        // this.MAX_TEXTURE_UNIT_ARRAY = Array.from({ length: rapid.maxTextureUnits },
+        //     (_, index) => index);
+        this.maxTextureUnits = rapid.maxTextureUnits
+    }
+    getTextureUnitList() {
+        return Array.from({ length: this.maxTextureUnits },
             (_, index) => index);
     }
-    setTextureUnits(usedTexture: number) {
-        return this.MAX_TEXTURE_UNIT_ARRAY.slice(usedTexture, -1)
-    }
+    // setTextureUnits(usedTexture: number) {
+    //     return this.MAX_TEXTURE_UNIT_ARRAY.slice(usedTexture, -1)
+    // }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
         const [tx, ty] = this.rapid.matrixStack.apply(x, y) as number[]
         this.webglArrayBuffer.pushFloat32(tx)
         this.webglArrayBuffer.pushFloat32(ty)
     }
-    protected useTexture(texture: WebGLTexture) {
-        let textureUnit = this.usedTextures.indexOf(texture)
-        if (textureUnit === -1) {
-            // 新纹理 
-            if (this.usedTextures.length >= this.rapid.maxTextureUnits) {
-                this.render()
-            }
+    /**
+     * 使用纹理，必须在渲染操作之前
+     * @param texture 
+     * @returns 
+     */
+    useTexture(texture: WebGLTexture):[number, boolean] {
+        const textureUnit = this.usedTextures.indexOf(texture)
+        if (textureUnit == -1) {
             this.usedTextures.push(texture)
-            textureUnit = this.usedTextures.length - 1
-            this.needBind.add(textureUnit)
+            return [this.usedTextures.length - 1, true]
         }
-        return textureUnit
+        return [textureUnit, false]
     }
+    
+    freeTextureUnitNum(){
+        return this.maxTextureUnits - this.usedTextures.length
+    }
+
     enterRegion(customShader?: GLShader) {
         this.currentShader = customShader ?? this.getShader("default")!
         this.currentShader.use()
@@ -73,14 +83,15 @@ class RenderRegion {
         }
 
         newCurrentUniform?.clearDirty()
+
         return isChanged
     }
     exitRegion() { }
+    
     protected initDefaultShader(vs: string, fs: string, attributes?: IAttribute[]) {
-        // this.webglArrayBuffer.bindBuffer()
-        // this.defaultShader = new GLShader(this.rapid, vs, fs, attributes)
         this.setShader("default", vs, fs, attributes)
     }
+
     setShader(name: string, vs: string, fs: string, attributes?: IAttribute[]) {
         this.webglArrayBuffer.bindBuffer()
         this.shaders.set(name, new GLShader(this.rapid, vs, fs, attributes))
@@ -88,26 +99,26 @@ class RenderRegion {
             this.defaultShader = this.shaders.get(name)
         }
     }
+
     getShader(name: string) {
         return this.shaders.get(name)
     }
+
     render() {
         this.executeRender()
         this.initializeForNextRender()
     }
     protected executeRender() {
-        this.webglArrayBuffer.bufferData()
         const gl = this.gl
-
-        for (const unit of this.needBind) {
-            gl.activeTexture(gl.TEXTURE0 + unit + this.currentShader!.usedTexture);
+        for (let unit = 0; unit < this.usedTextures.length; unit++) {
+            gl.activeTexture(gl.TEXTURE0 + unit);
             gl.bindTexture(gl.TEXTURE_2D, this.usedTextures[unit]);
         }
-        this.needBind.clear()
+        this.webglArrayBuffer.bufferData()
     }
     protected initializeForNextRender() {
         this.webglArrayBuffer.clear()
-        this.usedTextures = []
+        this.usedTextures.length = 0
         this.isCostumShader = false
     }
 
