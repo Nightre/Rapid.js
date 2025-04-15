@@ -14,6 +14,7 @@ declare class RenderRegion {
     private costumUnifrom?;
     private defaultShader?;
     private maxTextureUnits;
+    protected freeTextureUnitNum: number;
     constructor(rapid: Rapid);
     getTextureUnitList(): number[];
     protected addVertex(x: number, y: number, ..._: unknown[]): void;
@@ -23,10 +24,10 @@ declare class RenderRegion {
      * @returns
      */
     useTexture(texture: WebGLTexture): [number, boolean];
-    freeTextureUnitNum(): number;
     enterRegion(customShader?: GLShader): void;
     updateProjection(): void;
-    setCostumUnifrom(newCurrentUniform: Uniform): boolean;
+    isUnifromChanged(newCurrentUniform?: Uniform): boolean;
+    setCurrentUniform(newCurrentUniform: Uniform): void;
     exitRegion(): void;
     protected initDefaultShader(vs: string, fs: string, attributes?: IAttribute[]): void;
     setShader(name: string, vs: string, fs: string, attributes?: IAttribute[]): void;

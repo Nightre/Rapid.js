@@ -72,14 +72,17 @@ class SpriteRegion extends RenderRegion {
         additionalTexturenit: number = 0
     ) {
         if (
-            1 + additionalTexturenit > this.freeTextureUnitNum()
+            1 + additionalTexturenit > this.freeTextureUnitNum
             || this.batchSprite >= MAX_BATCH
-            || (uniforms && this.setCostumUnifrom(uniforms))
+            || this.isUnifromChanged(uniforms)
             || this.rapid.projectionDirty
         ) {
             this.render()
 
-            if (uniforms) this.currentShader!.setUniforms(uniforms, this)
+            if (uniforms && this.isUnifromChanged(uniforms)) {
+                this.currentShader!.setUniforms(uniforms, this)
+                this.setCurrentUniform(uniforms)
+            }
             if (this.rapid.projectionDirty) this.updateProjection()
         }
 

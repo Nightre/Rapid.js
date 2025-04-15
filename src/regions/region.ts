@@ -16,6 +16,7 @@ class RenderRegion {
     private costumUnifrom?: Uniform
     private defaultShader?: GLShader
     private maxTextureUnits: number
+    protected freeTextureUnitNum: number = 0
 
     constructor(rapid: Rapid) {
         this.rapid = rapid
@@ -42,17 +43,14 @@ class RenderRegion {
      * @param texture 
      * @returns 
      */
-    useTexture(texture: WebGLTexture):[number, boolean] {
+    useTexture(texture: WebGLTexture): [number, boolean] {
         const textureUnit = this.usedTextures.indexOf(texture)
         if (textureUnit == -1) {
             this.usedTextures.push(texture)
+            this.freeTextureUnitNum = this.maxTextureUnits - this.usedTextures.length
             return [this.usedTextures.length - 1, true]
         }
         return [textureUnit, false]
-    }
-    
-    freeTextureUnitNum(){
-        return this.maxTextureUnits - this.usedTextures.length
     }
 
     enterRegion(customShader?: GLShader) {
@@ -73,21 +71,30 @@ class RenderRegion {
         )
     }
 
-    setCostumUnifrom(newCurrentUniform: Uniform) {
-        let isChanged = false
+    isUnifromChanged(newCurrentUniform?: Uniform) {
+        if (!newCurrentUniform) return false
+        //let isChanged = false
         if (this.costumUnifrom != newCurrentUniform) {
-            isChanged = true
-            this.costumUnifrom = newCurrentUniform
+            //isChanged = true
+            //this.costumUnifrom = newCurrentUniform
+            return true
         } else if (newCurrentUniform?.isDirty) {
-            isChanged = true
+            //isChanged = true
+            return true
         }
-
-        newCurrentUniform?.clearDirty()
-
-        return isChanged
-    }
-    exitRegion() { }
+        return false
     
+        //newCurrentUniform?.clearDirty()
+        //return isChanged
+    }
+
+    setCurrentUniform(newCurrentUniform: Uniform) {
+        newCurrentUniform.clearDirty()
+        this.costumUnifrom = newCurrentUniform
+    }
+
+    exitRegion() { }
+
     protected initDefaultShader(vs: string, fs: string, attributes?: IAttribute[]) {
         this.setShader("default", vs, fs, attributes)
     }
@@ -120,6 +127,7 @@ class RenderRegion {
         this.webglArrayBuffer.clear()
         this.usedTextures.length = 0
         this.isCostumShader = false
+        this.freeTextureUnitNum = this.maxTextureUnits
     }
 
     hasPendingContent(): boolean {
