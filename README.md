@@ -60,6 +60,7 @@ For more examples and detailed documentation, visit our [website](https://nightr
 ## Roadmap
 
 * Light System 🚧 (In Progress)
+* 9-slice
 * Nodejs Support
 
 ## Contributing
