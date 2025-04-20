@@ -1,6 +1,6 @@
 {
   "name": "rapid-render",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "type": "module",
   "files": [
     "dist"
@@ -21,6 +21,7 @@
     "docs": "typedoc"
   },
   "devDependencies": {
+    "express": "^4.18.2",
     "rollup": "^4.12.0",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-string": "^3.0.0",
@@ -28,8 +29,10 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.6.2",
     "typedoc": "^0.26.6",
-    "typescript": "^5.3.3",
-    "express": "^4.18.2",
-    "typedoc-theme-category-nav": "^0.0.3"
+    "typedoc-theme-category-nav": "^0.0.3",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
   }
 }

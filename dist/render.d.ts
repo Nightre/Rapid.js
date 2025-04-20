@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
@@ -233,5 +233,11 @@ declare class Rapid {
      * @param mode - The blend mode to apply
      */
     setBlendMode(mode: BlendMode): void;
+    /**
+     * Render light shadow
+     * @param occlusion - The occlusion polygon
+     * @param lightSource - The light source position
+     */
+    drawLightShadowMask(options: ILightRenderOptions): void;
 }
 export default Rapid;

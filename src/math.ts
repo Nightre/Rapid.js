@@ -960,6 +960,18 @@ export class Vec2 implements IMathObject<Vec2> {
     static FromArray(array: number[][]): Vec2[] {
         return array.map(pair => new Vec2(pair[0], pair[1]));
     }
+
+    /**
+     * Calculates the angle between two vectors.
+     * @param v - The other vector.
+     * @returns The angle between the two vectors in radians.
+     */
+    angleBetween(v: Vec2): number {
+        const dotProduct = this.dot(v);
+        const magnitudeProduct = this.length() * v.length();
+        const cosTheta = Math.max(-1, Math.min(1, dotProduct / magnitudeProduct));
+        return Math.acos(cosTheta);
+    }
 }
 
 /**

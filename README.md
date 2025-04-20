@@ -9,17 +9,15 @@ A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/exampl
 
 ## Features
 
-* **Fast Rendering**
-* **TileMap** - YSort, isometric
-* **Graphics Drawing**
-* **Text Rendering**
-* **Line Drawing** - line texture
-* **Custom Shaders**
-* **Mask**
-* **Frame Buffer Object**
-
-> [!WARNING]  
-> This project is a work in progress! Expect bugs, report issues, and feel free to contribute.
+* **Fast Rendering** ⚡
+* **TileMap** - YSort, isometric 🗺️
+* **Light Shadow** 💡
+* **Graphics Drawing** ✏️
+* **Text Rendering** 📝
+* **Line Drawing** - line texture 〰️
+* **Custom Shaders** 🎨
+* **Mask** 🎭
+* **Frame Buffer Object** 🖼️
 
 ## Install
 
@@ -59,8 +57,7 @@ For more examples and detailed documentation, visit our [website](https://nightr
 
 ## Roadmap
 
-* Light System 🚧 (In Progress)
-* 9-slice
+* 9-slice 🚧 (In Progress)
 * Nodejs Support
 
 ## Contributing
@@ -71,3 +68,4 @@ Issues and PRs are welcome!
 
 ![1](./screenshot/1.gif)
 ![2](./screenshot/2.gif)
+![3](./screenshot/3.png)

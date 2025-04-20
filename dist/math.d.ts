@@ -444,6 +444,12 @@ export declare class Vec2 implements IMathObject<Vec2> {
      * @returns An array of Vec2 instances.
      */
     static FromArray(array: number[][]): Vec2[];
+    /**
+     * Calculates the angle between two vectors.
+     * @param v - The other vector.
+     * @returns The angle between the two vectors in radians.
+     */
+    angleBetween(v: Vec2): number;
 }
 /**
  * Provides utility methods for mathematical conversions.

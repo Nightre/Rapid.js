@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -553,6 +553,22 @@ class Rapid {
             default:
                 break;
         }
+    }
+    /**
+     * Render light shadow
+     * @param occlusion - The occlusion polygon
+     * @param lightSource - The light source position
+     */
+    drawLightShadowMask(options: ILightRenderOptions) {
+        this.startDrawMask(options.type || MaskType.Exclude)
+        const shadowPolygon = this.light.createLightShadowMaskPolygon(options.occlusion, options.lightSource, options.baseProjectionLength)
+        shadowPolygon.forEach(polygon => {
+            this.renderGraphic({
+                points: polygon,
+                color: Color.Black,
+            })
+        })
+        this.endDrawMask()
     }
 }
 

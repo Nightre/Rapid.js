@@ -163,3 +163,16 @@ export declare enum BlendMode {
     Subtractive = "subtractive",
     Mix = "mix"
 }
+/**
+ * Interface for light rendering options
+ */
+export interface ILightRenderOptions {
+    /** Position of the light source */
+    lightSource: Vec2;
+    /** Array of vertex arrays for occlusion objects, each occlusion object is defined by a set of vertices */
+    occlusion: Vec2[][];
+    /** Base projection length that controls shadow length */
+    baseProjectionLength?: number;
+    /** Type of mask to apply */
+    type?: MaskType;
+}
