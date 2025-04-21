@@ -19,6 +19,12 @@ A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/exampl
 * **Mask** 🎭
 * **Frame Buffer Object** 🖼️
 
+## Performance Testing
+
+32x32 Texture Sprites 60FPS
+
+* `Intel® Iris® Xe Graphics` : 42K sprites
+
 ## Install
 
 ```bash
