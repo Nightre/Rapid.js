@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -9,6 +9,7 @@ import { FrameBufferObject, Texture, TextureCache } from "./texture"
 import { TileMapRender, TileSet } from "./tilemap"
 import GLShader from "./webgl/glshader"
 import { getContext } from "./webgl/utils"
+import { ParticleEmitter } from "./particle"
 
 /**
  * The `Rapid` class provides a WebGL-based rendering engine. 
@@ -39,7 +40,7 @@ class Rapid {
     private currentMaskType: MaskType[] = []
     private currentTransform: ITransformOptions[] = []
     private currentFBO: FrameBufferObject[] = []
-
+    private lastTime: number = 0
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -167,6 +168,11 @@ class Rapid {
         this.matrixStack.pushIdentity()
         this.currentRegion = undefined
         this.currentRegionName = undefined
+
+        const now = performance.now();
+        const dt = this.lastTime ? (now - this.lastTime) / 1000 : 0;
+        this.lastTime = now;
+        return dt
     }
 
     /**
@@ -180,11 +186,17 @@ class Rapid {
      * Render
      * @param cb - The function to render.
      */
-    render(cb: () => void) {
-        this.startRender()
-        cb()
+    render(cb: (dt:number) => void) {
+        const dt = this.startRender()
+        cb(dt)
         this.endRender()
     }
+
+    renderCamera(options: ICameraOptions) {
+        this.matrixStack.applyTransform(options)
+        this.matrixStack.setTransform(this.matrixStack.getInverse())
+    }
+
     /**
      * Renders a sprite with the specified options.
      * 
@@ -214,6 +226,16 @@ class Rapid {
         )
 
         this.afterDraw()
+    }
+
+    renderParticles(particleEmitter: ParticleEmitter) {
+        if (particleEmitter.localSpace) {
+            this.startDraw(particleEmitter.getTransform())
+            particleEmitter.render();
+            this.afterDraw()
+        } else {
+            particleEmitter.render();
+        }
     }
 
     /**
@@ -349,16 +371,6 @@ class Rapid {
         this.canvas.height = physicalHeight
 
         this.resizeWebglSize(logicalWidth, logicalHeight)
-        // this.gl.viewport(
-        //     0, 0, physicalWidth, physicalHeight
-        // )
-        // this.projection = this.createOrthMatrix(
-        //     0, logicalWidth, logicalHeight, 0
-        // )
-
-        // this.projectionDirty = true
-
-        // this.gl.scissor(0, 0, physicalWidth, physicalHeight)
 
         this.canvas.style.width = logicalWidth + 'px'
         this.canvas.style.height = logicalHeight + 'px'
@@ -569,6 +581,11 @@ class Rapid {
             })
         })
         this.endDrawMask()
+    }
+
+    createParticleEmitter(options: IParticleOptions): ParticleEmitter {
+        const emitter = new ParticleEmitter(this, options);
+        return emitter;
     }
 }
 

@@ -12,6 +12,8 @@ A highly efficient ([stress-test](https://nightre.github.io/Rapid.js/docs/exampl
 * **Fast Rendering** ⚡
 * **TileMap** - YSort, isometric 🗺️
 * **Light Shadow** 💡
+* **Particle** 🎆
+* **Camera** 🎥
 * **Graphics Drawing** ✏️
 * **Text Rendering** 📝
 * **Line Drawing** - line texture 〰️
@@ -75,3 +77,4 @@ Issues and PRs are welcome!
 ![1](./screenshot/1.gif)
 ![2](./screenshot/2.gif)
 ![3](./screenshot/3.png)
+![4](./screenshot/4.png)

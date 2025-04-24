@@ -289,6 +289,9 @@ export declare class Color implements IMathObject<Color> {
      * @returns A new Color instance with the result of the subtraction.
      */
     subtract(color: Color): Color;
+    divide(color: Color | number): Color;
+    multiply(color: Color | number): Color;
+    clamp(): void;
     static Red: Color;
     static Green: Color;
     static Blue: Color;
@@ -444,6 +447,7 @@ export declare class Vec2 implements IMathObject<Vec2> {
      * @returns An array of Vec2 instances.
      */
     static FromArray(array: number[][]): Vec2[];
+    static fromAngle(angle: number): Vec2;
     /**
      * Calculates the angle between two vectors.
      * @param v - The other vector.
@@ -473,4 +477,44 @@ export declare class MathUtils {
      * @returns The normalized angle in degrees.
      */
     static normalizeDegrees(degrees: number): number;
+}
+export declare class Random {
+    /**
+     * 生成指定范围内的随机浮点数
+     * @param min - 最小值
+     * @param max - 最大值
+     * @returns 随机浮点数
+     */
+    static float(min: number, max: number): number;
+    /**
+     * 生成指定范围内的随机整数
+     * @param min - 最小值
+     * @param max - 最大值
+     * @returns 随机整数
+     */
+    static int(min: number, max: number): number;
+    /**
+     * 生成随机角度（0-360度）
+     * @returns 随机角度（弧度）
+     */
+    static angle(): number;
+    /**
+     * 生成指定范围内的随机向量
+     * @param minX - 最小X值
+     * @param maxX - 最大X值
+     * @param minY - 最小Y值
+     * @param maxY - 最大Y值
+     * @returns 随机向量
+     */
+    static vector(minX: number, maxX: number, minY: number, maxY: number): Vec2;
+    /**
+     * 生成具有随机方向和指定长度的向量
+     * @param length - 向量长度
+     * @returns 随机方向向量
+     */
+    static direction(length: number): Vec2;
+    static randomColor(minColor: Color, maxColor: Color): Color;
+    static pick(array: any[]): any;
+    static pickWeight(array: [any, number][]): any;
+    static scalarOrRange<T extends number | Vec2 | Color>(range?: T | [T, T], defaultValue?: T): T;
 }

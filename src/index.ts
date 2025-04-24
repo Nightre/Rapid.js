@@ -4,6 +4,8 @@ import { Text } from "./texture";
 import { TileMapRender, TileSet } from "./tilemap";
 import { Uniform } from "./webgl/uniform";
 import { spriteAttributes, graphicAttributes } from "./regions/attributes";
+import { ParticleEmitter } from "./particle";
+
 export {
     Text,
     Rapid,
@@ -11,7 +13,7 @@ export {
     TileMapRender,
     TileSet,
     Uniform,
-    
+    ParticleEmitter,
     graphicAttributes,
     spriteAttributes,
 }
@@ -19,3 +21,4 @@ export * from "./math";
 export * from "./interface"
 export * from "./texture"
 export * from "./render"
+export * from "./particle"

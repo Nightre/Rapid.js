@@ -1,10 +1,11 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
 import { FrameBufferObject, Texture, TextureCache } from "./texture";
 import { TileMapRender, TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
+import { ParticleEmitter } from "./particle";
 /**
  * The `Rapid` class provides a WebGL-based rendering engine.
  */
@@ -29,6 +30,7 @@ declare class Rapid {
     private currentMaskType;
     private currentTransform;
     private currentFBO;
+    private lastTime;
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -84,7 +86,7 @@ declare class Rapid {
      * Starts the rendering process, resetting the matrix stack and clearing the current region.
      * @param clear - Whether to clear the matrix stack. Defaults to true.
      */
-    startRender(clear?: boolean): void;
+    startRender(clear?: boolean): number;
     /**
      * Ends the rendering process by rendering the current region.
      */
@@ -93,13 +95,15 @@ declare class Rapid {
      * Render
      * @param cb - The function to render.
      */
-    render(cb: () => void): void;
+    render(cb: (dt: number) => void): void;
+    renderCamera(options: ICameraOptions): void;
     /**
      * Renders a sprite with the specified options.
      *
      * @param options - The rendering options for the sprite, including texture, position, color, and shader.
      */
     renderSprite(options: ISpriteRenderOptions): void;
+    renderParticles(particleEmitter: ParticleEmitter): void;
     /**
      * Renders a texture directly without additional options.
      * This is a convenience method that calls renderSprite with just the texture.
@@ -239,5 +243,6 @@ declare class Rapid {
      * @param lightSource - The light source position
      */
     drawLightShadowMask(options: ILightRenderOptions): void;
+    createParticleEmitter(options: IParticleOptions): ParticleEmitter;
 }
 export default Rapid;

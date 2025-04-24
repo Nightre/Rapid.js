@@ -8,13 +8,14 @@ The rendering cycle drives Rapid.js, typically running in a `requestAnimationFra
 
 ```javascript
 function gameLoop() {
-    rapid.render(() => {
+    rapid.render((dt) => {
         // Rendering calls (e.g., draw sprites, text)
     });
 
     // OR
     
     rapid.startRender();
+    // const dt = rapid.startRender()
     // Rendering calls (e.g., draw sprites, text)
     rapid.endRender();
 

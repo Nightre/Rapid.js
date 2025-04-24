@@ -1,1 +1,1 @@
-export declare const getSize: (obj: any) => number;
+export declare const isPlainObject: (obj: any) => boolean;

@@ -1,6 +1,6 @@
 {
   "name": "rapid-render",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "type": "module",
   "files": [
     "dist"
@@ -28,11 +28,11 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.6.2",
-    "typedoc": "^0.26.6",
     "typedoc-theme-category-nav": "^0.0.3",
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "typedoc": "^0.28.3"
   }
 }

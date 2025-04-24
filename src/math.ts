@@ -138,7 +138,7 @@ export class WebglBufferArray extends DynamicArrayBuffer {
      */
     private webglBufferSize: number = 0
     readonly usage: number
-    constructor(gl: WebGLContext, arrayType: ArrayType, type: number = gl.ARRAY_BUFFER, usage:number = gl.STATIC_DRAW) {
+    constructor(gl: WebGLContext, arrayType: ArrayType, type: number = gl.ARRAY_BUFFER, usage: number = gl.STATIC_DRAW) {
         super(arrayType)
         this.gl = gl
         this.buffer = gl.createBuffer()!;
@@ -481,7 +481,7 @@ export class MatrixStack extends DynamicArrayBuffer {
         transform.scale && this.scale(transform.scale)
 
         let offsetX = transform.offsetX || 0
-        let offsetY = transform.offsetY|| 0
+        let offsetY = transform.offsetY || 0
 
         if (transform.offset) {
             offsetX += transform.offset.x
@@ -710,13 +710,53 @@ export class Color implements IMathObject<Color> {
      */
     subtract(color: Color) {
         return new Color(
-            Math.max(this.r - color.r, 0),
-            Math.max(this.g - color.g, 0),
-            Math.max(this.b - color.b, 0),
-            Math.max(this.a - color.a, 0)
+            this.r - color.r, 
+            this.g - color.g, 
+            this.b - color.b, 
+            this.a - color.a,
         );
     }
+    divide(color: Color | number) {
+        if (color instanceof Color) {
+            return new Color(
+                this.r / color.r,
+                this.g / color.g,
+                this.b / color.b,
+                this.a / color.a
+            );
+        } else {
+            return new Color(
+                this.r / color,
+                this.g / color,
+                this.b / color,
+                this.a / color
+            );
+        }
+    }
 
+    multiply(color: Color | number) {
+        if (color instanceof Color) {
+            return new Color(
+                this.r * color.r,
+                this.g * color.g,
+                this.b * color.b,
+                this.a * color.a
+            );
+        } else {
+            return new Color(
+                this.r * color,
+                this.g * color,
+                this.b * color,
+                this.a * color
+            );
+        }
+    }
+    clamp() {
+        this.r = Math.max(0, Math.min(255, this.r));
+        this.g = Math.max(0, Math.min(255, this.g));
+        this.b = Math.max(0, Math.min(255, this.b));
+        this.a = Math.max(0, Math.min(255, this.a));
+    }
     static Red = new Color(255, 0, 0, 255)
     static Green = new Color(0, 255, 0, 255)
     static Blue = new Color(0, 0, 255, 255)
@@ -961,6 +1001,10 @@ export class Vec2 implements IMathObject<Vec2> {
         return array.map(pair => new Vec2(pair[0], pair[1]));
     }
 
+    static fromAngle(angle: number): Vec2 {
+        return new Vec2(Math.cos(angle), Math.sin(angle));
+    }
+
     /**
      * Calculates the angle between two vectors.
      * @param v - The other vector.
@@ -1003,5 +1047,122 @@ export class MathUtils {
      */
     static normalizeDegrees(degrees: number) {
         return ((degrees % 360) + 360) % 360;
+    }
+}
+
+export class Random {
+    /**
+     * 生成指定范围内的随机浮点数
+     * @param min - 最小值
+     * @param max - 最大值
+     * @returns 随机浮点数
+     */
+    static float(min: number, max: number): number {
+        return Math.random() * (max - min) + min;
+    }
+
+    /**
+     * 生成指定范围内的随机整数
+     * @param min - 最小值
+     * @param max - 最大值
+     * @returns 随机整数
+     */
+    static int(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    /**
+     * 生成随机角度（0-360度）
+     * @returns 随机角度（弧度）
+     */
+    static angle(): number {
+        return Math.random() * Math.PI * 2;
+    }
+
+    /**
+     * 生成指定范围内的随机向量
+     * @param minX - 最小X值
+     * @param maxX - 最大X值
+     * @param minY - 最小Y值
+     * @param maxY - 最大Y值
+     * @returns 随机向量
+     */
+    static vector(minX: number, maxX: number, minY: number, maxY: number): Vec2 {
+        return new Vec2(
+            Random.float(minX, maxX),
+            Random.float(minY, maxY)
+        );
+    }
+
+    /**
+     * 生成具有随机方向和指定长度的向量
+     * @param length - 向量长度
+     * @returns 随机方向向量
+     */
+    static direction(length: number): Vec2 {
+        const angle = Random.angle();
+        return new Vec2(
+            Math.cos(angle) * length,
+            Math.sin(angle) * length
+        );
+    }
+    static randomColor(minColor: Color, maxColor: Color): Color {
+        return new Color(
+            Random.float(minColor.r, maxColor.r),
+            Random.float(minColor.g, maxColor.g),
+            Random.float(minColor.b, maxColor.b),
+            Random.float(minColor.a, maxColor.a)
+        );
+    }
+
+    static pick(array: any[]): any {
+        return array[Random.int(0, array.length - 1)];
+    }
+
+    static pickWeight(array: [any, number][]): any {
+        if (!array || array.length === 0) {
+            return null;
+        }
+
+        // 计算总权重
+        let totalWeight = 0;
+        for (const item of array) {
+            totalWeight += item[1];
+        }
+
+        // 生成一个0到总权重之间的随机数
+        const random = Math.random() * totalWeight;
+
+        // 减去每个项目的权重直到找到选择的项目
+        let currentWeight = 0;
+        for (const item of array) {
+            currentWeight += item[1];
+            if (random <= currentWeight) {
+                return item[0];
+            }
+        }
+
+        // 防止浮点数精度问题，返回最后一项
+        return array[array.length - 1][0];
+    }
+
+
+    static scalarOrRange<T extends number | Vec2 | Color>(range?: T | [T, T], defaultValue?: T): T {
+        if (range === undefined) {
+            return defaultValue as T;
+        }
+        if (Array.isArray(range)) {
+            if (typeof range[0] === 'number') {
+                return Random.float(range[0] as number, range[1] as number) as T;
+            } else if (range[0] instanceof Vec2) {
+                return Random.vector(range[0].x, (range[1] as Vec2).x, range[0].y, (range[1] as Vec2).y) as T;
+            } else if (range[0] instanceof Color) {
+                return Random.randomColor(range[0] as Color, range[1] as Color) as T;
+            }
+        }
+        if (typeof range === 'number') {
+            return range as T;
+        }
+        return (range as Vec2 | Color).clone() as T;
     }
 }
