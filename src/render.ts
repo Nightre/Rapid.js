@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -192,7 +192,7 @@ class Rapid {
         this.endRender()
     }
 
-    renderCamera(options: ICameraOptions) {
+    applyCameraTransform(options: ICameraOptions) {
         this.matrixStack.applyTransform(options)
         this.matrixStack.setTransform(this.matrixStack.getInverse())
     }
@@ -265,7 +265,7 @@ class Rapid {
      * 
      * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(options: IGraphicRenderOptions): void {
+    renderGraphic(options: IPolygonGraphicRenderOptions): void {
         this.startGraphicDraw(options)
         options.points.forEach((vec, index) => {
             const color = Array.isArray(options.color) ? options.color[index] : options.color

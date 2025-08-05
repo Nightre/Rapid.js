@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
@@ -96,7 +96,7 @@ declare class Rapid {
      * @param cb - The function to render.
      */
     render(cb: (dt: number) => void): void;
-    renderCamera(options: ICameraOptions): void;
+    applyCameraTransform(options: ICameraOptions): void;
     /**
      * Renders a sprite with the specified options.
      *
@@ -122,7 +122,7 @@ declare class Rapid {
      *
      * @param options - The options for rendering the graphic, including points, color, texture, and draw type.
      */
-    renderGraphic(options: IGraphicRenderOptions): void;
+    renderGraphic(options: IPolygonGraphicRenderOptions): void;
     /**
      * Starts the graphic drawing process.
      *

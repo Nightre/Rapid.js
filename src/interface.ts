@@ -102,11 +102,12 @@ export interface ITextTextureOptions {
     textBaseline?: CanvasTextBaseline;
 }
 
-export interface ILineRenderOptions extends IGraphicRenderOptions {
+export interface ILineStyleOptions extends IGraphicRenderOptions {
     width?: number;
     closed?: boolean;
     roundCap?: boolean,
     textureMode?: LineTextureMode,
+    points: Vec2[],
 }
 export enum LineTextureMode {
     STRETCH = 'stretch',
@@ -117,15 +118,18 @@ export enum TextureWrapMode {
     CLAMP = 'clamp',
     MIRROR = 'mirror',
 }
-export interface IRenderLineOptions extends ILineRenderOptions, ITransformOptions { }
+export interface IRenderLineOptions extends ILineStyleOptions, ITransformOptions {
+
+}
 export interface IGraphicRenderOptions extends ITransformOptions, IShaderRenderOptions {
-    points: Vec2[],
     color?: Color | Color[],
     drawType?: number,
     uv?: Vec2[],
     texture?: Texture,
 }
-
+export interface IPolygonGraphicRenderOptions extends IGraphicRenderOptions {
+    points: Vec2[],
+}
 export interface ICircleRenderOptions extends IGraphicRenderOptions {
     radius: number,
     segments?: number,

@@ -1,4 +1,4 @@
-import { ILineRenderOptions } from "./interface";
+import { ILineStyleOptions } from "./interface";
 import { Vec2 } from "./math";
 /**
  * @ignore
@@ -10,7 +10,7 @@ export declare const getLineNormal: (points: Vec2[], closed?: boolean) => {
     }[];
     length: number;
 };
-export declare const getLineGeometry: (options: ILineRenderOptions) => {
+export declare const getLineGeometry: (options: ILineStyleOptions) => {
     vertices: Vec2[];
     uv: Vec2[];
 };

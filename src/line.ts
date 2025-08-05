@@ -1,4 +1,4 @@
-import { ILineRenderOptions, LineTextureMode } from "./interface";
+import { ILineStyleOptions, LineTextureMode } from "./interface";
 import { Vec2 } from "./math";
 
 const LINE_ROUND_SEGMENTS = 10;
@@ -99,7 +99,7 @@ export const getLineNormal = (points: Vec2[], closed: boolean = false): { normal
 };
 
 
-export const getLineGeometry = (options: ILineRenderOptions) => {
+export const getLineGeometry = (options: ILineStyleOptions) => {
     const points = options.points;
     if (points.length < 2) return { vertices: [], uv: [] };
 
