@@ -323,8 +323,14 @@ class Rapid {
     }
 
     applyCameraTransform(options: ICameraOptions) {
-        this.matrixStack.applyTransform(options)
-        this.matrixStack.setTransform(this.matrixStack.getInverse())
+        this.withTransform(() => {
+            if (options.center) {
+                const centerdPosition = new Vec2(this.logicWidth, this.logicHeight).divide(2)
+                this.matrixStack.translate(centerdPosition)
+            }
+            this.matrixStack.applyTransform(options)
+            this.matrixStack.setTransform(this.matrixStack.getInverse())
+        })
     }
 
     /**

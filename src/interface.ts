@@ -19,11 +19,11 @@ export interface IMathStruct<T> {
 }
 
 export enum ScaleRadio {
-    KEEP='keep',
-    KEEP_H='keep_h',
-    KEEP_W='keep_w',
-    IGNORE='ignore',
-    EXPAND='expand',
+    KEEP = 'keep',
+    KEEP_H = 'keep_h',
+    KEEP_W = 'keep_w',
+    IGNORE = 'ignore',
+    EXPAND = 'expand',
 }
 
 export interface IRapidOptions {
@@ -35,8 +35,8 @@ export interface IRapidOptions {
     antialias?: boolean,
     devicePixelRatio?: number,
 
-    scaleEnable?:boolean,
-    scaleRadio?:ScaleRadio,
+    scaleEnable?: boolean,
+    scaleRadio?: ScaleRadio,
 }
 export interface IAttribute {
     name: string
@@ -217,7 +217,9 @@ export interface ILightRenderOptions {
 }
 
 
-export interface ICameraOptions extends ITransformOptions { }
+export interface ICameraOptions extends ITransformOptions {
+    center?: boolean
+}
 
 /**
  * Defines particle emitter shape types

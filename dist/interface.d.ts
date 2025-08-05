@@ -187,6 +187,7 @@ export interface ILightRenderOptions {
     type?: MaskType;
 }
 export interface ICameraOptions extends ITransformOptions {
+    center?: boolean;
 }
 /**
  * Defines particle emitter shape types
