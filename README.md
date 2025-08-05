@@ -78,3 +78,5 @@ Issues and PRs are welcome!
 ![2](./screenshot/2.gif)
 ![3](./screenshot/3.png)
 ![4](./screenshot/4.png)
+![4](./screenshot/5.png)
+

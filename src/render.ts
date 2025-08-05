@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions, ScaleRadio } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -29,7 +29,17 @@ class Rapid {
     height: number
 
     backgroundColor: Color
-    readonly devicePixelRatio = window.devicePixelRatio || 1
+    devicePixelRatio: number
+
+    private physicsWidth!: number
+    private physicsHeight!: number
+
+    private logicWidth!: number
+    private logicHeight!: number
+
+    private scaleEnable: boolean;
+    private scaleRadio: ScaleRadio;
+
     readonly maxTextureUnits: number
     private readonly defaultColor = new Color(255, 255, 255, 255)
     //    private readonly defaultColorBlack = new Color(0, 0, 0, 255)
@@ -53,21 +63,132 @@ class Rapid {
         this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
 
         this.width = options.width || this.canvas.width
-        this.height = options.width || this.canvas.height
+        this.height = options.height || this.canvas.height
 
+        this.scaleEnable = options.scaleEnable ?? false
+        this.scaleRadio = options.scaleRadio || ScaleRadio.KEEP
+
+        this.devicePixelRatio = options.devicePixelRatio ?? window.devicePixelRatio ?? 1
         this.backgroundColor = options.backgroundColor || new Color(255, 255, 255, 255)
         this.registerBuildInRegion()
         this.initWebgl(gl)
+        this.updateDisplaySize(this.width, this.height);
         this.projectionDirty = false
+        this.canvas.style.display = 'block'
     }
 
     /**
-     * Render a tile map layer.
-     * @param data - The map data to render.
-     * @param options - The options for rendering the tile map layer.
+     * @param displayWdith css px size
+     * @param displayHeight css px size
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void {
-        this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
+    private updateDisplaySize(displayWdith: number, displayHeight: number) {
+        const designW = this.width;
+        const designH = this.height;
+
+        let logicW: number;
+        let logicH: number;
+        let physicsW: number;
+        let physicsH: number;
+
+        if (this.scaleEnable) {
+            const designAspect = designW / designH;
+            const windowAspect = displayWdith / displayHeight;
+
+            switch (this.scaleRadio) {
+                case ScaleRadio.IGNORE:
+                    logicW = designW;
+                    logicH = designH;
+                    physicsW = displayWdith * this.devicePixelRatio;
+                    physicsH = displayHeight * this.devicePixelRatio;
+                    break;
+
+                case ScaleRadio.KEEP:
+                    logicW = designW;
+                    logicH = designH;
+
+                    let targetW: number;
+                    let targetH: number;
+
+                    if (windowAspect > designAspect) {
+                        targetH = displayHeight;
+                        targetW = targetH * designAspect;
+                    } else {
+                        targetW = displayWdith;
+                        targetH = targetW / designAspect;
+                    }
+
+                    physicsW = targetW * this.devicePixelRatio;
+                    physicsH = targetH * this.devicePixelRatio;
+                    break;
+
+                case ScaleRadio.EXPAND:
+                    if (windowAspect > designAspect) {
+                        logicH = designH;
+                        logicW = designH * windowAspect;
+                    } else {
+                        logicW = designW;
+                        logicH = designW / windowAspect;
+                    }
+                    physicsW = displayWdith * this.devicePixelRatio;
+                    physicsH = displayHeight * this.devicePixelRatio;
+                    break;
+
+                case ScaleRadio.KEEP_W:
+                    logicW = designW;
+                    logicH = designW / windowAspect;
+                    physicsW = displayWdith * this.devicePixelRatio;
+                    physicsH = displayHeight * this.devicePixelRatio;
+                    break;
+
+                case ScaleRadio.KEEP_H:
+                    logicH = designH;
+                    logicW = designH * windowAspect;
+                    physicsW = displayWdith * this.devicePixelRatio;
+                    physicsH = displayHeight * this.devicePixelRatio;
+                    break;
+
+                default:
+                    logicW = designW;
+                    logicH = designH;
+                    physicsW = displayWdith * this.devicePixelRatio;
+                    physicsH = displayHeight * this.devicePixelRatio;
+                    break;
+            }
+
+        } else {
+            logicW = designW;
+            logicH = designH;
+            physicsW = designW * this.devicePixelRatio;
+            physicsH = designH * this.devicePixelRatio;
+        }
+
+        this.logicWidth = logicW;
+        this.logicHeight = logicH;
+        this.physicsWidth = physicsW;
+        this.physicsHeight = physicsH;
+
+        this.resizeSize(logicW, logicH, physicsW, physicsH, true);
+    }
+
+    private resizeSize(logicW: number, logicH: number, physicsW: number, physicsH: number, updateCanvas = false) {
+        this.updateProjection(0, logicW, logicH, 0)
+        this.gl.viewport(0, 0, physicsW, physicsH)
+        this.gl.scissor(0, 0, physicsW, physicsH)
+
+        if (updateCanvas) {
+            // canvas 像素大小
+            this.canvas.width = physicsW
+            this.canvas.height = physicsH
+
+            // canvas 大小
+            this.canvas.style.width = physicsW / this.devicePixelRatio + 'px'
+            this.canvas.style.height = physicsH / this.devicePixelRatio + 'px'
+        }
+    }
+
+    private updateProjection(left: number, right: number, bottom: number, top: number) {
+        this.projection = this.createOrthMatrix(left, right, bottom, top)
+        this.projectionDirty = true
     }
 
     /**
@@ -75,7 +196,7 @@ class Rapid {
      * @param gl - The WebGL context.
      */
     private initWebgl(gl: WebGLContext) {
-        this.resize(this.width, this.height)
+        //this.resize(this.width, this.height)
         gl.enable(gl.BLEND);
         gl.disable(gl.DEPTH_TEST);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -186,10 +307,19 @@ class Rapid {
      * Render
      * @param cb - The function to render.
      */
-    render(cb: (dt:number) => void) {
+    render(cb: (dt: number) => void) {
         const dt = this.startRender()
         cb(dt)
         this.endRender()
+    }
+
+    /**
+     * Render a tile map layer.
+     * @param data - The map data to render.
+     * @param options - The options for rendering the tile map layer.
+     */
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void {
+        this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
     }
 
     applyCameraTransform(options: ICameraOptions) {
@@ -360,37 +490,6 @@ class Rapid {
     }
 
     /**
-     * Resizes the canvas and updates the viewport and projection matrix.
-     * @param width - The new width of the canvas.
-     * @param height - The new height of the canvas.
-     */
-    resize(logicalWidth: number, logicalHeight: number) {
-        const physicalWidth = logicalWidth * this.devicePixelRatio
-        const physicalHeight = logicalHeight * this.devicePixelRatio
-        this.canvas.width = physicalWidth
-        this.canvas.height = physicalHeight
-
-        this.resizeWebglSize(logicalWidth, logicalHeight)
-
-        this.canvas.style.width = logicalWidth + 'px'
-        this.canvas.style.height = logicalHeight + 'px'
-
-        this.width = logicalWidth
-        this.height = logicalHeight
-    }
-    private resizeWebglSize(width: number, height: number, devicePixelRatio?: number) {
-        const physicalWidth = width * (devicePixelRatio || this.devicePixelRatio)
-        const physicalHeight = height * (devicePixelRatio || this.devicePixelRatio)
-        this.gl.viewport(0, 0, physicalWidth, physicalHeight)
-        this.updateProjection(0, width, height, 0)
-        this.gl.scissor(0, 0, physicalWidth, physicalHeight)
-    }
-    private updateProjection(left: number, right: number, bottom: number, top: number) {
-        this.projection = this.createOrthMatrix(left, right, bottom, top)
-        this.projectionDirty = true
-    }
-
-    /**
      * Clears the canvas with the background color.
      * @param bgColor - The background color to clear the canvas with.
      */
@@ -511,7 +610,7 @@ class Rapid {
         fbo.bind()
         this.clearTextureUnit()
 
-        this.resizeWebglSize(fbo.width, fbo.height, 1)
+        this.resizeSize(fbo.width, fbo.height, fbo.width, fbo.height)
         this.updateProjection(0, fbo.width, 0, fbo.height)
         this.save()
         this.matrixStack.identity()
@@ -530,8 +629,11 @@ class Rapid {
             fbo.unbind()
             this.clearTextureUnit()
 
-            this.resizeWebglSize(this.width, this.height)
-            this.updateProjection(0, this.width, this.height, 0)
+            this.resizeSize(
+                this.logicWidth, this.logicHeight,
+                this.physicsWidth, this.physicsHeight
+            )
+            //this.updateProjection(0, this.width, this.height, 0)
             this.restore()
         }
     }

@@ -15,12 +15,22 @@ export interface IMathStruct<T> {
     copy(obj: T): void;
     equal(obj: T): boolean;
 }
+export declare enum ScaleRadio {
+    KEEP = "keep",
+    KEEP_H = "keep_h",
+    KEEP_W = "keep_w",
+    IGNORE = "ignore",
+    EXPAND = "expand"
+}
 export interface IRapidOptions {
     canvas: HTMLCanvasElement;
     width?: number;
     height?: number;
     backgroundColor?: Color;
     antialias?: boolean;
+    devicePixelRatio?: number;
+    scaleEnable?: boolean;
+    scaleRadio?: ScaleRadio;
 }
 export interface IAttribute {
     name: string;

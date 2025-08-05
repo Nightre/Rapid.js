@@ -21,7 +21,13 @@ declare class Rapid {
     width: number;
     height: number;
     backgroundColor: Color;
-    readonly devicePixelRatio: number;
+    devicePixelRatio: number;
+    private physicsWidth;
+    private physicsHeight;
+    private logicWidth;
+    private logicHeight;
+    private scaleEnable;
+    private scaleRadio;
     readonly maxTextureUnits: number;
     private readonly defaultColor;
     private currentRegion?;
@@ -37,11 +43,12 @@ declare class Rapid {
      */
     constructor(options: IRapidOptions);
     /**
-     * Render a tile map layer.
-     * @param data - The map data to render.
-     * @param options - The options for rendering the tile map layer.
+     * @param displayWdith css px size
+     * @param displayHeight css px size
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void;
+    private updateDisplaySize;
+    private resizeSize;
+    private updateProjection;
     /**
      * Initializes WebGL context settings.
      * @param gl - The WebGL context.
@@ -96,6 +103,12 @@ declare class Rapid {
      * @param cb - The function to render.
      */
     render(cb: (dt: number) => void): void;
+    /**
+     * Render a tile map layer.
+     * @param data - The map data to render.
+     * @param options - The options for rendering the tile map layer.
+     */
+    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void;
     applyCameraTransform(options: ICameraOptions): void;
     /**
      * Renders a sprite with the specified options.
@@ -156,14 +169,6 @@ declare class Rapid {
      * @param options - The options for rendering the circle, including radius, position, color, and segment count.
      */
     renderCircle(options: ICircleRenderOptions): void;
-    /**
-     * Resizes the canvas and updates the viewport and projection matrix.
-     * @param width - The new width of the canvas.
-     * @param height - The new height of the canvas.
-     */
-    resize(logicalWidth: number, logicalHeight: number): void;
-    private resizeWebglSize;
-    private updateProjection;
     /**
      * Clears the canvas with the background color.
      * @param bgColor - The background color to clear the canvas with.

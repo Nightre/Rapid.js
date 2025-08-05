@@ -18,12 +18,25 @@ export interface IMathStruct<T> {
     equal(obj: T): boolean
 }
 
+export enum ScaleRadio {
+    KEEP='keep',
+    KEEP_H='keep_h',
+    KEEP_W='keep_w',
+    IGNORE='ignore',
+    EXPAND='expand',
+}
+
 export interface IRapidOptions {
     canvas: HTMLCanvasElement
+    // 此处设置的是逻辑 wh
     width?: number
     height?: number,
     backgroundColor?: Color,
     antialias?: boolean,
+    devicePixelRatio?: number,
+
+    scaleEnable?:boolean,
+    scaleRadio?:ScaleRadio,
 }
 export interface IAttribute {
     name: string
