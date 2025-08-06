@@ -710,9 +710,9 @@ export class Color implements IMathObject<Color> {
      */
     subtract(color: Color) {
         return new Color(
-            this.r - color.r, 
-            this.g - color.g, 
-            this.b - color.b, 
+            this.r - color.r,
+            this.g - color.g,
+            this.b - color.b,
             this.a - color.a,
         );
     }
@@ -796,6 +796,20 @@ export class Vec2 implements IMathObject<Vec2> {
     constructor(x?: number, y?: number) {
         this.x = x !== undefined ? x : 0;
         this.y = y !== undefined ? y : 0;
+    }
+
+    set(x: number | number[], y?: number) {
+        if (Array.isArray(x)) {
+            this.x = x[0]
+            this.y = x[0]
+        } else if (y) {
+            this.x = x
+            this.y = y
+        } else {
+            this.x = x
+            this.y = x
+        }
+        return this
     }
 
     /**

@@ -695,6 +695,35 @@ class Rapid {
         const emitter = new ParticleEmitter(this, options);
         return emitter;
     }
+
+    cssToGameCoords(x: number | Vec2, y?: number): Vec2 {
+        const css = x instanceof Vec2 ? x : new Vec2(x, y)
+        const rect = this.canvas.getBoundingClientRect();
+
+        const normalizedX = css.x / rect.width;
+        const normalizedY = css.y / rect.height;
+
+        const gameX = normalizedX * this.logicWidth;
+        const gameY = normalizedY * this.logicHeight;
+
+        return new Vec2(gameX, gameY);
+    }
+    gameToCssCoords(x: number | Vec2, y?: number): Vec2 {
+        const gameCoords = x instanceof Vec2 ? x : new Vec2(x, y ?? 0);
+
+        const rect = this.canvas.getBoundingClientRect();
+
+        const normalizedX = gameCoords.x / this.logicWidth;
+        const normalizedY = gameCoords.y / this.logicHeight;
+
+        const cssXRelativeToCanvas = normalizedX * rect.width;
+        const cssYRelativeToCanvas = normalizedY * rect.height;
+
+        const cssX = cssXRelativeToCanvas;
+        const cssY = cssYRelativeToCanvas;
+
+        return new Vec2(cssX, cssY);
+    }
 }
 
 export default Rapid

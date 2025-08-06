@@ -47,22 +47,32 @@ export interface IAttribute {
     offset?: number
 }
 
-export interface ITransformOptions {
+export interface IEntityTransformOptions {
     position?: Vec2,
     scale?: Vec2 | number,
     rotation?: number,
 
-    offset?: Vec2,
+    x?: number,
+    y?: number,
+
+    tags: string[]
+}
+
+export interface ITransformOptions {
+    restoreTransform?: boolean,
+    saveTransform?: boolean,
+
+    position?: Vec2,
+    scale?: Vec2 | number,
+    rotation?: number,
 
     x?: number,
     y?: number,
 
+    offset?: Vec2,
     offsetX?: number,
     offsetY?: number,
     origin?: Vec2 | number,
-
-    restoreTransform?: boolean,
-    saveTransform?: boolean,
 
     afterSave?(): unknown,
     beforRestore?(): unknown,
