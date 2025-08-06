@@ -46,7 +46,7 @@ declare class Rapid {
      * @param displayWdith css px size
      * @param displayHeight css px size
      */
-    private updateDisplaySize;
+    updateDisplaySize(displayWdith: number, displayHeight: number): void;
     private resizeSize;
     private updateProjection;
     /**

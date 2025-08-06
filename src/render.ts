@@ -81,7 +81,7 @@ class Rapid {
      * @param displayWdith css px size
      * @param displayHeight css px size
      */
-    private updateDisplaySize(displayWdith: number, displayHeight: number) {
+    updateDisplaySize(displayWdith: number, displayHeight: number) {
         const designW = this.width;
         const designH = this.height;
 

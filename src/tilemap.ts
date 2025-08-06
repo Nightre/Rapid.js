@@ -64,28 +64,34 @@ export class TileMapRender {
     }
 
     /**
-     * Gets the y-sorted rows for rendering entities at specific y positions.
-     * @param ySortRow - Array of y-sort callbacks to process.
-     * @param height - Height of each tile.
-     * @param renderRow - Number of rows to render.
-     * @returns Array of y-sort callbacks grouped by row.
+     * 将需要 y-sort 的回调根据它们的 y 坐标分组到一个 Map 中。
+     * 使用 Map 是为了避免因地图坐标过大而创建稀疏数组，从而优化内存使用。
+     *
+     * @param ySortCallbacks - Array of y-sort callbacks to process.
+     * @param height - The effective height of a tile row, used for grouping.
+     * @returns A Map where keys are row indices (y) and values are arrays of y-sort callbacks for that row.
      * @private
      */
-    private getYSortRow(ySortRow: YSortCallback[] | undefined, height: number, renderRow: number) {
-        if (!ySortRow) {
-            return []
+    private getYSortRow(ySortCallbacks: YSortCallback[] | undefined, height: number): Map<number, YSortCallback[]> {
+        const rows = new Map<number, YSortCallback[]>();
+        if (!ySortCallbacks) {
+            return rows;
         }
-        const rows: YSortCallback[][] = []
 
-        for (const ySort of ySortRow) {
-            const y = Math.floor(ySort.ySort / height)
+        for (const ySort of ySortCallbacks) {
+            // 计算这个对象属于哪一行
+            const y = Math.floor(ySort.ySort / height);
 
-            if (!rows[y]) rows[y] = []
-            rows[y].push(ySort)
+            // 如果这一行在 Map 中还不存在，则初始化一个空数组
+            if (!rows.has(y)) {
+                rows.set(y, []);
+            }
+
+            // 将对象添加到对应的行数组中
+            rows.get(y)!.push(ySort);
         }
-        return rows
+        return rows;
     }
-
     /**
      * Calculates the error offset values for tile rendering.
      * @param options - Layer rendering options containing error values.
@@ -107,6 +113,25 @@ export class TileMapRender {
     }
 
     /**
+     * Renders a row of y-sorted entities.
+     * @param rapid - The Rapid rendering instance.
+     * @param ySortRow - Array of y-sort callbacks to render.
+     * @private
+     */
+    private renderYSortRow(rapid: Rapid, ySortRow: YSortCallback[]) {
+        if (!ySortRow || ySortRow.length === 0) { // 加一个安全检查
+            return;
+        }
+        for (const ySort of ySortRow) {
+            if (ySort.render) {
+                ySort.render();
+            } else if (ySort.renderSprite) {
+                rapid.renderSprite(ySort.renderSprite);
+            }
+        }
+    }
+
+    /**
      * Calculates tile rendering data based on the viewport and tileset.
      * @param tileSet - The tileset to use for rendering.
      * @param options - Layer rendering options.
@@ -114,61 +139,53 @@ export class TileMapRender {
      * @private
      */
     private getTileData(tileSet: TileSet, options: ILayerRenderOptions) {
-        const shape = options.shape ?? TilemapShape.SQUARE
-        const width = tileSet.width
-        const height = shape === TilemapShape.ISOMETRIC ? tileSet.height / 2 : tileSet.height
+        const shape = options.shape ?? TilemapShape.SQUARE;
+        const width = tileSet.width;
+        const height = shape === TilemapShape.ISOMETRIC ? tileSet.height / 2 : tileSet.height;
 
-        const matrix = this.rapid.matrixStack
-        const view = matrix.globalToLocal(Vec2.ZERO)
-        const globalScale = matrix.getGlobalScale()
-        const { errorX, errorY } = this.getOffset(options)
+        const matrix = this.rapid.matrixStack;
+        const { errorX, errorY } = this.getOffset(options);
 
-        const viewportWidth = Math.ceil(this.rapid.width / width / globalScale.x) + errorX * 2
-        const viewportHeight = Math.ceil(this.rapid.height / height / globalScale.y) + errorY * 2
+        // 1. 获取屏幕的四个角点
+        const screenTopLeft = new Vec2(0, 0);
+        const screenTopRight = new Vec2(this.rapid.width, 0);
+        const screenBottomLeft = new Vec2(0, this.rapid.height);
+        const screenBottomRight = new Vec2(this.rapid.width, this.rapid.height);
 
-        // Calculate starting tile position
+        // 2. 将这四个屏幕角点通过逆矩阵变换到瓦片地图的本地空间
+        const localTopLeft = matrix.globalToLocal(screenTopLeft);
+        const localTopRight = matrix.globalToLocal(screenTopRight);
+        const localBottomLeft = matrix.globalToLocal(screenBottomLeft);
+        const localBottomRight = matrix.globalToLocal(screenBottomRight);
+
+        // 3. 找出这四个点在本地空间中的最小和最大坐标，形成AABB
+        const minX = Math.min(localTopLeft.x, localTopRight.x, localBottomLeft.x, localBottomRight.x);
+        const maxX = Math.max(localTopLeft.x, localTopRight.x, localBottomLeft.x, localBottomRight.x);
+        const minY = Math.min(localTopLeft.y, localTopRight.y, localBottomLeft.y, localBottomRight.y);
+        const maxY = Math.max(localTopLeft.y, localTopRight.y, localBottomLeft.y, localBottomRight.y);
+
+        // 4. 根据AABB计算出瓦片的起始索引和需要渲染的瓦片数量
         const startTile = new Vec2(
-            view.x < 0 ? Math.ceil(view.x / width) : Math.floor(view.x / width),
-            view.y < 0 ? Math.ceil(view.y / height) : Math.floor(view.y / height)
-        )
+            Math.floor(minX / width) - errorX,
+            Math.floor(minY / height) - errorY
+        );
 
-        startTile.x -= errorX
-        startTile.y -= errorY
+        const endTile = new Vec2(
+            Math.ceil(maxX / width) + errorX,
+            Math.ceil(maxY / height) + errorY
+        );
 
-        // Calculate precise pixel offset
-        let offset = new Vec2(
-            0 - (view.x % width) - errorX * width,
-            0 - (view.y % height) - errorY * height
-        )
-
-        offset = offset.add(view)
+        const viewportWidth = endTile.x - startTile.x;
+        const viewportHeight = endTile.y - startTile.y;
 
         return {
             startTile,
-            offset,
             viewportWidth,
             viewportHeight,
             height,
-            width,
-            shape,
-        }
+        };
     }
 
-    /**
-     * Renders a row of y-sorted entities.
-     * @param rapid - The Rapid rendering instance.
-     * @param ySortRow - Array of y-sort callbacks to render.
-     * @private
-     */
-    private renderYSortRow(rapid: Rapid, ySortRow: YSortCallback[]) {
-        for (const ySort of ySortRow) {
-            if (ySort.render) {
-                ySort.render()
-            } else if (ySort.renderSprite) {
-                rapid.renderSprite(ySort.renderSprite)
-            }
-        }
-    }
     /**
      * Renders the tilemap layer based on the provided data and options.
      * 
@@ -177,68 +194,67 @@ export class TileMapRender {
      * @returns 
      */
     renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void {
-        this.rapid.matrixStack.applyTransform(options)
-        const tileSet = options.tileSet
+        this.rapid.matrixStack.applyTransform(options);
+        const tileSet = options.tileSet;
+        
+        // 使用支持旋转的 getTileData 版本
         const {
             startTile,
-            offset,
             viewportWidth,
             viewportHeight,
-            shape,
-            width,
             height
-        } = this.getTileData(tileSet, options)
-        const ySortRow = this.getYSortRow(options.ySortCallback, height, viewportHeight)
-        const enableYSort = options.ySortCallback && options.ySortCallback.length > 0
+        } = this.getTileData(tileSet, options);
 
-        if (this.rapid.matrixStack.getGlobalRotation() !== 0) {
-            warn("TileMapRender: tilemap is not supported rotation")
-            this.rapid.matrixStack.setGlobalRotation(0)
-        }
+        // --- 这里是改动点 ---
+        // 1. 调用新的 getYSortRow，它返回一个 Map
+        const ySortRowsMap = this.getYSortRow(options.ySortCallback, height);
+        const enableYSort = options.ySortCallback && options.ySortCallback.length > 0;
 
         for (let y = 0; y < viewportHeight; y++) {
-            const mapY = y + startTile.y
+            const mapY = y + startTile.y;
 
-            const currentRow: YSortCallback[] = ySortRow[mapY] ?? []
+            // 2. 从 Map 中获取当前行的回调，如果不存在则返回一个空数组
+            const currentRow: YSortCallback[] = ySortRowsMap.get(mapY) ?? [];
+            
+            // 后续逻辑保持不变...
             if (mapY < 0 || mapY >= data.length) {
-                this.renderYSortRow(this.rapid, currentRow)
-                continue
+                // 即使地图瓦片不存在，也可能需要渲染这一行的独立实体
+                this.renderYSortRow(this.rapid, currentRow);
+                continue;
             }
 
             for (let x = 0; x < viewportWidth; x++) {
-                const mapX = x + startTile.x
-                if (mapX < 0 || mapX >= data[mapY].length) continue
+                const mapX = x + startTile.x;
+                if (mapX < 0 || mapX >= data[mapY].length) continue;
 
-                const tileId = data[mapY][mapX]
-                const tile = tileSet.getTile(tileId)
-                if (!tile) continue
-
-                let screenX = x * width + offset.x;
-                let screenY = y * height + offset.y;
-                let ySort = y * height + offset.y + (tile.ySortOffset ?? 0);
-
-                if (mapY % 2 !== 0 && shape === TilemapShape.ISOMETRIC) {
-                    screenX += width / 2
-                }
-                const edata = options.eachTile ? (options.eachTile(tileId, mapX, mapY) || {}) : {}
+                const tileId = data[mapY][mapX];
+                const tile = tileSet.getTile(tileId);
+                if (!tile) continue;
+                
+                // 使用矩阵计算坐标的逻辑
+                const localPos = this.mapToLocal(new Vec2(mapX, mapY), options);
+                const screenPos = this.rapid.matrixStack.localToGlobal(localPos);
+                const ySort = screenPos.y + (tile.ySortOffset ?? 0);
+                const edata = options.eachTile ? (options.eachTile(tileId, mapX, mapY) || {}) : {};
 
                 currentRow.push({
                     ySort,
                     renderSprite: {
                         ...tile,
-                        // 保证 SprtieOption 被覆盖后仍然有效果
-                        x: screenX + (tile.x || 0),
-                        y: screenY + (tile.y || 0),
+                        x: localPos.x + (tile.x || 0),
+                        y: localPos.y + (tile.y || 0),
                         ...edata,
                     }
-                })
+                });
             }
+            
             if (enableYSort) {
-                currentRow.sort((a, b) => a.ySort! - b.ySort!)
+                currentRow.sort((a, b) => a.ySort! - b.ySort!);
             }
-            this.renderYSortRow(this.rapid, currentRow)
+            this.renderYSortRow(this.rapid, currentRow);
         }
-        this.rapid.matrixStack.applyTransform(options)
+        
+        this.rapid.matrixStack.applyTransformAfter(options);
     }
 
     /**

@@ -42,11 +42,12 @@ export declare class TileMapRender {
      */
     constructor(rapid: Rapid);
     /**
-     * Gets the y-sorted rows for rendering entities at specific y positions.
-     * @param ySortRow - Array of y-sort callbacks to process.
-     * @param height - Height of each tile.
-     * @param renderRow - Number of rows to render.
-     * @returns Array of y-sort callbacks grouped by row.
+     * 将需要 y-sort 的回调根据它们的 y 坐标分组到一个 Map 中。
+     * 使用 Map 是为了避免因地图坐标过大而创建稀疏数组，从而优化内存使用。
+     *
+     * @param ySortCallbacks - Array of y-sort callbacks to process.
+     * @param height - The effective height of a tile row, used for grouping.
+     * @returns A Map where keys are row indices (y) and values are arrays of y-sort callbacks for that row.
      * @private
      */
     private getYSortRow;
@@ -58,6 +59,13 @@ export declare class TileMapRender {
      */
     private getOffset;
     /**
+     * Renders a row of y-sorted entities.
+     * @param rapid - The Rapid rendering instance.
+     * @param ySortRow - Array of y-sort callbacks to render.
+     * @private
+     */
+    private renderYSortRow;
+    /**
      * Calculates tile rendering data based on the viewport and tileset.
      * @param tileSet - The tileset to use for rendering.
      * @param options - Layer rendering options.
@@ -65,13 +73,6 @@ export declare class TileMapRender {
      * @private
      */
     private getTileData;
-    /**
-     * Renders a row of y-sorted entities.
-     * @param rapid - The Rapid rendering instance.
-     * @param ySortRow - Array of y-sort callbacks to render.
-     * @private
-     */
-    private renderYSortRow;
     /**
      * Renders the tilemap layer based on the provided data and options.
      *
