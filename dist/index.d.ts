@@ -11,3 +11,5 @@ export * from "./interface";
 export * from "./texture";
 export * from "./render";
 export * from "./particle";
+export * from "./utils";
+export * from "./input";

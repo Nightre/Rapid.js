@@ -249,5 +249,7 @@ declare class Rapid {
      */
     drawLightShadowMask(options: ILightRenderOptions): void;
     createParticleEmitter(options: IParticleOptions): ParticleEmitter;
+    cssToGameCoords(x: number | Vec2, y?: number): Vec2;
+    gameToCssCoords(x: number | Vec2, y?: number): Vec2;
 }
 export default Rapid;

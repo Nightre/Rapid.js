@@ -326,6 +326,7 @@ export declare class Vec2 implements IMathObject<Vec2> {
      * @param y - The y coordinate (default is 0).
      */
     constructor(x?: number, y?: number);
+    set(x: number | number[], y?: number): this;
     /**
      * Adds another vector to this vector.
      * @param v - The vector to add.
