@@ -10,6 +10,7 @@ import { TileMapRender, TileSet } from "./tilemap"
 import GLShader from "./webgl/glshader"
 import { getContext } from "./webgl/utils"
 import { ParticleEmitter } from "./particle"
+import { Camera } from "./utils"
 
 /**
  * The `Rapid` class provides a WebGL-based rendering engine. 
@@ -34,8 +35,10 @@ class Rapid {
     private physicsWidth!: number
     private physicsHeight!: number
 
-    private logicWidth!: number
-    private logicHeight!: number
+    logicWidth!: number
+    logicHeight!: number
+
+    camera: Camera
 
     private scaleEnable: boolean;
     private scaleRadio: ScaleRadio;
@@ -61,6 +64,8 @@ class Rapid {
         this.canvas = options.canvas
         this.textures = new TextureCache(this, options.antialias ?? false)
         this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
+
+        this.camera = new Camera(this)
 
         this.width = options.width || this.canvas.width
         this.height = options.height || this.canvas.height
@@ -287,6 +292,7 @@ class Rapid {
         this.clear()
         clear && this.matrixStack.clear()
         this.matrixStack.pushIdentity()
+        this.applyCameraTransform()
         this.currentRegion = undefined
         this.currentRegionName = undefined
 
@@ -322,15 +328,11 @@ class Rapid {
         this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
     }
 
-    applyCameraTransform(options: ICameraOptions) {
-        this.withTransform(() => {
-            if (options.center) {
-                const centerdPosition = new Vec2(this.logicWidth, this.logicHeight).divide(2)
-                this.matrixStack.translate(centerdPosition)
-            }
-            this.matrixStack.applyTransform(options)
-            this.matrixStack.setTransform(this.matrixStack.getInverse())
-        })
+    private applyCameraTransform() {
+        // const centerdPosition = new Vec2(this.logicWidth, this.logicHeight).divide(2)
+        // this.matrixStack.translate(centerdPosition)
+        this.camera.render()
+        this.matrixStack.setTransform(this.camera.transform.getTransform())
     }
 
     /**

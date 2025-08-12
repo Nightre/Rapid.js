@@ -55,7 +55,7 @@ export interface IEntityTransformOptions {
     x?: number,
     y?: number,
 
-    tags: string[]
+    tags?: string[]
 }
 
 export interface ITransformOptions {

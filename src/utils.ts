@@ -7,6 +7,7 @@ export const isPlainObject = (obj: any) => {
     return Object.getPrototypeOf(obj) === Object.prototype;
 }
 
+
 export class Entity {
     position: Vec2;
     scale: Vec2;
@@ -19,7 +20,8 @@ export class Entity {
 
     tags: string[];
 
-    constructor(rapid: Rapid, options: IEntityTransformOptions) {
+    constructor(rapid: Rapid, options: IEntityTransformOptions = {}) {
+        this.transform.pushIdentity()
         this.rapid = rapid;
 
         this.tags = options.tags ?? []
@@ -133,5 +135,26 @@ export class Entity {
             return tags.every(tag => entity.tags.includes(tag));
         };
         return this.findDescendant(predicate, onlyFirst);
+    }
+}
+
+export class Camera extends Entity {
+    override updateTransform() {
+        const transform = this.transform;
+        const parentTransform = this.getParentTransform();
+        transform.setTransform(parentTransform.getTransform());
+
+        const centerdPosition = new Vec2(
+            -this.rapid.logicWidth, 
+            -this.rapid.logicHeight
+        ).divide(2)
+
+        transform.translate(centerdPosition);
+        transform.translate(this.position);
+        
+        transform.rotate(this.rotation);
+        transform.scale(this.scale);
+
+        transform.setTransform(transform.getInverse())
     }
 }
