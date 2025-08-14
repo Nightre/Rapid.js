@@ -8,7 +8,7 @@ To create text in Rapid.js, you use the `createText` method:
 
 ```javascript
 // Create a simple text texture
-const textTexture = rapid.textures.createText({
+const textTexture = rapid.texture.createText({
     text: "Hello World",         // Text content
     fontSize: 24                 // Font size
 });
@@ -26,7 +26,7 @@ You can dynamically update text content:
 
 ```javascript
 let score = 0;
-const scoreText = rapid.textures.createText({ 
+const scoreText = rapid.texture.createText({ 
     text: "Score: 0", 
     fontSize: 24 
 });

@@ -5,9 +5,9 @@ const rapid = new Rapid({
     backgroundColor: Color.fromHex("FFFFFF")
 })
 
-const plane = await rapid.textures.textureFromUrl("./assets/plane.png")
-const cat = await rapid.textures.textureFromUrl("./assets/cat.png")
-const stone = await rapid.textures.textureFromUrl("./assets/stone.jpeg")
+const plane = await rapid.texture.textureFromUrl("./assets/plane.png")
+const cat = await rapid.texture.textureFromUrl("./assets/cat.png")
+const stone = await rapid.texture.textureFromUrl("./assets/stone.jpeg")
 
 const graphicPoints = Vec2.FromArray([
     [0, 0],

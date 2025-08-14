@@ -29,7 +29,7 @@ Sprites are textured quads that can be positioned, rotated, and scaled:
 
 ```javascript
 // Load texture first
-const texture = await rapid.textures.textureFromUrl("./assets/character.png");
+const texture = await rapid.texture.textureFromUrl("./assets/character.png");
 
 // Render sprite
 rapid.renderSprite({
@@ -144,7 +144,7 @@ const linePoints = [
 ];
 
 // Load texture with REPEAT wrap mode
-const roadTexture = await rapid.textures.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
+const roadTexture = await rapid.texture.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
 
 // Render textured line with REPEAT mode
 rapid.renderLine({

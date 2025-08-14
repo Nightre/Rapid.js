@@ -6,11 +6,11 @@ Textures are images used for rendering sprites and other graphics in Rapid.js. T
 
 ```javascript
 // Load a texture from a URL
-const texture = await rapid.textures.textureFromUrl("./assets/character.png");
+const texture = await rapid.texture.textureFromUrl("./assets/character.png");
 
 // You can also load textures from a data URL or an Image object
 const imageElement = document.getElementById("myImage");
-const textureFromImage = await rapid.textures.textureFromSource(imageElement);
+const textureFromImage = await rapid.texture.textureFromSource(imageElement);
 ```
 
 ## Using Textures
@@ -39,10 +39,10 @@ Rapid.js supports sprite sheets to efficiently manage multiple images:
 
 ```javascript
 // Load a sprite sheet
-const spriteSheet = await rapid.textures.textureFromUrl("./assets/spritesheet.png");
+const spriteSheet = await rapid.texture.textureFromUrl("./assets/spritesheet.png");
 
 // Split into individual sprites (divide the texture into a grid)
-const sprites = spriteSheet.createSpritesHeet(32, 32);
+const sprites = spriteSheet.createSpritesheet(32, 32);
 // sprites is now an array of textures, each 32x32 pixels
 
 // Use individual sprites
@@ -65,7 +65,7 @@ You can create new textures by clipping regions from existing ones:
 
 ```javascript
 // Original texture
-const fullTexture = await rapid.textures.textureFromUrl("./assets/character.png");
+const fullTexture = await rapid.texture.textureFromUrl("./assets/character.png");
 
 // Create a clipped texture (x, y, width, height)
 const headTexture = fullTexture.clone().setClipRegion(0, 0, 32, 32);
@@ -83,7 +83,7 @@ Rapid.js supports different texture wrap modes that control how textures behave 
 // TextureWrapMode.MIRROR - Mirrors the texture at each repeat
 
 // Load texture with specific wrap mode
-const tilingTexture = await rapid.textures.textureFromUrl(
+const tilingTexture = await rapid.texture.textureFromUrl(
     "./assets/pattern.png", 
     true,  // antialias
     TextureWrapMode.REPEAT  // wrap mode
@@ -93,5 +93,5 @@ const tilingTexture = await rapid.textures.textureFromUrl(
 ## Deleting Textures
 
 ```js
-rapid.textures.destroy(texture);
+rapid.texture.destroy(texture);
 ```

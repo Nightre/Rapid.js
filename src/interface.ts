@@ -214,7 +214,7 @@ export interface YSortCallback {
 }
 
 export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IEntityTransformOptions {
-
+    enableYsort: boolean
 }
 
 export interface ITilemapLayerOptions {

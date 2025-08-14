@@ -6,7 +6,7 @@ const rapid = new Rapid({
     backgroundColor: Color.fromHex("#000000")
 });
 
-const particleTexture = await rapid.textures.textureFromUrl("./assets/particle.png");
+const particleTexture = await rapid.texture.textureFromUrl("./assets/particle.png");
 let mouse = new Vec2(255, 255);
 
 let particle = rapid.createParticleEmitter({

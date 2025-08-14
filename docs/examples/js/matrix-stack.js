@@ -7,7 +7,7 @@ const rapid = new Rapid({
 
 let time = 0;
 
-const cat = await rapid.textures.textureFromUrl("./assets/cat.png");
+const cat = await rapid.texture.textureFromUrl("./assets/cat.png");
 
 function animate() {
     time += 0.1;

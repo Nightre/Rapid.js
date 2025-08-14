@@ -5,8 +5,8 @@ const rapid = new Rapid({
     backgroundColor: Color.fromHex("FFFFFF")
 })
 
-const cat = await rapid.textures.textureFromUrl("./assets/cat.png")
-const plane = await rapid.textures.textureFromUrl("./assets/plane.png")
+const cat = await rapid.texture.textureFromUrl("./assets/cat.png")
+const plane = await rapid.texture.textureFromUrl("./assets/plane.png")
 
 let time = 0
 const render = () => {

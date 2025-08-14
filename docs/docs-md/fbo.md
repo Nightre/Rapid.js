@@ -6,9 +6,9 @@ Frame Buffer Objects (FBOs) in Rapid.js allow you to render content to a texture
 
 ```javascript
 // Create a new FBO with specified dimensions
-const fbo = rapid.textures.createFrameBufferObject(128, 64);
+const fbo = rapid.texture.createFrameBufferObject(128, 64);
 
-const renderTexture = await rapid.textures.textureFromFrameBufferObject(fbo);
+const renderTexture = await rapid.texture.textureFromFrameBufferObject(fbo);
 ```
 
 ## Using FBOs
@@ -70,7 +70,7 @@ fbo.resize(1024, 768);
 ## Deleting FBO
 
 ```javascript
-rapid.textures.destroy(fbo);
+rapid.texture.destroy(fbo);
 ```
 
 ## Common Use Cases
@@ -79,8 +79,8 @@ rapid.textures.destroy(fbo);
 
 ```javascript
 // Create an FBO for the main scene
-const sceneFBO = rapid.textures.createFrameBufferObject(width, height);
-const sceneTexture = await rapid.textures.textureFromFrameBufferObject(sceneFBO);
+const sceneFBO = rapid.texture.createFrameBufferObject(width, height);
+const sceneTexture = await rapid.texture.textureFromFrameBufferObject(sceneFBO);
 
 // Render scene to FBO
 rapid.drawToFBO(sceneFBO, () => {

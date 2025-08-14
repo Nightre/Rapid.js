@@ -5,11 +5,11 @@ const rapid = new Rapid({
     backgroundColor: Color.fromHex("ADD8E6")
 })
 
-const cat = await rapid.textures.textureFromUrl("./assets/cat.png")
-const ground = await rapid.textures.textureFromUrl("./assets/ground.png")
+const cat = await rapid.texture.textureFromUrl("./assets/cat.png")
+const ground = await rapid.texture.textureFromUrl("./assets/ground.png")
 
-const fbo = rapid.textures.createFrameBufferObject(128, 64)
-const renderTexture = await rapid.textures.textureFromFrameBufferObject(fbo)
+const fbo = rapid.texture.createFrameBufferObject(128, 64)
+const renderTexture = await rapid.texture.textureFromFrameBufferObject(fbo)
 
 let time = 0
 let catPos = new Vec2(0, 20)

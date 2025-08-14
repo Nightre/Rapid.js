@@ -22,8 +22,8 @@ const updateDisplaySize = () => {
 window.addEventListener('resize', updateDisplaySize)
 updateDisplaySize()
 
-const cat = await rapid.textures.textureFromUrl("./assets/cat.png")
-const plane = await rapid.textures.textureFromUrl("./assets/plane.png")
+const cat = await rapid.texture.textureFromUrl("./assets/cat.png")
+const plane = await rapid.texture.textureFromUrl("./assets/plane.png")
 
 const sprites = []
 

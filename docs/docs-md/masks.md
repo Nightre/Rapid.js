@@ -52,7 +52,7 @@ const rapid = new Rapid({
 });
 
 // Load some textures
-const texture = await rapid.textures.textureFromUrl("./assets/character.png");
+const texture = await rapid.texture.textureFromUrl("./assets/character.png");
 
 function render() {
     rapid.startRender();

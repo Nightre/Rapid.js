@@ -7,7 +7,7 @@ const rapid = new Rapid({
 
 let time = 0;
 
-const grass = await rapid.textures.textureFromUrl("./assets/stone.jpeg");
+const grass = await rapid.texture.textureFromUrl("./assets/stone.jpeg");
 
 const graphicPoints = Vec2.FromArray([
     [0, 50],

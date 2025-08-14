@@ -274,7 +274,7 @@ class Texture {
 /**
  * @ignore
  */
-export const SCALEFACTOR = 2
+export const SCALEFACTOR = 2.5
 class Text extends Texture {
     private readonly options: ITextTextureOptions;
     private readonly rapid: Rapid;

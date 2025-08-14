@@ -5,7 +5,7 @@ const rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("FFFFFF")
 })
-const road = await rapid.textures.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
+const road = await rapid.texture.textureFromUrl("./assets/road.png", false, TextureWrapMode.REPEAT);
 let lineMod = LineTextureMode.REPEAT;
 
 const linePath = [

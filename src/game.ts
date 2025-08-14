@@ -268,6 +268,7 @@ export class Tilemap extends Entity {
     data: (number | string)[][] = [[]];
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
     ySortCallback: YSortCallback[] = [];
+    enableYsort: boolean
 
     /**
      * Creates a tilemap entity.
@@ -288,6 +289,7 @@ export class Tilemap extends Entity {
         this.tileSet = options.tileSet;
         this.shape = options.shape ?? TilemapShape.SQUARE;
         this.eachTile = options.eachTile;
+        this.enableYsort = options.enableYsort ?? false
     }
 
     /**
@@ -295,8 +297,12 @@ export class Tilemap extends Entity {
      * @param queue - The array to collect renderable entities.
      */
     override collectRenderables(queue: Entity[]): void {
-        if (this.onRender !== Entity.prototype.onRender) {
-            queue.push(this);
+        if (this.enableYsort) {
+            if (this.onRender !== Entity.prototype.onRender) {
+                queue.push(this);
+            }
+        }else{
+            super.collectRenderables(queue)
         }
     }
 
@@ -389,13 +395,14 @@ export class Tilemap extends Entity {
     override onRender(render: Rapid): void {
         const ySortCallback: YSortCallback[] = [...this.ySortCallback];
 
-        this.children.forEach(child => {
-            ySortCallback.push({
-                ySort: child.localZindex,
-                entity: child
+        if (this.enableYsort) {
+            this.children.forEach(child => {
+                ySortCallback.push({
+                    ySort: child.localZindex,
+                    entity: child
+                });
             });
-        });
-
+        }
         render.renderTileMapLayer(this.data, {
             error: this.error,
             tileSet: this.tileSet,

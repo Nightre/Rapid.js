@@ -7,9 +7,9 @@ const rapid = new Rapid({
 
 let time = 0;
 
-let text = rapid.textures.createText({ fontSize: 30 });
+let text = rapid.texture.createText({ fontSize: 30 });
 
-let text2 = rapid.textures.createText({ 
+let text2 = rapid.texture.createText({ 
     text: "Hello World \n안녕하세요 세계\nこんにちは世界\nПривет мир\nHallo Welt", 
     fontSize: 24 
 });

@@ -5,8 +5,8 @@ const rapid = new Rapid({
     backgroundColor: Color.fromHex("FFFFFF")
 })
 
-const dog = await rapid.textures.textureFromUrl("./assets/dog.png")
-const vegetable = await rapid.textures.textureFromUrl("./assets/vegetable.png")
+const dog = await rapid.texture.textureFromUrl("./assets/dog.png")
+const vegetable = await rapid.texture.textureFromUrl("./assets/vegetable.png")
 
 const vertexShaderSource = `
 uniform float uCustomUniform;

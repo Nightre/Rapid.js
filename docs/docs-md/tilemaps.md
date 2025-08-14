@@ -18,8 +18,8 @@ A tileset manages your tile textures and their properties. Here's how to create 
 const tileSet = new TileSet(32, 32);
 
 // Load textures
-const grassTexture = await rapid.textures.textureFromUrl("./grass.png");
-const treeTexture = await rapid.textures.textureFromUrl("./tree.png");
+const grassTexture = await rapid.texture.textureFromUrl("./grass.png");
+const treeTexture = await rapid.texture.textureFromUrl("./tree.png");
 
 // Register tiles with IDs
 tileSet.setTile(0, grassTexture);  // Simple tile

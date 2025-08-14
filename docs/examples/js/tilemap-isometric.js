@@ -26,12 +26,12 @@ const tileMap2 = Array.from({ length: 100 }, () =>
 
 const map = new Vec2(-250, -250)
 
-const tileTexture = await rapid.textures.textureFromUrl("./assets/iso.png");
-const ghost = await rapid.textures.textureFromUrl("./assets/ghost-iso.png");
-const catTexture = await rapid.textures.textureFromUrl("./assets/cat.png");
+const tileTexture = await rapid.texture.textureFromUrl("./assets/iso.png");
+const ghost = await rapid.texture.textureFromUrl("./assets/ghost-iso.png");
+const catTexture = await rapid.texture.textureFromUrl("./assets/cat.png");
 
 const tileSet = new TileSet(64, 32)
-const textures = tileTexture.createSpritesHeet(64, 32);
+const textures = tileTexture.createSpritesheet(64, 32);
 const building = tileTexture.clone().setClipRegion(64, 32, 64, 96)
 
 tileSet.setTile(0, textures[0])

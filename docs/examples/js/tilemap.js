@@ -1,9 +1,10 @@
-import { Color, Rapid, TileSet, Vec2, MathUtils } from "/Rapid.js/dist/rapid.js";
+import { Color, Rapid, TileSet, Vec2, MathUtils, InputManager } from "/Rapid.js/dist/rapid.js";
 
 const rapid = new Rapid({
     canvas: document.getElementById("game"),
     backgroundColor: Color.fromHex("87CEEB")
 });
+const input = new InputManager(rapid)
 
 const generateTileMap = (rows, cols) =>
     Array.from({ length: rows }, () =>
@@ -26,15 +27,15 @@ const tileMap2 = Array.from({ length: 100 }, () =>
 );
 
 const map = new Vec2(-250, -250)
-const grassTexture = await rapid.textures.textureFromUrl("./assets/grass-tile.png");
-const treeTexture = await rapid.textures.textureFromUrl("./assets/tree.png");
-const buildingTexture = await rapid.textures.textureFromUrl("./assets/building.png");
-const catTexture = await rapid.textures.textureFromUrl("./assets/cat.png");
-const ghost = await rapid.textures.textureFromUrl("./assets/ghost-squre.png");
+const grassTexture = await rapid.texture.textureFromUrl("./assets/grass-tile.png");
+const treeTexture = await rapid.texture.textureFromUrl("./assets/tree.png");
+const buildingTexture = await rapid.texture.textureFromUrl("./assets/building.png");
+const catTexture = await rapid.texture.textureFromUrl("./assets/cat.png");
+const ghost = await rapid.texture.textureFromUrl("./assets/ghost-squre.png");
 
 const tileSet = new TileSet(32, 32)
 
-const textures = (await rapid.textures.textureFromUrl("./assets/water-tile.png")).createSpritesHeet(32, 32);
+const textures = (await rapid.texture.textureFromUrl("./assets/water-tile.png")).createSpritesheet(32, 32);
 
 tileSet.setTile(0, grassTexture)
 tileSet.setTile(1, textures[0])
@@ -75,7 +76,7 @@ function animate() {
         rapid.matrixStack.scale(scale)
         rapid.matrixStack.translate(map)
 
-        const local = rapid.matrixStack.globalToLocal(mouse)
+        const local = rapid.matrixStack.globalToLocal(input.mousePosition)
         const options = {
             ySortCallback: [
                 {

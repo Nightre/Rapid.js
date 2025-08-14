@@ -7,7 +7,7 @@ Particles are a powerful way to add visual effects to your games and application
 To create a particle effect, use the `createParticleEmitter` method:
 
 ```javascript
-const particleTexture = await rapid.textures.textureFromUrl("./particle.png");
+const particleTexture = await rapid.texture.textureFromUrl("./particle.png");
 
 const emitter = rapid.createParticleEmitter({
     position: new Vec2(400, 300),
