@@ -2,7 +2,7 @@ import Rapid from "./render";
 import { IParticleOptions, ParticleShape, ITransformOptions, ParticleAttribute, ParticleAttributeTypes, ParticleAttributeData } from "./interface";
 import { Color, Vec2, Random } from "./math";
 import { Texture } from "./texture";
-import { isPlainObject } from "./utils";
+import { isPlainObject } from "./game";
 
 // Define constants for magic numbers
 const DEFAULT_EMIT_RATE = 10;

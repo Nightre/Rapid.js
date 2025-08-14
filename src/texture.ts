@@ -46,7 +46,7 @@ class TextureCache {
      * @param antialias - Whether to enable antialiasing.
      * @returns A new `Texture` instance created from the specified image source.
      */
-    async textureFromSource(source: Images, antialias: boolean = this.antialias, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
+    textureFromSource(source: Images, antialias: boolean = this.antialias, wrapMode: TextureWrapMode = TextureWrapMode.CLAMP) {
         let base = this.cache.get(source)
         if (!base) {
             base = BaseTexture.fromImageSource(this.render, source, antialias, wrapMode)
@@ -232,15 +232,7 @@ class Texture {
             BaseTexture.fromImageSource(rapid, image, antialias)
         )
     }
-    /**
-     * Creates a new `Texture` instance from the specified URL.
-     * @param rapid - The Rapid instance to use.
-     * @param url - The URL of the image to create the texture from.
-     * @returns A new `Texture` instance created from the specified URL.
-     */
-    static fromUrl(rapid: Rapid, url: string) {
-        return rapid.textures.textureFromUrl(url)
-    }
+
     /**
      * Converts the current texture into a spritesheet.
      * @param rapid - The Rapid instance to use.

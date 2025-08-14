@@ -125,6 +125,8 @@ export class TileMapRender {
         for (const ySort of ySortRow) {
             if (ySort.render) {
                 ySort.render();
+            } else if (ySort.entity) {
+                ySort.entity.onRender(rapid)
             } else if (ySort.renderSprite) {
                 rapid.renderSprite(ySort.renderSprite);
             }
@@ -196,7 +198,7 @@ export class TileMapRender {
     renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void {
         this.rapid.matrixStack.applyTransform(options);
         const tileSet = options.tileSet;
-        
+
         // 使用支持旋转的 getTileData 版本
         const {
             startTile,
@@ -215,7 +217,7 @@ export class TileMapRender {
 
             // 2. 从 Map 中获取当前行的回调，如果不存在则返回一个空数组
             const currentRow: YSortCallback[] = ySortRowsMap.get(mapY) ?? [];
-            
+
             // 后续逻辑保持不变...
             if (mapY < 0 || mapY >= data.length) {
                 // 即使地图瓦片不存在，也可能需要渲染这一行的独立实体
@@ -230,7 +232,7 @@ export class TileMapRender {
                 const tileId = data[mapY][mapX];
                 const tile = tileSet.getTile(tileId);
                 if (!tile) continue;
-                
+
                 // 使用矩阵计算坐标的逻辑
                 const localPos = this.mapToLocal(new Vec2(mapX, mapY), options);
                 const screenPos = this.rapid.matrixStack.localToGlobal(localPos);
@@ -247,13 +249,13 @@ export class TileMapRender {
                     }
                 });
             }
-            
+
             if (enableYSort) {
                 currentRow.sort((a, b) => a.ySort! - b.ySort!);
             }
             this.renderYSortRow(this.rapid, currentRow);
         }
-        
+
         this.rapid.matrixStack.applyTransformAfter(options);
     }
 

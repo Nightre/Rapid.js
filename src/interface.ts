@@ -1,3 +1,5 @@
+import { AudioPlayer } from "./audio";
+import { Entity } from "./game";
 import { Color, Vec2 } from "./math";
 import { Texture } from "./texture";
 import { TileSet } from "./tilemap";
@@ -56,6 +58,10 @@ export interface IEntityTransformOptions {
     y?: number,
 
     tags?: string[]
+}
+
+export interface ITilemapEntityOptions extends IEntityTransformOptions {
+    tileset: TileSet
 }
 
 export interface ITransformOptions {
@@ -179,9 +185,15 @@ export interface IRegisterTileOptions extends ISpriteRenderOptions {
 export interface YSortCallback {
     ySort: number,
     render?: () => void,
+    entity?: Entity
     renderSprite?: ISpriteRenderOptions
 }
-export interface ILayerRenderOptions extends ITransformOptions {
+
+export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IEntityTransformOptions {
+
+}
+
+export interface ITilemapLayerOptions {
     error?: number | Vec2,
     errorX?: number,
     errorY?: number,
@@ -192,6 +204,8 @@ export interface ILayerRenderOptions extends ITransformOptions {
 
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void,
 }
+
+export interface ILayerRenderOptions extends ITransformOptions, ITilemapLayerOptions { }
 export interface IShaderRenderOptions {
     shader?: GLShader;
     uniforms?: Uniform,
@@ -377,5 +391,29 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
 
 
 export interface IGameOptions extends IRapidOptions {
-    
+
+}
+
+export interface ISound {
+    element: HTMLAudioElement;
+    source: MediaElementAudioSourceNode | null;
+    gainNode: GainNode;
+}
+
+/**
+ * Interface for an asset to be loaded.
+ */
+export interface IAsset {
+    type: 'json' | 'audio' | 'image';
+    name: string;
+    url: string;
+}
+
+/**
+ * Interface for the assets storage structure.
+ */
+export interface IAssets {
+    json: { [key: string]: any };
+    audio: { [key: string]: AudioPlayer };
+    images: { [key: string]: Texture };
 }

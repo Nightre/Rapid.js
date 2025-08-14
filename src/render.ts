@@ -10,7 +10,7 @@ import { TileMapRender, TileSet } from "./tilemap"
 import GLShader from "./webgl/glshader"
 import { getContext } from "./webgl/utils"
 import { ParticleEmitter } from "./particle"
-import { Camera } from "./utils"
+import { Camera } from "./game"
 
 /**
  * The `Rapid` class provides a WebGL-based rendering engine. 
@@ -22,7 +22,7 @@ class Rapid {
     projectionDirty: boolean = true
 
     matrixStack = new MatrixStack()
-    textures: TextureCache
+    texture: TextureCache
     tileMap = new TileMapRender(this)
     light = new LightManager(this)
 
@@ -60,7 +60,7 @@ class Rapid {
         const gl = getContext(options.canvas)
         this.gl = gl
         this.canvas = options.canvas
-        this.textures = new TextureCache(this, options.antialias ?? false)
+        this.texture = new TextureCache(this, options.antialias ?? false)
         this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
         this.width = options.width || this.canvas.width
         this.height = options.height || this.canvas.height
