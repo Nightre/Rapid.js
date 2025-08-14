@@ -121,7 +121,7 @@ export class DynamicArrayBuffer {
      * length of the array
      */
     public get length(): number {
-        return this.typedArray.length
+        return this.usedElemNum
     }
 }
 
@@ -190,7 +190,7 @@ export class MatrixStack extends DynamicArrayBuffer {
     pushMat() {
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
-        this.resize(6)
+        this.resize(MATRIX_SIZE)
         this.pushFloat32(arr[offset + 0])
         this.pushFloat32(arr[offset + 1])
         this.pushFloat32(arr[offset + 2])
@@ -208,7 +208,7 @@ export class MatrixStack extends DynamicArrayBuffer {
      * push a matrix and indentiy it
      */
     pushIdentity() {
-        this.resize(6)
+        this.resize(MATRIX_SIZE)
         this.pushFloat32(1)
         this.pushFloat32(0)
         this.pushFloat32(0)
@@ -801,7 +801,7 @@ export class Vec2 implements IMathObject<Vec2> {
     set(x: number | number[], y?: number) {
         if (Array.isArray(x)) {
             this.x = x[0]
-            this.y = x[0]
+            this.y = x[1]
         } else if (y) {
             this.x = x
             this.y = y

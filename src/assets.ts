@@ -168,5 +168,5 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
         return this.assets.images[name];
     }
 }
-
+ 
 export default AssetsLoader;

@@ -599,10 +599,10 @@ class Rapid {
      * Sets up the FBO for rendering by binding it, adjusting viewport size and projection
      * @param fbo - The Frame Buffer Object to render to
      */
-    startFBO(fbo: FrameBufferObject) {
+    startFBO(fbo: FrameBufferObject, color: Color = this.defaultColor) {
         this.quitCurrentRegion()
 
-        fbo.bind()
+        fbo.bind(color)
         this.clearTextureUnit()
 
         this.resizeSize(fbo.width, fbo.height, fbo.width, fbo.height)
