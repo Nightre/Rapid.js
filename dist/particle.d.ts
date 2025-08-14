@@ -26,12 +26,14 @@ export declare class ParticleEmitter {
      */
     getTransform(): ITransformOptions;
     /**
-     * Sets particle emission rate
-     * @param rate - Particles per second
+     * Sets particle emission rate.
+     * In continuous mode (`emitTime`=0), this is particles per second.
+     * In burst mode (`emitTime`>0), this is particles per burst.
+     * @param rate - The emission rate.
      */
     setEmitRate(rate: number): void;
     /**
-     * Sets time interval between emissions
+     * Sets time interval between emissions. Set to 0 for continuous emission.
      * @param time - Time interval in seconds
      */
     setEmitTime(time: number): void;
@@ -48,7 +50,7 @@ export declare class ParticleEmitter {
      */
     clear(): void;
     /**
-     * Emits specified number of particles
+     * Emits a specified number of particles immediately.
      * @param count - Number of particles to emit
      */
     emit(count: number): void;
@@ -69,5 +71,9 @@ export declare class ParticleEmitter {
      * Checks if the particle emitter is active (has particles or is emitting)
      */
     isActive(): boolean;
+    /**
+     * Triggers a single burst of particles, regardless of whether the emitter is running.
+     * The number of particles is determined by `emitRate`.
+     */
     oneShot(): void;
 }

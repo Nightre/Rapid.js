@@ -1,5 +1,6 @@
 import Rapid from "./render";
 import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from "./interface";
+import { Color } from "./math";
 /**
  * texture manager
  * @ignore
@@ -65,6 +66,7 @@ declare class BaseTexture {
     width: number;
     height: number;
     wrapMode: TextureWrapMode;
+    cacheKey: string | Images | null;
     constructor(texture: WebGLTexture, width: number, height: number, wrapMode?: TextureWrapMode);
     static fromImageSource(r: Rapid, image: Images, antialias?: boolean, wrapMode?: TextureWrapMode): BaseTexture;
     /**
@@ -117,7 +119,7 @@ declare class Texture {
      * @param base
      * @param scale
      */
-    setBaseTextur(base?: BaseTexture): void;
+    setBaseTexture(base?: BaseTexture): void;
     /**
      * Sets the region of the texture to be used for rendering.
      * @param x - The x-coordinate of the top-left corner of the region.
@@ -134,6 +136,7 @@ declare class Texture {
      * @returns A new `Texture` instance created from the image source.
      */
     static fromImageSource(rapid: Rapid, image: Images, antialias?: boolean): Texture;
+    static fromFrameBufferObject(fbo: FrameBufferObject): Texture;
     /**
      * Converts the current texture into a spritesheet.
      * @param rapid - The Rapid instance to use.
@@ -141,7 +144,7 @@ declare class Texture {
      * @param spriteHeight - The height of each sprite in the spritesheet.
      * @returns An array of `Texture` instances representing the sprites in the spritesheet.
      */
-    createSpritesHeet(spriteWidth: number, spriteHeight: number): Texture[];
+    createSpritesheet(spriteWidth: number, spriteHeight: number): Texture[];
     /**
      * Clone the current texture
      * @returns A new `Texture` instance with the same base texture reference.
@@ -153,30 +156,23 @@ declare class Texture {
  */
 export declare const SCALEFACTOR = 2;
 declare class Text extends Texture {
-    private options;
-    private rapid;
+    private readonly options;
+    private readonly rapid;
     protected scale: number;
     text: string;
-    /**
-     * Creates a new `Text` instance.
-     * @param options - The options for rendering the text, such as font, size, color, etc.
-     */
     constructor(rapid: Rapid, options: ITextTextureOptions);
     private updateTextImage;
-    /**
-     * Creates a canvas element for rendering text.
-     * @returns HTMLCanvasElement - The created canvas element.
-     */
     private createTextCanvas;
     /**
-     * Update the displayed text
-     * @param text
+     * Updates the displayed text. Re-renders the texture if the text has changed.
+     * @param text - The new text to display.
      */
     setText(text: string): void;
 }
 declare class FrameBufferObject extends BaseTexture {
     private framebuffer;
     private gl;
+    private readonly stencilBuffer;
     /**
      * Creates a new FrameBufferObject instance
      * @param render - The Rapid instance to use
@@ -189,7 +185,7 @@ declare class FrameBufferObject extends BaseTexture {
      * Bind the framebuffer for rendering
      * @ignore
      */
-    bind(): void;
+    bind(bgColor: Color): void;
     /**
      * Unbind the framebuffer and restore default framebuffer
      * @ignore
