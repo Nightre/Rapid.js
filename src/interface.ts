@@ -374,3 +374,8 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
      */
     damping?: number,
 }
+
+
+export interface IGameOptions extends IRapidOptions {
+    
+}

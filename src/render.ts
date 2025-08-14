@@ -38,8 +38,6 @@ class Rapid {
     logicWidth!: number
     logicHeight!: number
 
-    camera: Camera
-
     private scaleEnable: boolean;
     private scaleRadio: ScaleRadio;
 
@@ -64,9 +62,6 @@ class Rapid {
         this.canvas = options.canvas
         this.textures = new TextureCache(this, options.antialias ?? false)
         this.maxTextureUnits = gl.getParameter(this.gl.MAX_TEXTURE_IMAGE_UNITS);
-
-        this.camera = new Camera(this)
-
         this.width = options.width || this.canvas.width
         this.height = options.height || this.canvas.height
 
@@ -292,7 +287,6 @@ class Rapid {
         this.clear()
         clear && this.matrixStack.clear()
         this.matrixStack.pushIdentity()
-        this.applyCameraTransform()
         this.currentRegion = undefined
         this.currentRegionName = undefined
 
@@ -326,13 +320,6 @@ class Rapid {
      */
     renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void {
         this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
-    }
-
-    private applyCameraTransform() {
-        // const centerdPosition = new Vec2(this.logicWidth, this.logicHeight).divide(2)
-        // this.matrixStack.translate(centerdPosition)
-        this.camera.render()
-        this.matrixStack.setTransform(this.camera.transform.getTransform())
     }
 
     /**

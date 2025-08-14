@@ -1,4 +1,5 @@
-import { IEntityTransformOptions, ITransformOptions } from "./interface";
+import { InputManager } from "./input";
+import { IEntityTransformOptions, IGameOptions, ITransformOptions } from "./interface";
 import { MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 
@@ -6,7 +7,6 @@ export const isPlainObject = (obj: any) => {
     if (typeof obj !== 'object' || obj === null) return false;
     return Object.getPrototypeOf(obj) === Object.prototype;
 }
-
 
 export class Entity {
     position: Vec2;
@@ -17,12 +17,14 @@ export class Entity {
     readonly children: Entity[] = [];
     transform = new MatrixStack();
     rapid: Rapid;
+    game: Game
 
     tags: string[];
 
-    constructor(rapid: Rapid, options: IEntityTransformOptions = {}) {
+    constructor(game: Game, options: IEntityTransformOptions = {}) {
         this.transform.pushIdentity()
-        this.rapid = rapid;
+        this.game = game
+        this.rapid = game.render;
 
         this.tags = options.tags ?? []
         // Position
@@ -49,9 +51,25 @@ export class Entity {
         return this.parent ? this.parent.transform : this.rapid.matrixStack;
     }
 
-    update(deltaTime: number): void {
+    public update(deltaTime: number): void {
+        this.onUpdate(deltaTime);
 
+        for (const child of this.children) {
+            child.update(deltaTime);
+        }
     }
+    onUpdate(deltaTime: number) { }
+
+    public render(): void {
+        this.updateTransform();
+
+        this.onRender();
+
+        for (const child of this.children) {
+            child.render();
+        }
+    }
+    onRender() { }
 
     updateTransform(deep: boolean = false) {
         if (deep && this.parent) {
@@ -64,24 +82,8 @@ export class Entity {
         transform.translate(this.position);
         transform.rotate(this.rotation);
         transform.scale(this.scale);
-    }
 
-    render(): void {
-        this.updateTransform();
-    }
-
-    postRender(): void {
-        for (const child of this.children) {
-            child.render();
-            child.postRender();
-        }
-    }
-
-    postUpdate(deltaTime: number): void {
-        for (const child of this.children) {
-            child.update(deltaTime);
-            child.postUpdate(deltaTime);
-        }
+        this.rapid.matrixStack.setTransform(transform.getTransform())
     }
 
     addChild(child: Entity): void {
@@ -98,14 +100,6 @@ export class Entity {
             child.parent = null;
             this.children.splice(index, 1);
         }
-    }
-
-    root(dt: number) {
-        this.update(dt)
-        this.postUpdate(dt)
-
-        this.render()
-        this.postRender()
     }
 
     findDescendant(predicate: (entity: Entity) => boolean, onlyFirst = true): Entity[] | Entity | null {
@@ -136,25 +130,95 @@ export class Entity {
         };
         return this.findDescendant(predicate, onlyFirst);
     }
+
+    dispose() {
+        this.postDispose();
+        if (this.parent) {
+            this.parent.removeChild(this);
+        }
+    }
+
+    postDispose() {
+        this.children.forEach(child => {
+            child.dispose();
+        })
+    }
 }
 
 export class Camera extends Entity {
     override updateTransform() {
         const transform = this.transform;
-        const parentTransform = this.getParentTransform();
-        transform.setTransform(parentTransform.getTransform());
-
+        transform.identity()
+        
         const centerdPosition = new Vec2(
-            -this.rapid.logicWidth, 
+            -this.rapid.logicWidth,
             -this.rapid.logicHeight
         ).divide(2)
 
         transform.translate(centerdPosition);
         transform.translate(this.position);
-        
+
         transform.rotate(this.rotation);
         transform.scale(this.scale);
 
         transform.setTransform(transform.getInverse())
+    }
+}
+
+export class Scene extends Entity {
+    create() {
+
+    }
+}
+
+export class Game {
+    render: Rapid;
+    mainScene: Scene | null = null;
+    input: InputManager;
+    private isRunning: boolean = false;
+    private lastTime: number = 0;
+
+    constructor(options: IGameOptions) {
+        this.render = new Rapid(options);
+        this.input = new InputManager(this.render);
+    }
+
+    switchScene(newScene: Scene): void {
+        if (this.mainScene) {
+            this.mainScene.dispose();
+        }
+        this.mainScene = newScene;
+        newScene.create();
+    }
+
+    start(): void {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.lastTime = performance.now();
+            this.gameLoop();
+        }
+    }
+
+    stop(): void {
+        this.isRunning = false;
+    }
+
+    private gameLoop(): void {
+        if (!this.isRunning) return;
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+        this.lastTime = currentTime;
+
+        this.render.startRender();
+
+        if (this.mainScene) {
+            this.mainScene.update(deltaTime)
+            this.mainScene.render()
+        }
+
+        this.render.endRender();
+
+        requestAnimationFrame(this.gameLoop.bind(this));
     }
 }

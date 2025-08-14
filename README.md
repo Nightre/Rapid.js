@@ -1,3 +1,9 @@
+> [!WARNING]
+> **🚧 Major Refactoring in Progress 🚧**
+>
+> This project is currently undergoing a significant rewrite to improve its core architecture and introduce new features. As a result, the **current documentation and examples are outdated** and may not work with the `main` branch.
+>
+> We are working hard to update the documentation soon. Thank you for your patience!
 
 # Rapid.js
 
