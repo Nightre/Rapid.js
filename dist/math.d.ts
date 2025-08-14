@@ -1,4 +1,4 @@
-import { IMathStruct as IMathObject, ITransformOptions, WebGLContext } from "./interface";
+import { IMathObject, ITransformOptions, WebGLContext } from "./interface";
 /**
  * @ignore
  */

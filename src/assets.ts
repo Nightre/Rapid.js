@@ -1,54 +1,39 @@
 import { AudioPlayer } from "./audio";
 import { Game } from "./game";
 import { IAsset as IAsset, IAssets } from "./interface";
+import EventEmitter from "eventemitter3";
+
+/**
+ * Events emitted by AssetsLoader.
+ */
+interface AssetsLoaderEvents {
+  progress: (progress: number, loaded: number, total: number) => void;
+  complete: (assets: IAssets) => void;
+  error: (error: { name: string; url: string; error: any }) => void;
+}
 
 /**
  * AssetsLoader class for loading game assets (JSON, audio, images).
  * Supports asynchronous loading with progress tracking and error handling.
  */
-class AssetsLoader {
+class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
     private assets: IAssets;
     private totalAsset: number = 0;
     private loadedAssets: number = 0;
-    private onProgress: ((progress: number, loaded: number, total: number) => void) | null = null;
-    private onComplete: ((assets: IAssets) => void) | null = null;
-    private onError: ((error: { name: string; url: string; error: any }) => void) | null = null;
-    private game: Game
+    private game: Game;
+
     /**
      * Creates an instance of AssetsLoader.
      * Initializes the asset storage and counters.
      */
     constructor(game: Game) {
-        this.game = game
+        super();
+        this.game = game;
         this.assets = {
             json: {},
             audio: {},
             images: {}
         };
-    }
-
-    /**
-     * Sets the callback for loading progress updates.
-     * @param callback - Function called with progress (0.0 to 1.0), loaded count, and total count.
-     */
-    setProgressCallback(callback: (progress: number, loaded: number, total: number) => void): void {
-        this.onProgress = callback;
-    }
-
-    /**
-     * Sets the callback for when all assets are loaded.
-     * @param callback - Function called with the loaded assets.
-     */
-    setCompleteCallback(callback: (assets: IAssets) => void): void {
-        this.onComplete = callback;
-    }
-
-    /**
-     * Sets the callback for handling loading errors.
-     * @param callback - Function called with error details (name, url, error).
-     */
-    setErrorCallback(callback: (error: { name: string; url: string; error: any }) => void): void {
-        this.onError = callback;
     }
 
     /**
@@ -124,16 +109,14 @@ class AssetsLoader {
 
     /**
      * Handles the completion of an asset load.
-     * Updates progress and triggers completion callback if all assets are loaded.
+     * Updates progress and triggers completion event if all assets are loaded.
      */
     private assetLoaded(): void {
         this.loadedAssets++;
-        if (this.onProgress) {
-            const progress = this.loadedAssets / this.totalAsset;
-            this.onProgress(progress, this.loadedAssets, this.totalAsset);
-        }
-        if (this.loadedAssets === this.totalAsset && this.onComplete) {
-            this.onComplete(this.assets);
+        const progress = this.loadedAssets / this.totalAsset;
+        this.emit('progress', progress, this.loadedAssets, this.totalAsset);
+        if (this.loadedAssets === this.totalAsset) {
+            this.emit('complete', this.assets);
         }
     }
 
@@ -144,11 +127,8 @@ class AssetsLoader {
      * @param error - The error object or message.
      */
     private handleError(name: string, url: string, error: any): void {
-        if (this.onError) {
-            this.onError({ name, url, error });
-        } else {
-            console.error(`Failed to load asset ${name} from ${url}:`, error);
-        }
+        this.emit('error', { name, url, error });
+        console.error(`Failed to load asset ${name} from ${url}:`, error);
     }
 
     /**

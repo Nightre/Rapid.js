@@ -1,16 +1,12 @@
 import AssetsLoader from "./assets";
 import AudioManager from "./audio";
 import { InputManager } from "./input";
-import { IEntityTilemapLayerOptions, IEntityTransformOptions, IGameOptions, ISpriteRenderOptions, ITilemapLayerOptions, ITransformOptions, TilemapShape, YSortCallback } from "./interface";
+import { IEntityTilemapLayerOptions, IEntityTransformOptions, IGameOptions, IMathObject, ISpriteRenderOptions, ITilemapLayerOptions, ITransformOptions, TilemapShape, YSortCallback } from "./interface";
 import { MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 import { TextureCache } from "./texture";
 import { TileSet } from "./tilemap";
-
-export const isPlainObject = (obj: any) => {
-    if (typeof obj !== 'object' || obj === null) return false;
-    return Object.getPrototypeOf(obj) === Object.prototype;
-}
+import { Easing, EasingFunction, Timer, Tween } from "./utils";
 
 /**
  * Base class for game entities with transform and rendering capabilities.
@@ -431,6 +427,9 @@ export class Game {
     texture: TextureCache
     private isRunning: boolean = false;
     private lastTime: number = 0;
+    private tweens: Tween<any>[] = [];
+    private timers: Timer[] = [];
+
     renderQueue: Entity[] = [];
 
     /**
@@ -521,11 +520,94 @@ export class Game {
 
         this.render.endRender();
         this.input.updateNextFrame()
+        this.updateTweens(deltaTime)
+        this.updateTimers(deltaTime)
         requestAnimationFrame(this.gameLoop.bind(this));
     }
 
-    destroy(){
+    destroy() {
         this.audio.destroy()
         this.input.destroy()
+    }
+
+    /**
+     * Creates and starts a new timer that will be automatically updated by the game loop.
+     * @param duration - The duration in seconds before the timer triggers.
+     * @param onComplete - The function to call when the timer finishes.
+     * @param repeat - If true, the timer will restart after completing. Defaults to false.
+     * @returns The created Timer instance, allowing you to `stop()` it manually if needed.
+     * @example
+     * // Log a message after 2.5 seconds
+     * game.createTimer(2.5, () => {
+     *     console.log('Timer finished!');
+     * });
+     *
+     * // Spawn an enemy every 5 seconds
+     * const enemySpawner = game.createTimer(5, () => {
+     *     scene.spawnEnemy();
+     * }, true);
+     */
+    public createTimer(duration: number, repeat: boolean = false): Timer {
+        const timer = new Timer(duration, repeat);
+        this.timers.push(timer);
+        timer.start(); // Timers start automatically upon creation
+        return timer;
+    }
+    /**
+     * Updates all active timers and removes completed ones.
+     * @param deltaTime - The time elapsed since the last frame.
+     * @private
+     */
+    private updateTimers(deltaTime: number): void {
+        for (const timer of this.timers) {
+            timer.update(deltaTime);
+        }
+        // Filter out finished timers to prevent the array from growing indefinitely
+        this.timers = this.timers.filter(timer => !timer.isFinished);
+    }
+    /**
+     * Creates and starts a new tween animation.
+     * The tween will be automatically updated by the game loop.
+     * @template T - The type of the value being animated (e.g., Vec2, Color, number).
+     * @param target - The object to animate.
+     * @param property - The name of the property on the target to animate.
+     * @param to - The final value of the property.
+     * @param duration - The duration of the animation in seconds.
+     * @param easing - The easing function to use. Defaults to Linear.
+     * @returns The created Tween instance, allowing you to chain calls like .onComplete().
+     * @example
+     * // Tween a sprite's position over 2 seconds
+     * game.createTween(mySprite, 'position', new Vec2(500, 300), 2, Easing.EaseOutQuad);
+     *
+     * // Tween a shape's color to red and do something on completion
+     * game.createTween(myShape, 'color', Color.Red, 1.5)
+     *     .onComplete(() => {
+     *         console.log('Color tween finished!');
+     *     });
+     */
+    public createTween<T extends IMathObject<T> | number>(
+        target: any,
+        property: string,
+        to: T,
+        duration: number,
+        easing: EasingFunction = Easing.Linear
+    ): Tween<T> {
+        const tween = new Tween(target, property, to, duration, easing);
+        this.tweens.push(tween);
+        tween.start();
+        return tween;
+    }
+
+    /**
+     * Updates all active tweens and removes completed ones.
+     * @param deltaTime - The time elapsed since the last frame.
+     * @private
+     */
+    private updateTweens(deltaTime: number): void {
+        for (const tween of this.tweens) {
+            tween.update(deltaTime);
+        }
+        // Filter out finished tweens to prevent the array from growing indefinitely
+        this.tweens = this.tweens.filter(tween => !tween.isFinished);
     }
 }

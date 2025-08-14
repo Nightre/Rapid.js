@@ -1,60 +1,93 @@
 import { Vec2 } from "./math";
 import Rapid from "./render";
-import { Entity } from "./utils";
+import { Entity } from "./game";
+/**
+ * Manages user input for keyboard and mouse events.
+ * Tracks key and button states, including pressed/released states for the current and previous frames.
+ */
 export declare class InputManager {
-    rapid: Rapid;
-    canvas: HTMLCanvasElement;
-    mousePosition: Vec2;
+    private rapid;
+    private canvas;
+    private mousePosition;
     private keysDown;
     private keysDownLastFrame;
     private buttonsDown;
     private buttonsDownLastFrame;
+    /**
+     * Creates an instance of InputManager.
+     * @param rapid - The Rapid instance for rendering and coordinate conversion.
+     */
     constructor(rapid: Rapid);
     /**
-     * 附加所有必要的事件监听器
+     * Attaches all necessary event listeners for keyboard and mouse input.
      * @private
      */
     private attachEventListeners;
+    /**
+     * Updates the state of keys and buttons for the next frame.
+     */
     updateNextFrame(): void;
     /**
-     * 检查某个按键当前是否被按下 (持续检测)
-     * @param key `event.code` 的值, e.g., "KeyW", "Space"
+     * Checks if a key is currently pressed (continuous detection).
+     * @param key - The key code (e.g., "KeyW", "Space").
+     * @returns True if the key is pressed, false otherwise.
      */
     isKeyDown(key: string): boolean;
     /**
-     * 检查某个按键当前是否是松开状态
-     * @param key `event.code` 的值
+     * Checks if a key is currently released.
+     * @param key - The key code (e.g., "KeyW", "Space").
+     * @returns True if the key is released, false otherwise.
      */
     isKeyUp(key: string): boolean;
     /**
-     * 检查某个按键是否在当前帧“刚刚被按下” (单次触发)
-     * @param key `event.code` 的值
+     * Checks if a key was pressed in the current frame (single trigger).
+     * @param key - The key code (e.g., "KeyW", "Space").
+     * @returns True if the key was just pressed, false otherwise.
      */
     wasKeyPressed(key: string): boolean;
     /**
-     * 检查某个按键是否在当前帧“刚刚被松开” (单次触发)
-     * @param key `event.code` 的值
+     * Checks if a key was released in the current frame (single trigger).
+     * @param key - The key code (e.g., "KeyW", "Space").
+     * @returns True if the key was just released, false otherwise.
      */
     wasKeyReleased(key: string): boolean;
     /**
-     * 检查某个鼠标按钮当前是否被按下 (持续检测)
-     * @param button 鼠标按钮编号
+     * Checks if a mouse button is currently pressed (continuous detection).
+     * @param button - The mouse button number (0: left, 1: middle, 2: right).
+     * @returns True if the button is pressed, false otherwise.
      */
     isButtonDown(button: number): boolean;
     /**
-     * 检查某个鼠标按钮当前是否是松开状态
-     * @param button 鼠标按钮编号
+     * Checks if a mouse button is currently released.
+     * @param button - The mouse button number (0: left, 1: middle, 2: right).
+     * @returns True if the button is released, false otherwise.
      */
     isButtonUp(button: number): boolean;
     /**
-     * 检查某个鼠标按钮是否在当前帧“刚刚被按下” (单次触发)
-     * @param button 鼠标按钮编号
+     * Checks if a mouse button was pressed in the current frame (single trigger).
+     * @param button - The mouse button number (0: left, 1: middle, 2: right).
+     * @returns True if the button was just pressed, false otherwise.
      */
     wasButtonPressed(button: number): boolean;
     /**
-     * 检查某个鼠标按钮是否在当前帧“刚刚被松开” (单次触发)
-     * @param button 鼠标按钮编号
+     * Checks if a mouse button was released in the current frame (single trigger).
+     * @param button - The mouse button number (0: left, 1: middle, 2: right).
+     * @returns True if the button was just released, false otherwise.
      */
     wasButtonReleased(button: number): boolean;
+    /**
+     * Converts the mouse position to local coordinates relative to an entity.
+     * @param entity - The entity to convert coordinates for.
+     * @returns The mouse position in the entity's local coordinate system.
+     */
     getMouseLocal(entity: Entity): Vec2;
+    /**
+     * Removes all event listeners and cleans up resources.
+     */
+    destroy(): void;
+    private handleMouseMove;
+    private handleKeyDown;
+    private handleKeyUp;
+    private handleMouseDown;
+    private handleMouseUp;
 }

@@ -1,3 +1,5 @@
+import { AudioPlayer } from "./audio";
+import { Entity } from "./game";
 import { Color, Vec2 } from "./math";
 import { Texture } from "./texture";
 import { TileSet } from "./tilemap";
@@ -8,12 +10,32 @@ import { Uniform } from "./webgl/uniform";
  */
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 /**
- * @ignore
+ * Defines the required mathematical operations for an object to be tweenable.
  */
-export interface IMathStruct<T> {
-    clone(obj: T): T;
-    copy(obj: T): void;
-    equal(obj: T): boolean;
+export interface IMathObject<T> {
+    /**
+     * Creates a new object that is a copy of the current instance.
+     * @returns A new instance of the object.
+     */
+    clone(): IMathObject<T>;
+    /**
+     * Adds another object's values to this one.
+     * @param other - The object to add.
+     * @returns A new object with the result of the addition.
+     */
+    add(other: IMathObject<T>): IMathObject<T>;
+    /**
+     * Subtracts another object's values from this one.
+     * @param other - The object to subtract.
+     * @returns A new object with the result of the subtraction.
+     */
+    subtract(other: IMathObject<T>): IMathObject<T>;
+    /**
+     * Multiplies the object's values by a scalar.
+     * @param scalar - The number to multiply by.
+     * @returns A new object with the result of the multiplication.
+     */
+    multiply(scalar: number | IMathObject<T>): IMathObject<T>;
 }
 export declare enum ScaleRadio {
     KEEP = "keep",
@@ -46,7 +68,10 @@ export interface IEntityTransformOptions {
     rotation?: number;
     x?: number;
     y?: number;
-    tags: string[];
+    tags?: string[];
+}
+export interface ITilemapEntityOptions extends IEntityTransformOptions {
+    tileset: TileSet;
 }
 export interface ITransformOptions {
     restoreTransform?: boolean;
@@ -153,9 +178,12 @@ export interface IRegisterTileOptions extends ISpriteRenderOptions {
 export interface YSortCallback {
     ySort: number;
     render?: () => void;
+    entity?: Entity;
     renderSprite?: ISpriteRenderOptions;
 }
-export interface ILayerRenderOptions extends ITransformOptions {
+export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IEntityTransformOptions {
+}
+export interface ITilemapLayerOptions {
     error?: number | Vec2;
     errorX?: number;
     errorY?: number;
@@ -163,6 +191,8 @@ export interface ILayerRenderOptions extends ITransformOptions {
     shape?: TilemapShape;
     tileSet: TileSet;
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
+}
+export interface ILayerRenderOptions extends ITransformOptions, ITilemapLayerOptions {
 }
 export interface IShaderRenderOptions {
     shader?: GLShader;
@@ -332,3 +362,32 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
      */
     damping?: number;
 };
+export interface IGameOptions extends IRapidOptions {
+}
+export interface ISound {
+    element: HTMLAudioElement;
+    source: MediaElementAudioSourceNode | null;
+    gainNode: GainNode;
+}
+/**
+ * Interface for an asset to be loaded.
+ */
+export interface IAsset {
+    type: 'json' | 'audio' | 'image';
+    name: string;
+    url: string;
+}
+/**
+ * Interface for the assets storage structure.
+ */
+export interface IAssets {
+    json: {
+        [key: string]: any;
+    };
+    audio: {
+        [key: string]: AudioPlayer;
+    };
+    images: {
+        [key: string]: Texture;
+    };
+}

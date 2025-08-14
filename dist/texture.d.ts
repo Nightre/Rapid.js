@@ -29,7 +29,7 @@ declare class TextureCache {
      * @param antialias - Whether to enable antialiasing.
      * @returns A new `Texture` instance created from the specified image source.
      */
-    textureFromSource(source: Images, antialias?: boolean, wrapMode?: TextureWrapMode): Promise<Texture>;
+    textureFromSource(source: Images, antialias?: boolean, wrapMode?: TextureWrapMode): Texture;
     /**
      * Load an image from the specified URL.
      * @param url - The URL of the image to load.
@@ -134,13 +134,6 @@ declare class Texture {
      * @returns A new `Texture` instance created from the image source.
      */
     static fromImageSource(rapid: Rapid, image: Images, antialias?: boolean): Texture;
-    /**
-     * Creates a new `Texture` instance from the specified URL.
-     * @param rapid - The Rapid instance to use.
-     * @param url - The URL of the image to create the texture from.
-     * @returns A new `Texture` instance created from the specified URL.
-     */
-    static fromUrl(rapid: Rapid, url: string): Promise<Texture>;
     /**
      * Converts the current texture into a spritesheet.
      * @param rapid - The Rapid instance to use.

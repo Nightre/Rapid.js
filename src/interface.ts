@@ -12,13 +12,37 @@ import { Uniform } from "./webgl/uniform";
 export type WebGLContext = WebGL2RenderingContext | WebGLRenderingContext;
 
 /**
- * @ignore
+ * Defines the required mathematical operations for an object to be tweenable.
  */
-export interface IMathStruct<T> {
-    clone(obj: T): T,
-    copy(obj: T): void,
-    equal(obj: T): boolean
+export interface IMathObject<T> {
+    /**
+     * Creates a new object that is a copy of the current instance.
+     * @returns A new instance of the object.
+     */
+    clone(): IMathObject<T>;
+
+    /**
+     * Adds another object's values to this one.
+     * @param other - The object to add.
+     * @returns A new object with the result of the addition.
+     */
+    add(other: IMathObject<T>): IMathObject<T>;
+
+    /**
+     * Subtracts another object's values from this one.
+     * @param other - The object to subtract.
+     * @returns A new object with the result of the subtraction.
+     */
+    subtract(other: IMathObject<T>): IMathObject<T>;
+
+    /**
+     * Multiplies the object's values by a scalar.
+     * @param scalar - The number to multiply by.
+     * @returns A new object with the result of the multiplication.
+     */
+    multiply(scalar: number | IMathObject<T>): IMathObject<T>;
 }
+
 
 export enum ScaleRadio {
     KEEP = 'keep',

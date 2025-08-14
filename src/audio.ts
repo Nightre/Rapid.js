@@ -1,10 +1,18 @@
 import { ISound } from "./interface";
+import EventEmitter from "eventemitter3";
+
+/**
+ * Events emitted by AudioPlayer.
+ */
+interface AudioPlayerEvents {
+  ended: () => void;
+}
 
 /**
  * Audio class for managing individual audio elements.
  * Encapsulates an HTMLAudioElement and its Web Audio API nodes.
  */
-export class AudioPlayer {
+export class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
     public element: HTMLAudioElement;
     public source: AudioNode | null;
     public gainNode: GainNode;
@@ -16,10 +24,19 @@ export class AudioPlayer {
      * @param audioContext - The Web Audio API context.
      */
     constructor(audioElement: HTMLAudioElement, audioContext: AudioContext) {
+        super();
         this.element = audioElement;
         this.audioContext = audioContext;
         this.source = null;
         this.gainNode = this.audioContext.createGain();
+        this.element.addEventListener('ended', this.handleEnded.bind(this));
+    }
+
+    /**
+     * Handles the 'ended' event when audio playback completes.
+     */
+    private handleEnded(): void {
+        this.emit('ended');
     }
 
     /**
@@ -71,6 +88,8 @@ export class AudioPlayer {
     destroy(): void {
         this.stop();
         this.gainNode.disconnect();
+        this.element.removeEventListener('ended', this.handleEnded.bind(this));
+        this.removeAllListeners();
     }
 }
 

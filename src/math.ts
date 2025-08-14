@@ -1,4 +1,4 @@
-import { IMathStruct as IMathObject, ITransformOptions, WebGLContext } from "./interface";
+import { IMathObject, ITransformOptions, WebGLContext } from "./interface";
 
 const MATRIX_SIZE = 6
 
@@ -710,10 +710,10 @@ export class Color implements IMathObject<Color> {
      */
     subtract(color: Color) {
         return new Color(
-            this.r - color.r,
-            this.g - color.g,
-            this.b - color.b,
-            this.a - color.a,
+            Math.max(0, this.r - color.r), // Clamp to 0
+            Math.max(0, this.g - color.g), // Clamp to 0
+            Math.max(0, this.b - color.b), // Clamp to 0
+            Math.max(0, this.a - color.a)  // Clamp to 0
         );
     }
     divide(color: Color | number) {
@@ -1052,7 +1052,6 @@ export class MathUtils {
     static rad2deg(rad: number) {
         return rad / (Math.PI / 180);
     }
-
 
     /**
      * Normalizes an angle in degrees to be within the range of 0 to 360 degrees.

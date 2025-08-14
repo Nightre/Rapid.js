@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions } from "./interface";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, IPolygonGraphicRenderOptions } from "./interface";
 import { LightManager } from "./light";
 import { Color, MatrixStack, Vec2 } from "./math";
 import RenderRegion from "./regions/region";
@@ -15,7 +15,7 @@ declare class Rapid {
     projection: Float32Array;
     projectionDirty: boolean;
     matrixStack: MatrixStack;
-    textures: TextureCache;
+    texture: TextureCache;
     tileMap: TileMapRender;
     light: LightManager;
     width: number;
@@ -24,8 +24,8 @@ declare class Rapid {
     devicePixelRatio: number;
     private physicsWidth;
     private physicsHeight;
-    private logicWidth;
-    private logicHeight;
+    logicWidth: number;
+    logicHeight: number;
     private scaleEnable;
     private scaleRadio;
     readonly maxTextureUnits: number;
@@ -109,7 +109,6 @@ declare class Rapid {
      * @param options - The options for rendering the tile map layer.
      */
     renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void;
-    applyCameraTransform(options: ICameraOptions): void;
     /**
      * Renders a sprite with the specified options.
      *
