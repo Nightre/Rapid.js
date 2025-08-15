@@ -1,11 +1,10 @@
 import AssetsLoader from "./assets";
 import AudioManager from "./audio";
 import { InputManager } from "./input";
-import { IEntityTilemapLayerOptions, IEntityTransformOptions, IGameOptions, IMathObject, ISpriteRenderOptions, ITilemapLayerOptions, ITransformOptions, TilemapShape, YSortCallback } from "./interface";
+import { ICameraOptions, IEntityTransformOptions, IGameOptions, IMathObject } from "./interface";
 import { MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 import { TextureCache } from "./texture";
-import { TileSet } from "./tilemap";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
 
 /**
@@ -32,15 +31,15 @@ export class Entity {
     }
 
     get y() {
-        return this.position.x
+        return this.position.y
     }
 
     set x(nx: number) {
-        this.x = nx
+        this.position.x = nx
     }
 
     set y(ny: number) {
-        this.y = ny
+        this.position.y = ny
     }
 
     /**
@@ -74,6 +73,10 @@ export class Entity {
         this.rotation = options.rotation ?? 0;
     }
 
+    getScene() {
+        return this.game.getMainScene()
+    }
+
     /**
      * Gets the parent transform or the renderer's matrix stack if no parent exists.
      * @returns The transform matrix stack.
@@ -105,6 +108,7 @@ export class Entity {
      * @ignore
      */
     public collectRenderables(queue: Entity[]): void {
+        this.updateTransform()
         if (this.onRender !== Entity.prototype.onRender) {
             queue.push(this);
         }
@@ -117,7 +121,7 @@ export class Entity {
      * Prepares the entity's transform before rendering.
      * @ignore
      */
-    beforOnRender(): void {
+    beforeOnRender(): void {
         const transform = this.transform;
         this.rapid.matrixStack.setTransform(transform.getTransform());
     }
@@ -231,184 +235,127 @@ export class Entity {
 }
 
 /**
- * Camera entity for managing the view transform in the game.
+ * A layer that renders its children directly to the screen, ignoring any camera transforms.
+ * Ideal for UI elements like HUDs, menus, and scores.
+ *
+ * CanvasLayer 是一个特殊的层，它会直接将其子节点渲染到屏幕上，忽略任何摄像机的变换。
+ * 非常适合用于UI元素，如HUD（状态栏）、菜单和分数显示。
  */
-export class Camera extends Entity {
-    /**
-     * Updates the camera's transform to center the view and apply transformations.
-     */
+export class CanvasLayer extends Entity {
+    constructor(game: Game, options: IEntityTransformOptions) {
+        super(game, options);
+    }
+
     override updateTransform(): void {
-        const transform = this.transform;
-        transform.identity();
-
-        const centeredPosition = new Vec2(
-            -this.rapid.logicWidth,
-            -this.rapid.logicHeight
-        ).divide(2);
-
-        transform.translate(centeredPosition);
-        transform.translate(this.position);
-        transform.rotate(this.rotation);
-        transform.scale(this.scale);
-
-        transform.setTransform(transform.getInverse());
+        this.transform.identity();
     }
 }
 
 /**
- * Tilemap entity for rendering tiled maps.
+ * Camera entity for managing the view transform in the game.
  */
-export class Tilemap extends Entity {
-    static readonly DEFAULT_ERROR = 0;
-    static readonly EMPTY_TILE = -1;
+export class Camera extends Entity {
+    enable: boolean = false;
+    center: boolean = false;
 
-    error: Vec2 = new Vec2(Tilemap.DEFAULT_ERROR);
-    shape: TilemapShape;
-    tileSet: TileSet;
-    data: (number | string)[][] = [[]];
-    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
-    ySortCallback: YSortCallback[] = [];
-    enableYsort: boolean
+    positionSmoothingSpeed: number = 0;
+    rotationSmoothingSpeed: number = 0;
+
+    // 用于平滑处理的内部变量，代表摄像机当前实际渲染的【局部】位置和旋转
+    private _currentRenderPosition: Vec2;
+    private _currentRenderRotation: number;
 
     /**
-     * Creates a tilemap entity.
-     * @param game - The game instance this tilemap belongs to.
-     * @param options - Configuration options for the tilemap.
+     * 设置此摄像机是否为当前场景的主摄像机。
+     * @param isEnable 
      */
-    constructor(game: Game, options: IEntityTilemapLayerOptions) {
+    setEnable(isEnable: boolean) {
+        this.enable = isEnable;
+        if (isEnable) {
+            this.game.setMainCamera(this);
+        } else if (this.game.mainCamera === this) {
+            this.game.setMainCamera(null);
+        }
+    }
+
+    constructor(game: Game, options: ICameraOptions = {}) {
         super(game, options);
-        if (options.error) {
-            if (typeof options.error === "number") {
-                this.error = new Vec2(options.error);
-            } else {
-                this.error = options.error;
-            }
+        this.center = options.center ?? true;
+        this.positionSmoothingSpeed = options.positionSmoothingSpeed ?? 0;
+        this.rotationSmoothingSpeed = options.rotationSmoothingSpeed ?? 0;
+
+        // 初始化当前渲染位置为初始【局部】位置
+        this._currentRenderPosition = this.position.clone();
+        this._currentRenderRotation = this.rotation;
+
+        this.setEnable(options.enable ?? false);
+    }
+
+    /**
+     * 每帧更新，用于平滑摄像机的【局部】变换属性。
+     * @param deltaTime 
+     */
+    override onUpdate(deltaTime: number): void {
+        // --- 位置平滑 ---
+        // 这里平滑的是 this.position (局部目标位置) 到 _currentRenderPosition (局部渲染位置)
+        if (this.positionSmoothingSpeed > 0) {
+            const factor = 1 - Math.exp(-this.positionSmoothingSpeed * deltaTime);
+            this._currentRenderPosition.lerp(this.position, factor);
         } else {
-            this.error = new Vec2(options.errorX ?? Tilemap.DEFAULT_ERROR, options.errorY ?? Tilemap.DEFAULT_ERROR);
+            this._currentRenderPosition.copy(this.position);
         }
-        this.tileSet = options.tileSet;
-        this.shape = options.shape ?? TilemapShape.SQUARE;
-        this.eachTile = options.eachTile;
-        this.enableYsort = options.enableYsort ?? false
-    }
 
-    /**
-     * Collects renderable entities, excluding children unless they override onRender.
-     * @param queue - The array to collect renderable entities.
-     */
-    override collectRenderables(queue: Entity[]): void {
-        if (this.enableYsort) {
-            if (this.onRender !== Entity.prototype.onRender) {
-                queue.push(this);
-            }
-        }else{
-            super.collectRenderables(queue)
+        // --- 旋转平滑 ---
+        if (this.rotationSmoothingSpeed > 0) {
+            const factor = 1 - Math.exp(-this.rotationSmoothingSpeed * deltaTime);
+            let diff = this.rotation - this._currentRenderRotation;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            this._currentRenderRotation += diff * factor;
+        } else {
+            this._currentRenderRotation = this.rotation;
         }
     }
 
     /**
-     * Sets a tile at the specified map coordinates.
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @param tileId - The tile ID to set (number or string).
-     * @returns True if the tile was set successfully, false if coordinates are out of bounds.
+     * 根据摄像机的【全局】变换计算最终的视图矩阵。
+     * 这个方法现在正确地处理了父子关系。
      */
-    public setTile(x: number, y: number, tileId: number | string): boolean {
-        if (y < 0 || y >= this.data.length || x < 0 || x >= this.data[y].length) {
-            console.warn(`Tilemap.setTile: Coordinates (${x}, ${y}) are out of bounds.`);
-            return false;
+    override updateTransform(): void {
+        // --- Part 1: 计算摄像机在世界中的真实全局变换矩阵 ---
+        // 我们复用 Entity.updateTransform 的逻辑，但使用平滑后的局部值。
+        const parentTransform = this.getParentTransform();
+        const globalTransform = this.transform; // 使用 this.transform 作为临时计算器
+
+        // 1a. 从父节点继承变换
+        globalTransform.setTransform(parentTransform.getTransform());
+
+        // 1b. 应用自己的局部变换（使用平滑值）
+        globalTransform.translate(this._currentRenderPosition);
+        globalTransform.rotate(this._currentRenderRotation);
+        globalTransform.scale(this.scale);
+
+        // 此刻, `globalTransform` (即 this.transform) 存储的是摄像机在世界中的精确变换。
+
+        // --- Part 2: 将全局变换转换为视图矩阵 ---
+        // 视图矩阵是全局变换的逆矩阵。
+        const viewMatrix = globalTransform.getInverse();
+
+        // --- Part 3: 应用屏幕居中偏移 ---
+        // 我们需要将视图的原点(0,0)移动到屏幕中心。
+        // 这相当于对视图矩阵进行一次【前乘】平移变换。
+        if (this.center) {
+            const centerX = this.rapid.logicWidth / 2;
+            const centerY = this.rapid.logicHeight / 2;
+
+            // 手动执行前乘平移： T(center) * M(view)
+            // 只会影响最终矩阵的平移分量 (tx, ty)
+            viewMatrix[4] = viewMatrix[0] * centerX + viewMatrix[2] * centerY + viewMatrix[4];
+            viewMatrix[5] = viewMatrix[1] * centerX + viewMatrix[3] * centerY + viewMatrix[5];
         }
-        this.data[y][x] = tileId;
-        return true;
-    }
 
-    /**
-     * Gets the tile ID at the specified map coordinates.
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @returns The tile ID (number or string) or undefined if coordinates are out of bounds.
-     */
-    public getTile(x: number, y: number): number | string | undefined {
-        if (y < 0 || y >= this.data.length || x < 0 || x >= this.data[y].length) {
-            return undefined;
-        }
-        return this.data[y][x];
-    }
-
-    /**
-     * Removes a tile at the specified map coordinates (sets it to EMPTY_TILE).
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @returns True if the tile was removed successfully, false if coordinates are out of bounds.
-     */
-    public removeTile(x: number, y: number): boolean {
-        return this.setTile(x, y, Tilemap.EMPTY_TILE);
-    }
-
-    /**
-     * Fills a rectangular area with a specified tile ID.
-     * @param tileId - The tile ID to use for filling.
-     * @param startX - The starting X coordinate.
-     * @param startY - The starting Y coordinate.
-     * @param width - The width of the fill area.
-     * @param height - The height of the fill area.
-     */
-    public fill(tileId: number | string, startX: number, startY: number, width: number, height: number): void {
-        const endX = startX + width;
-        const endY = startY + height;
-
-        for (let y = startY; y < endY; y++) {
-            for (let x = startX; x < endX; x++) {
-                this.setTile(x, y, tileId);
-            }
-        }
-    }
-
-    /**
-     * Replaces the entire tilemap data and updates dimensions.
-     * @param newData - The new 2D array of tile data.
-     */
-    public setData(newData: (number | string)[][]): void {
-        this.data = newData;
-    }
-
-    /**
-     * Converts local coordinates to map coordinates.
-     * @param local - The local coordinates to convert.
-     */
-    public localToMap(local: Vec2): void {
-        this.rapid.tileMap.localToMap(local, { tileSet: this.tileSet });
-    }
-
-    /**
-     * Converts map coordinates to local coordinates.
-     * @param local - The map coordinates to convert.
-     */
-    public mapToLocal(local: Vec2): void {
-        this.rapid.tileMap.mapToLocal(local, { tileSet: this.tileSet });
-    }
-
-    /**
-     * Renders the tilemap layer.
-     * @param render - The rendering engine instance.
-     */
-    override onRender(render: Rapid): void {
-        const ySortCallback: YSortCallback[] = [...this.ySortCallback];
-
-        if (this.enableYsort) {
-            this.children.forEach(child => {
-                ySortCallback.push({
-                    ySort: child.localZindex,
-                    entity: child
-                });
-            });
-        }
-        render.renderTileMapLayer(this.data, {
-            error: this.error,
-            tileSet: this.tileSet,
-            eachTile: this.eachTile,
-            ySortCallback
-        });
+        // --- Part 4: 将最终计算出的视图矩阵存回 this.transform ---
+        this.transform.setTransform(viewMatrix);
     }
 }
 
@@ -436,8 +383,9 @@ export class Game {
     private lastTime: number = 0;
     private tweens: Tween<any>[] = [];
     private timers: Timer[] = [];
-
+    mainCamera: Camera | null = null
     renderQueue: Entity[] = [];
+    worldTransform = new MatrixStack()
 
     /**
      * Creates a new game instance.
@@ -449,6 +397,14 @@ export class Game {
         this.asset = new AssetsLoader(this)
         this.audio = new AudioManager()
         this.texture = this.render.texture
+    }
+
+    getMainScene() {
+        return this.mainScene
+    }
+
+    setMainCamera(camera: Camera | null) {
+        this.mainCamera = camera
     }
 
     /**
@@ -503,12 +459,18 @@ export class Game {
         this.render.startRender();
 
         if (this.mainScene) {
+            if (this.mainCamera && this.mainCamera.enable) {
+                this.render.matrixStack.setTransform(this.mainCamera.transform.getTransform());
+            }
+            this.worldTransform.setTransform(this.render.matrixStack.getTransform());
+
             this.mainScene.update(deltaTime);
             this.mainScene.collectRenderables(this.renderQueue);
+
             this.renderQueue.sort((a, b) => {
                 const isBrother = a.parent && a.parent === b.parent;
                 const global = a.globalZindex - b.globalZindex;
-                if (global !== 0 && !isBrother) {
+                if (global !== 0) {
                     return global;
                 }
                 if (isBrother) {
@@ -518,7 +480,7 @@ export class Game {
             });
 
             this.renderQueue.forEach(entity => {
-                entity.beforOnRender();
+                entity.beforeOnRender();
                 entity.onRender(this.render);
             });
 

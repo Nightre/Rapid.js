@@ -353,16 +353,6 @@ class Rapid {
         this.afterDraw()
     }
 
-    renderParticles(particleEmitter: ParticleEmitter) {
-        if (particleEmitter.localSpace) {
-            this.startDraw(particleEmitter.getTransform())
-            particleEmitter.render();
-            this.afterDraw()
-        } else {
-            particleEmitter.render();
-        }
-    }
-
     /**
      * Renders a texture directly without additional options.
      * This is a convenience method that calls renderSprite with just the texture.
@@ -678,11 +668,6 @@ class Rapid {
             })
         })
         this.endDrawMask()
-    }
-
-    createParticleEmitter(options: IParticleOptions): ParticleEmitter {
-        const emitter = new ParticleEmitter(this, options);
-        return emitter;
     }
 
     cssToGameCoords(x: number | Vec2, y?: number): Vec2 {

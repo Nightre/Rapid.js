@@ -1,4 +1,4 @@
-import { IMathObject, ITransformOptions, WebGLContext } from "./interface";
+import { IMathObject, ITransformOptions, WebGLContext } from './interface';
 /**
  * @ignore
  */
@@ -455,6 +455,7 @@ export declare class Vec2 implements IMathObject<Vec2> {
      * @returns The angle between the two vectors in radians.
      */
     angleBetween(v: Vec2): number;
+    lerp(target: Vec2, factor: number): Vec2;
 }
 /**
  * Provides utility methods for mathematical conversions.

@@ -1,11 +1,11 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, IPolygonGraphicRenderOptions } from "./interface";
-import { LightManager } from "./light";
-import { Color, MatrixStack, Vec2 } from "./math";
-import RenderRegion from "./regions/region";
-import { FrameBufferObject, Texture, TextureCache } from "./texture";
-import { TileMapRender, TileSet } from "./tilemap";
-import GLShader from "./webgl/glshader";
-import { ParticleEmitter } from "./particle";
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, IPolygonGraphicRenderOptions } from './interface';
+import { LightManager } from './light';
+import { Color, MatrixStack, Vec2 } from './math';
+import { default as RenderRegion } from './regions/region';
+import { FrameBufferObject, Texture, TextureCache } from './texture';
+import { TileMapRender, TileSet } from './tilemap';
+import { default as GLShader } from './webgl/glshader';
+import { ParticleEmitter } from './particle';
 /**
  * The `Rapid` class provides a WebGL-based rendering engine.
  */

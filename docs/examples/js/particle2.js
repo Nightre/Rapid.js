@@ -1,4 +1,4 @@
-import { Rapid, Color, Vec2, ParticleShape } from "/Rapid.js/dist/rapid.js";
+import { Rapid, Color, Vec2, ParticleShape } from "../../dist/rapid.js";
 
 // 创建Rapid实例
 const rapid = new Rapid({

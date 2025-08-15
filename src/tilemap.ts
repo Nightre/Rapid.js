@@ -1,8 +1,9 @@
 import Rapid from "./render";
-import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions } from "./interface";
+import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions } from "./interface";
 import { Texture } from "./texture";
 import { Vec2 } from "./math";
 import warn from "./log";
+import { Entity, Game } from "./game";
 
 /**
  * Represents a tileset that manages tile textures and their properties.
@@ -64,73 +65,23 @@ export class TileMapRender {
     }
 
     /**
-     * 将需要 y-sort 的回调根据它们的 y 坐标分组到一个 Map 中。
-     * 使用 Map 是为了避免因地图坐标过大而创建稀疏数组，从而优化内存使用。
-     *
-     * @param ySortCallbacks - Array of y-sort callbacks to process.
-     * @param height - The effective height of a tile row, used for grouping.
-     * @returns A Map where keys are row indices (y) and values are arrays of y-sort callbacks for that row.
-     * @private
-     */
-    private getYSortRow(ySortCallbacks: YSortCallback[] | undefined, height: number): Map<number, YSortCallback[]> {
-        const rows = new Map<number, YSortCallback[]>();
-        if (!ySortCallbacks) {
-            return rows;
-        }
-
-        for (const ySort of ySortCallbacks) {
-            // 计算这个对象属于哪一行
-            const y = Math.floor(ySort.ySort / height);
-
-            // 如果这一行在 Map 中还不存在，则初始化一个空数组
-            if (!rows.has(y)) {
-                rows.set(y, []);
-            }
-
-            // 将对象添加到对应的行数组中
-            rows.get(y)!.push(ySort);
-        }
-        return rows;
-    }
-    /**
      * Calculates the error offset values for tile rendering.
      * @param options - Layer rendering options containing error values.
      * @returns Object containing x and y error offsets.
      * @private
      */
     private getOffset(options: ILayerRenderOptions) {
-        let errorX = (options.errorX ?? 2) + 1
-        let errorY = (options.errorY ?? 2) + 1
+        let errorX = (options.errorX ?? 2) + 1;
+        let errorY = (options.errorY ?? 2) + 1;
         if (typeof options.error === 'number') {
-            const error = (options.error ?? 2) + 1
-            errorX = error
-            errorY = error
+            const error = (options.error ?? 2) + 1;
+            errorX = error;
+            errorY = error;
         } else if (options.error) {
-            errorX = options.error.x + 1
-            errorY = options.error.y + 1
+            errorX = options.error.x + 1;
+            errorY = options.error.y + 1;
         }
-        return { errorX, errorY }
-    }
-
-    /**
-     * Renders a row of y-sorted entities.
-     * @param rapid - The Rapid rendering instance.
-     * @param ySortRow - Array of y-sort callbacks to render.
-     * @private
-     */
-    private renderYSortRow(rapid: Rapid, ySortRow: YSortCallback[]) {
-        if (!ySortRow || ySortRow.length === 0) { // 加一个安全检查
-            return;
-        }
-        for (const ySort of ySortRow) {
-            if (ySort.render) {
-                ySort.render();
-            } else if (ySort.entity) {
-                ySort.entity.onRender(rapid)
-            } else if (ySort.renderSprite) {
-                rapid.renderSprite(ySort.renderSprite);
-            }
-        }
+        return { errorX, errorY };
     }
 
     /**
@@ -184,62 +135,62 @@ export class TileMapRender {
             startTile,
             viewportWidth,
             viewportHeight,
-            height,
         };
     }
 
     /**
      * Renders the tilemap layer based on the provided data and options.
-     * 
+     * This method collects all visible tiles and y-sortable objects into a single queue,
+     * sorts them once by their y-coordinate, and then renders them in the correct order.
+     *
      * @param data - A 2D array representing the tilemap data.
      * @param options - The rendering options for the tilemap layer.
-     * @returns 
      */
     renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void {
         this.rapid.matrixStack.applyTransform(options);
         const tileSet = options.tileSet;
 
-        // 使用支持旋转的 getTileData 版本
         const {
             startTile,
             viewportWidth,
             viewportHeight,
-            height
         } = this.getTileData(tileSet, options);
 
-        // --- 这里是改动点 ---
-        // 1. 调用新的 getYSortRow，它返回一个 Map
-        const ySortRowsMap = this.getYSortRow(options.ySortCallback, height);
-        const enableYSort = options.ySortCallback && options.ySortCallback.length > 0;
+        // --- 核心改动点 ---
+        // 1. 创建一个统一的渲染队列，用于存放所有需要渲染的对象 (瓦片和其他实体)
+        const renderQueue: YSortCallback[] = [];
 
+        // 2. 首先，将所有外部传入的、需要 y-sort 的对象添加到队列中
+        if (options.ySortCallback) {
+            renderQueue.push(...options.ySortCallback);
+        }
+
+        // 3. 遍历所有可视范围内的瓦片，并将它们作为渲染任务添加到队列中
         for (let y = 0; y < viewportHeight; y++) {
             const mapY = y + startTile.y;
-
-            // 2. 从 Map 中获取当前行的回调，如果不存在则返回一个空数组
-            const currentRow: YSortCallback[] = ySortRowsMap.get(mapY) ?? [];
-
-            // 后续逻辑保持不变...
             if (mapY < 0 || mapY >= data.length) {
-                // 即使地图瓦片不存在，也可能需要渲染这一行的独立实体
-                this.renderYSortRow(this.rapid, currentRow);
                 continue;
             }
 
             for (let x = 0; x < viewportWidth; x++) {
                 const mapX = x + startTile.x;
-                if (mapX < 0 || mapX >= data[mapY].length) continue;
+                if (mapX < 0 || mapX >= data[mapY].length) {
+                    continue;
+                }
 
                 const tileId = data[mapY][mapX];
                 const tile = tileSet.getTile(tileId);
-                if (!tile) continue;
+                if (!tile) {
+                    continue;
+                }
 
-                // 使用矩阵计算坐标的逻辑
+                // 计算瓦片的最终渲染位置和 y-sort 值
                 const localPos = this.mapToLocal(new Vec2(mapX, mapY), options);
-                const screenPos = this.rapid.matrixStack.localToGlobal(localPos);
-                const ySort = screenPos.y + (tile.ySortOffset ?? 0);
+                const ySort = localPos.y + (tile.ySortOffset ?? 0);
                 const edata = options.eachTile ? (options.eachTile(tileId, mapX, mapY) || {}) : {};
 
-                currentRow.push({
+                // 将瓦片封装成 YSortCallback 对象并推入队列
+                renderQueue.push({
                     ySort,
                     renderSprite: {
                         ...tile,
@@ -249,11 +200,23 @@ export class TileMapRender {
                     }
                 });
             }
+        }
 
-            if (enableYSort) {
-                currentRow.sort((a, b) => a.ySort! - b.ySort!);
+        // 4. 如果启用了 y-sort，对整个渲染队列进行一次排序
+        const enableYSort = options.ySortCallback && options.ySortCallback.length > 0;
+        if (enableYSort) {
+            renderQueue.sort((a, b) => a.ySort - b.ySort);
+        }
+
+        // 5. 遍历排序后的队列，依次执行渲染
+        for (const item of renderQueue) {
+            if (item.render) {
+                item.render();
+            } else if (item.entity) {
+                item.entity.onRender(this.rapid);
+            } else if (item.renderSprite) {
+                this.rapid.renderSprite(item.renderSprite);
             }
-            this.renderYSortRow(this.rapid, currentRow);
         }
 
         this.rapid.matrixStack.applyTransformAfter(options);
@@ -359,5 +322,163 @@ export class TileMapRender {
                 map.y * tileSet.height
             )
         }
+    }
+}
+
+
+/**
+ * Tilemap entity for rendering tiled maps.
+ */
+export class Tilemap extends Entity {
+    static readonly DEFAULT_ERROR = 0;
+    static readonly EMPTY_TILE = -1;
+
+    error: Vec2 = new Vec2(Tilemap.DEFAULT_ERROR);
+    shape: TilemapShape;
+    tileSet: TileSet;
+    data: (number | string)[][] = [[]];
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
+    ySortCallback: YSortCallback[] = [];
+    enableYsort: boolean
+
+    /**
+     * Creates a tilemap entity.
+     * @param game - The game instance this tilemap belongs to.
+     * @param options - Configuration options for the tilemap.
+     */
+    constructor(game: Game, options: IEntityTilemapLayerOptions) {
+        super(game, options);
+        if (options.error) {
+            if (typeof options.error === "number") {
+                this.error = new Vec2(options.error);
+            } else {
+                this.error = options.error;
+            }
+        } else {
+            this.error = new Vec2(options.errorX ?? Tilemap.DEFAULT_ERROR, options.errorY ?? Tilemap.DEFAULT_ERROR);
+        }
+        this.tileSet = options.tileSet;
+        this.shape = options.shape ?? TilemapShape.SQUARE;
+        this.eachTile = options.eachTile;
+        this.enableYsort = options.enableYsort ?? false
+    }
+
+    /**
+     * Collects renderable entities, excluding children unless they override onRender.
+     * @param queue - The array to collect renderable entities.
+     */
+    override collectRenderables(queue: Entity[]): void {
+        if (this.enableYsort) {
+            if (this.onRender !== Entity.prototype.onRender) {
+                queue.push(this);
+            }
+        } else {
+            super.collectRenderables(queue)
+        }
+    }
+
+    /**
+     * Sets a tile at the specified map coordinates.
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @param tileId - The tile ID to set (number or string).
+     * @returns True if the tile was set successfully, false if coordinates are out of bounds.
+     */
+    public setTile(x: number, y: number, tileId: number | string): boolean {
+        if (y < 0 || y >= this.data.length || x < 0 || x >= this.data[y].length) {
+            console.warn(`Tilemap.setTile: Coordinates (${x}, ${y}) are out of bounds.`);
+            return false;
+        }
+        this.data[y][x] = tileId;
+        return true;
+    }
+
+    /**
+     * Gets the tile ID at the specified map coordinates.
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @returns The tile ID (number or string) or undefined if coordinates are out of bounds.
+     */
+    public getTile(x: number, y: number): number | string | undefined {
+        if (y < 0 || y >= this.data.length || x < 0 || x >= this.data[y].length) {
+            return undefined;
+        }
+        return this.data[y][x];
+    }
+
+    /**
+     * Removes a tile at the specified map coordinates (sets it to EMPTY_TILE).
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @returns True if the tile was removed successfully, false if coordinates are out of bounds.
+     */
+    public removeTile(x: number, y: number): boolean {
+        return this.setTile(x, y, Tilemap.EMPTY_TILE);
+    }
+
+    /**
+     * Fills a rectangular area with a specified tile ID.
+     * @param tileId - The tile ID to use for filling.
+     * @param startX - The starting X coordinate.
+     * @param startY - The starting Y coordinate.
+     * @param width - The width of the fill area.
+     * @param height - The height of the fill area.
+     */
+    public fill(tileId: number | string, startX: number, startY: number, width: number, height: number): void {
+        const endX = startX + width;
+        const endY = startY + height;
+
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                this.setTile(x, y, tileId);
+            }
+        }
+    }
+
+    /**
+     * Replaces the entire tilemap data and updates dimensions.
+     * @param newData - The new 2D array of tile data.
+     */
+    public setData(newData: (number | string)[][]): void {
+        this.data = newData;
+    }
+
+    /**
+     * Converts local coordinates to map coordinates.
+     * @param local - The local coordinates to convert.
+     */
+    public localToMap(local: Vec2): void {
+        this.rapid.tileMap.localToMap(local, { tileSet: this.tileSet });
+    }
+
+    /**
+     * Converts map coordinates to local coordinates.
+     * @param local - The map coordinates to convert.
+     */
+    public mapToLocal(local: Vec2): void {
+        this.rapid.tileMap.mapToLocal(local, { tileSet: this.tileSet });
+    }
+
+    /**
+     * Renders the tilemap layer.
+     * @param render - The rendering engine instance.
+     */
+    override onRender(render: Rapid): void {
+        const ySortCallback: YSortCallback[] = [...this.ySortCallback];
+
+        if (this.enableYsort) {
+            this.children.forEach(child => {
+                ySortCallback.push({
+                    ySort: child.localZindex,
+                    entity: child
+                });
+            });
+        }
+        render.renderTileMapLayer(this.data, {
+            error: this.error,
+            tileSet: this.tileSet,
+            eachTile: this.eachTile,
+            ySortCallback
+        });
     }
 }

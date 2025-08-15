@@ -1,10 +1,10 @@
-import { AudioPlayer } from "./audio";
-import { Entity } from "./game";
-import { Color, Vec2 } from "./math";
-import { Texture } from "./texture";
-import { TileSet } from "./tilemap";
-import GLShader from "./webgl/glshader";
-import { Uniform } from "./webgl/uniform";
+import { AudioPlayer } from './audio';
+import { Entity } from './game';
+import { Color, Vec2 } from './math';
+import { Texture } from './texture';
+import { TileSet } from './tilemap';
+import { default as GLShader } from './webgl/glshader';
+import { Uniform } from './webgl/uniform';
 /**
  * @ignore
  */
@@ -182,6 +182,7 @@ export interface YSortCallback {
     renderSprite?: ISpriteRenderOptions;
 }
 export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IEntityTransformOptions {
+    enableYsort: boolean;
 }
 export interface ITilemapLayerOptions {
     error?: number | Vec2;
@@ -226,6 +227,9 @@ export interface ILightRenderOptions {
 }
 export interface ICameraOptions extends ITransformOptions {
     center?: boolean;
+    enable?: boolean;
+    positionSmoothingSpeed?: number;
+    rotationSmoothingSpeed?: number;
 }
 /**
  * Defines particle emitter shape types
@@ -362,6 +366,8 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
      */
     damping?: number;
 };
+export interface IParticleEmitterOptions extends IParticleOptions, IEntityTransformOptions {
+}
 export interface IGameOptions extends IRapidOptions {
 }
 export interface ISound {

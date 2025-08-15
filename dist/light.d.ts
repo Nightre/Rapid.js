@@ -1,5 +1,5 @@
-import { Vec2 } from "./math";
-import Rapid from "./render";
+import { Vec2 } from './math';
+import { default as Rapid } from './render';
 export declare class LightManager {
     render: Rapid;
     constructor(render: Rapid);

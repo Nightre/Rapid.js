@@ -14,10 +14,8 @@
     "require": "./dist/rapid.umd.cjs"
   },
   "scripts": {
-    "dev:build": "rollup -c rollup.config.dev.js -w",
-    "dev:serve": "node ./scripts/dev-server.js",
-    "dev": "concurrently \"npm run dev:build\" \"npm run dev:serve\"",
-    "build": "rollup -c rollup.config.prod.js && tsc",
+    "dev": "vite",
+    "build": "vite build",
     "docs": "typedoc"
   },
   "devDependencies": {
@@ -29,13 +27,17 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.6.2",
     "typedoc-theme-category-nav": "^0.0.3",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "unplugin-dts": "^1.0.0-beta.0",
+    "vite-plugin-dts": "^4.5.4"
   },
   "dependencies": {
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "concurrently": "^9.1.2",
     "eventemitter3": "^5.0.1",
-    "typedoc": "^0.28.3"
+    "typedoc": "^0.28.3",
+    "vite": "^7.1.2",
+    "vite-plugin-string": "^1.2.3"
   }
 }

@@ -1,4 +1,4 @@
-import { Color, Rapid, TileSet, Vec2, TilemapShape } from "/Rapid.js/dist/rapid.js";
+import { Color, Rapid, TileSet, Vec2, TilemapShape } from "../../dist/rapid.js";
 
 
 const rapid = new Rapid({

@@ -266,7 +266,11 @@ export interface ILightRenderOptions {
 
 
 export interface ICameraOptions extends ITransformOptions {
-    center?: boolean
+    center?: boolean,
+    enable?: boolean,
+
+    positionSmoothingSpeed?: number,
+    rotationSmoothingSpeed?: number
 }
 
 /**
@@ -412,7 +416,8 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
      */
     damping?: number,
 }
-
+export interface IParticleEmitterOptions extends IParticleOptions, IEntityTransformOptions {
+}
 
 export interface IGameOptions extends IRapidOptions {
 

@@ -1,4 +1,4 @@
-import { Color, Rapid, TileSet, Vec2, MathUtils, InputManager } from "/Rapid.js/dist/rapid.js";
+import { Color, Rapid, TileSet, Vec2, MathUtils, InputManager } from "../../dist/rapid.js";
 
 const rapid = new Rapid({
     canvas: document.getElementById("game"),
@@ -25,6 +25,7 @@ const tileMap2 = Array.from({ length: 100 }, () =>
         }
     })
 );
+tileMap2[0][0] = 4
 
 const map = new Vec2(-250, -250)
 const grassTexture = await rapid.texture.textureFromUrl("./assets/grass-tile.png");
@@ -46,14 +47,14 @@ tileSet.setTile(4, {
     texture: treeTexture,
     origin: new Vec2(0.5, 1),
     ySortOffset: 16,
-    x: -16,
+    x: 16,
     y: 16,
 })
 
 tileSet.setTile(5, {
     texture: buildingTexture,
-    offsetY: 32,
-    origin: new Vec2(0, 1),
+    offsetY: -32,
+    origin: new Vec2(0, 0),
     ySortOffset: 32
 })
 

@@ -1,6 +1,6 @@
-import { Vec2 } from "./math";
-import Rapid from "./render";
-import { Entity } from "./game";
+import { Vec2 } from './math';
+import { default as Rapid } from './render';
+import { Entity } from './game';
 /**
  * Manages user input for keyboard and mouse events.
  * Tracks key and button states, including pressed/released states for the current and previous frames.

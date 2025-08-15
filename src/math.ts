@@ -1030,6 +1030,15 @@ export class Vec2 implements IMathObject<Vec2> {
         const cosTheta = Math.max(-1, Math.min(1, dotProduct / magnitudeProduct));
         return Math.acos(cosTheta);
     }
+
+    public lerp(target: Vec2, factor: number): Vec2 {
+        // 对 x 坐标进行插值
+        this.x += (target.x - this.x) * factor;
+        // 对 y 坐标进行插值
+        this.y += (target.y - this.y) * factor;
+
+        return this;
+    }
 }
 
 /**

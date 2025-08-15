@@ -1,12 +1,11 @@
-import AssetsLoader from "./assets";
-import AudioManager from "./audio";
-import { InputManager } from "./input";
-import { IEntityTilemapLayerOptions, IEntityTransformOptions, IGameOptions, IMathObject, ISpriteRenderOptions, TilemapShape, YSortCallback } from "./interface";
-import { MatrixStack, Vec2 } from "./math";
-import Rapid from "./render";
-import { TextureCache } from "./texture";
-import { TileSet } from "./tilemap";
-import { EasingFunction, Timer, Tween } from "./utils";
+import { default as AssetsLoader } from './assets';
+import { default as AudioManager } from './audio';
+import { InputManager } from './input';
+import { ICameraOptions, IEntityTransformOptions, IGameOptions, IMathObject } from './interface';
+import { MatrixStack, Vec2 } from './math';
+import { default as Rapid } from './render';
+import { TextureCache } from './texture';
+import { EasingFunction, Timer, Tween } from './utils';
 /**
  * Base class for game entities with transform and rendering capabilities.
  */
@@ -32,6 +31,7 @@ export declare class Entity {
      * @param options - Configuration options for position, scale, rotation, and tags.
      */
     constructor(game: Game, options?: IEntityTransformOptions);
+    getRoot(): Scene | null;
     /**
      * Gets the parent transform or the renderer's matrix stack if no parent exists.
      * @returns The transform matrix stack.
@@ -57,7 +57,7 @@ export declare class Entity {
      * Prepares the entity's transform before rendering.
      * @ignore
      */
-    beforOnRender(): void;
+    beforeOnRender(): void;
     /**
      * Hook for custom rendering logic.
      * @param render - The rendering engine instance.
@@ -102,88 +102,42 @@ export declare class Entity {
     protected postDispose(): void;
 }
 /**
- * Camera entity for managing the view transform in the game.
+ * A layer that renders its children directly to the screen, ignoring any camera transforms.
+ * Ideal for UI elements like HUDs, menus, and scores.
+ *
+ * CanvasLayer 是一个特殊的层，它会直接将其子节点渲染到屏幕上，忽略任何摄像机的变换。
+ * 非常适合用于UI元素，如HUD（状态栏）、菜单和分数显示。
  */
-export declare class Camera extends Entity {
-    /**
-     * Updates the camera's transform to center the view and apply transformations.
-     */
+export declare class CanvasLayer extends Entity {
+    constructor(game: Game);
     updateTransform(): void;
 }
 /**
- * Tilemap entity for rendering tiled maps.
+ * Camera entity for managing the view transform in the game.
  */
-export declare class Tilemap extends Entity {
-    static readonly DEFAULT_ERROR = 0;
-    static readonly EMPTY_TILE = -1;
-    error: Vec2;
-    shape: TilemapShape;
-    tileSet: TileSet;
-    data: (number | string)[][];
-    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
-    ySortCallback: YSortCallback[];
+export declare class Camera extends Entity {
+    enable: boolean;
+    center: boolean;
+    positionSmoothingSpeed: number;
+    rotationSmoothingSpeed: number;
+    private _currentRenderPosition;
+    private _currentRenderRotation;
     /**
-     * Creates a tilemap entity.
-     * @param game - The game instance this tilemap belongs to.
-     * @param options - Configuration options for the tilemap.
+     * 设置此摄像机是否为当前场景的主摄像机。
+     * @param isEnable
      */
-    constructor(game: Game, options: IEntityTilemapLayerOptions);
+    setEnable(isEnable: boolean): void;
+    constructor(game: Game, options?: ICameraOptions);
     /**
-     * Collects renderable entities, excluding children unless they override onRender.
-     * @param queue - The array to collect renderable entities.
+     * 每帧更新，用于平滑摄像机的【局部】变换属性。
+     * @param deltaTime
      */
-    collectRenderables(queue: Entity[]): void;
+    onUpdate(deltaTime: number): void;
     /**
-     * Sets a tile at the specified map coordinates.
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @param tileId - The tile ID to set (number or string).
-     * @returns True if the tile was set successfully, false if coordinates are out of bounds.
+     * 根据摄像机的【全局】变换计算最终的视图矩阵。
+     * 这个方法现在正确地处理了父子关系。
      */
-    setTile(x: number, y: number, tileId: number | string): boolean;
-    /**
-     * Gets the tile ID at the specified map coordinates.
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @returns The tile ID (number or string) or undefined if coordinates are out of bounds.
-     */
-    getTile(x: number, y: number): number | string | undefined;
-    /**
-     * Removes a tile at the specified map coordinates (sets it to EMPTY_TILE).
-     * @param x - The X coordinate (column) on the map.
-     * @param y - The Y coordinate (row) on the map.
-     * @returns True if the tile was removed successfully, false if coordinates are out of bounds.
-     */
-    removeTile(x: number, y: number): boolean;
-    /**
-     * Fills a rectangular area with a specified tile ID.
-     * @param tileId - The tile ID to use for filling.
-     * @param startX - The starting X coordinate.
-     * @param startY - The starting Y coordinate.
-     * @param width - The width of the fill area.
-     * @param height - The height of the fill area.
-     */
-    fill(tileId: number | string, startX: number, startY: number, width: number, height: number): void;
-    /**
-     * Replaces the entire tilemap data and updates dimensions.
-     * @param newData - The new 2D array of tile data.
-     */
-    setData(newData: (number | string)[][]): void;
-    /**
-     * Converts local coordinates to map coordinates.
-     * @param local - The local coordinates to convert.
-     */
-    localToMap(local: Vec2): void;
-    /**
-     * Converts map coordinates to local coordinates.
-     * @param local - The map coordinates to convert.
-     */
-    mapToLocal(local: Vec2): void;
-    /**
-     * Renders the tilemap layer.
-     * @param render - The rendering engine instance.
-     */
-    onRender(render: Rapid): void;
+    updateTransform(): void;
 }
 /**
  * Scene class representing a game scene with entities.
@@ -208,12 +162,15 @@ export declare class Game {
     private lastTime;
     private tweens;
     private timers;
+    mainCamera: Camera | null;
     renderQueue: Entity[];
     /**
      * Creates a new game instance.
      * @param options - Configuration options for the game.
      */
     constructor(options: IGameOptions);
+    getMainScene(): Scene | null;
+    setMainCamera(camera: Camera | null): void;
     /**
      * Switches to a new scene, disposing of the current one.
      * @param newScene - The new scene to switch to.

@@ -1,7 +1,7 @@
-import { AudioPlayer } from "./audio";
-import { Game } from "./game";
-import { IAsset as IAsset, IAssets } from "./interface";
-import EventEmitter from "eventemitter3";
+import { AudioPlayer } from './audio';
+import { Game } from './game';
+import { IAsset as IAsset, IAssets } from './interface';
+import { default as EventEmitter } from 'eventemitter3';
 /**
  * Events emitted by AssetsLoader.
  */

@@ -1,5 +1,5 @@
-import { ILineStyleOptions } from "./interface";
-import { Vec2 } from "./math";
+import { ILineStyleOptions } from './interface';
+import { Vec2 } from './math';
 /**
  * @ignore
  */

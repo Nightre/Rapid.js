@@ -1,4 +1,4 @@
-import { Color, Rapid, Vec2, LineTextureMode, TextureWrapMode } from "/Rapid.js/dist/rapid.js"
+import { Color, Rapid, Vec2, LineTextureMode, TextureWrapMode } from "../../dist/rapid.js"
 
 
 const rapid = new Rapid({

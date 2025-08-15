@@ -1,6 +1,6 @@
-import Rapid from "./render";
-import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from "./interface";
-import { Color } from "./math";
+import { default as Rapid } from './render';
+import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from './interface';
+import { Color } from './math';
 /**
  * texture manager
  * @ignore
@@ -154,7 +154,7 @@ declare class Texture {
 /**
  * @ignore
  */
-export declare const SCALEFACTOR = 2;
+export declare const SCALEFACTOR = 2.5;
 declare class Text extends Texture {
     private readonly options;
     private readonly rapid;

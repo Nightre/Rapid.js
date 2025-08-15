@@ -1,4 +1,4 @@
-import { Color, Rapid, Vec2 } from "/Rapid.js/dist/rapid.js"
+import { Color, Rapid, Vec2 } from "../../dist/rapid.js"
 
 let rapid = new Rapid({
     canvas: document.getElementById("game"),

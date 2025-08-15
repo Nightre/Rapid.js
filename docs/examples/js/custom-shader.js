@@ -1,4 +1,4 @@
-import { Color, Rapid, Uniform, Vec2, ShaderType } from "/Rapid.js/dist/rapid.js"
+import { Color, Rapid, Uniform, Vec2, ShaderType } from "../../dist/rapid.js"
 
 const rapid = new Rapid({
     canvas: document.getElementById("game"),

@@ -1,11 +1,9 @@
-import Rapid from "./render";
-import { IParticleOptions, ITransformOptions } from "./interface";
-import { Vec2 } from "./math";
+import { IParticleOptions, ITransformOptions } from './interface';
+import { Entity, Game } from './game';
 /**
  * Particle emitter for creating and managing particle systems
  */
-export declare class ParticleEmitter {
-    private rapid;
+export declare class ParticleEmitter extends Entity {
     private particles;
     private options;
     private emitting;
@@ -14,13 +12,12 @@ export declare class ParticleEmitter {
     private emitTime;
     private emitTimeCounter;
     localSpace: boolean;
-    position: Vec2;
     /**
      * Creates a new particle emitter
      * @param rapid - The Rapid renderer instance
      * @param options - Emitter configuration options
      */
-    constructor(rapid: Rapid, options: IParticleOptions);
+    constructor(game: Game, options: IParticleOptions);
     /**
      * Gets the transform options
      */
@@ -58,11 +55,11 @@ export declare class ParticleEmitter {
      * Updates particle emitter state
      * @param deltaTime - Time in seconds since last update
      */
-    update(deltaTime: number): void;
+    onUpdate(deltaTime: number): void;
     /**
      * Renders all particles
      */
-    render(): void;
+    onRender(): void;
     /**
      * Gets current particle count
      */

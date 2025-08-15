@@ -1,7 +1,8 @@
-import Rapid from "./render";
-import { IRegisterTileOptions, ILayerRenderOptions } from "./interface";
-import { Texture } from "./texture";
-import { Vec2 } from "./math";
+import { default as Rapid } from './render';
+import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions } from './interface';
+import { Texture } from './texture';
+import { Vec2 } from './math';
+import { Entity, Game } from './game';
 /**
  * Represents a tileset that manages tile textures and their properties.
  */
@@ -42,29 +43,12 @@ export declare class TileMapRender {
      */
     constructor(rapid: Rapid);
     /**
-     * 将需要 y-sort 的回调根据它们的 y 坐标分组到一个 Map 中。
-     * 使用 Map 是为了避免因地图坐标过大而创建稀疏数组，从而优化内存使用。
-     *
-     * @param ySortCallbacks - Array of y-sort callbacks to process.
-     * @param height - The effective height of a tile row, used for grouping.
-     * @returns A Map where keys are row indices (y) and values are arrays of y-sort callbacks for that row.
-     * @private
-     */
-    private getYSortRow;
-    /**
      * Calculates the error offset values for tile rendering.
      * @param options - Layer rendering options containing error values.
      * @returns Object containing x and y error offsets.
      * @private
      */
     private getOffset;
-    /**
-     * Renders a row of y-sorted entities.
-     * @param rapid - The Rapid rendering instance.
-     * @param ySortRow - Array of y-sort callbacks to render.
-     * @private
-     */
-    private renderYSortRow;
     /**
      * Calculates tile rendering data based on the viewport and tileset.
      * @param tileSet - The tileset to use for rendering.
@@ -75,10 +59,11 @@ export declare class TileMapRender {
     private getTileData;
     /**
      * Renders the tilemap layer based on the provided data and options.
+     * This method collects all visible tiles and y-sortable objects into a single queue,
+     * sorts them once by their y-coordinate, and then renders them in the correct order.
      *
      * @param data - A 2D array representing the tilemap data.
      * @param options - The rendering options for the tilemap layer.
-     * @returns
      */
     renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void;
     /**
@@ -95,4 +80,80 @@ export declare class TileMapRender {
      * @returns The local coordinates.
      */
     mapToLocal(map: Vec2, options: ILayerRenderOptions): Vec2;
+}
+/**
+ * Tilemap entity for rendering tiled maps.
+ */
+export declare class Tilemap extends Entity {
+    static readonly DEFAULT_ERROR = 0;
+    static readonly EMPTY_TILE = -1;
+    error: Vec2;
+    shape: TilemapShape;
+    tileSet: TileSet;
+    data: (number | string)[][];
+    eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
+    ySortCallback: YSortCallback[];
+    enableYsort: boolean;
+    /**
+     * Creates a tilemap entity.
+     * @param game - The game instance this tilemap belongs to.
+     * @param options - Configuration options for the tilemap.
+     */
+    constructor(game: Game, options: IEntityTilemapLayerOptions);
+    /**
+     * Collects renderable entities, excluding children unless they override onRender.
+     * @param queue - The array to collect renderable entities.
+     */
+    collectRenderables(queue: Entity[]): void;
+    /**
+     * Sets a tile at the specified map coordinates.
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @param tileId - The tile ID to set (number or string).
+     * @returns True if the tile was set successfully, false if coordinates are out of bounds.
+     */
+    setTile(x: number, y: number, tileId: number | string): boolean;
+    /**
+     * Gets the tile ID at the specified map coordinates.
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @returns The tile ID (number or string) or undefined if coordinates are out of bounds.
+     */
+    getTile(x: number, y: number): number | string | undefined;
+    /**
+     * Removes a tile at the specified map coordinates (sets it to EMPTY_TILE).
+     * @param x - The X coordinate (column) on the map.
+     * @param y - The Y coordinate (row) on the map.
+     * @returns True if the tile was removed successfully, false if coordinates are out of bounds.
+     */
+    removeTile(x: number, y: number): boolean;
+    /**
+     * Fills a rectangular area with a specified tile ID.
+     * @param tileId - The tile ID to use for filling.
+     * @param startX - The starting X coordinate.
+     * @param startY - The starting Y coordinate.
+     * @param width - The width of the fill area.
+     * @param height - The height of the fill area.
+     */
+    fill(tileId: number | string, startX: number, startY: number, width: number, height: number): void;
+    /**
+     * Replaces the entire tilemap data and updates dimensions.
+     * @param newData - The new 2D array of tile data.
+     */
+    setData(newData: (number | string)[][]): void;
+    /**
+     * Converts local coordinates to map coordinates.
+     * @param local - The local coordinates to convert.
+     */
+    localToMap(local: Vec2): void;
+    /**
+     * Converts map coordinates to local coordinates.
+     * @param local - The map coordinates to convert.
+     */
+    mapToLocal(local: Vec2): void;
+    /**
+     * Renders the tilemap layer.
+     * @param render - The rendering engine instance.
+     */
+    onRender(render: Rapid): void;
 }
