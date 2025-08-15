@@ -659,6 +659,20 @@ export class Color implements IMathObject<Color> {
     }
 
     /**
+     * Converts the color to a hexadecimal string representation (e.g., '#RRGGBBAA').
+     * @param includeAlpha - Whether to include the alpha channel in the hex string.
+     * @returns The hexadecimal string representation of the color.
+     */
+    toHexString(includeAlpha: boolean = true): string {
+        const r = this.r.toString(16).padStart(2, '0');
+        const g = this.g.toString(16).padStart(2, '0');
+        const b = this.b.toString(16).padStart(2, '0');
+        const a = this.a.toString(16).padStart(2, '0');
+
+        return `#${r}${g}${b}${includeAlpha ? a : ''}`;
+    }
+
+    /**
      * Checks if the current color is equal to another color.
      * @param color - The color to compare with.
      * @returns True if the colors are equal, otherwise false.

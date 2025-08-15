@@ -323,7 +323,7 @@ class Text extends Texture {
 
         // Re-apply properties after scaling
         context.font = font;
-        context.fillStyle = this.options.color || '#000';
+        context.fillStyle = this.options.color ? this.options.color.toHexString() : '#000';
         context.textAlign = this.options.textAlign || 'left';
         context.textBaseline = this.options.textBaseline || 'top';
 

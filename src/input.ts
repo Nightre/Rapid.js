@@ -9,7 +9,7 @@ import { Entity } from "./game";
 export class InputManager {
   private rapid: Rapid;
   private canvas: HTMLCanvasElement;
-  private mousePosition: Vec2 = Vec2.ZERO;
+  mousePosition: Vec2 = Vec2.ZERO;
 
   // Tracks keys pressed in the current frame (e.g., "KeyW", "Space", "ArrowUp").
   private keysDown: Set<string> = new Set();
@@ -151,6 +151,26 @@ export class InputManager {
    */
   getMouseLocal(entity: Entity): Vec2 {
     return entity.transform.globalToLocal(this.mousePosition);
+  }
+
+  getAxis(negativeAction: string, positiveAction: string): number {
+    let value = 0;
+    if (this.isKeyDown(positiveAction)) {
+      value += 1;
+    }
+    if (this.isKeyDown(negativeAction)) {
+      value -= 1;
+    }
+    return value;
+  }
+
+  getVector(negativeX: string, positiveX: string, negativeY: string, positiveY: string): Vec2 {
+    const x = this.getAxis(negativeX, positiveX);
+    const y = this.getAxis(negativeY, positiveY);
+
+    const vector = new Vec2(x, y);
+
+    return vector.normalize();
   }
 
   /**

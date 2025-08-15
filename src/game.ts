@@ -1,10 +1,11 @@
+import EventEmitter from "eventemitter3";
 import AssetsLoader from "./assets";
 import AudioManager from "./audio";
 import { InputManager } from "./input";
-import { ICameraOptions, IEntityTransformOptions, IGameOptions, IMathObject } from "./interface";
-import { MatrixStack, Vec2 } from "./math";
+import { IAnimation, ICameraOptions, IEntityTransformOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from "./interface";
+import { Color, MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
-import { TextureCache } from "./texture";
+import { Text, Texture, TextureCache } from "./texture";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
 
 /**
@@ -231,6 +232,13 @@ export class Entity {
         this.children.forEach(child => {
             child.dispose();
         });
+    }
+
+    getMouseLocalPosition(){
+        return this.game.input.getMouseLocal(this)
+    }
+    getMouseGlobalPosition(){
+        return this.game.input.mousePosition
     }
 }
 
@@ -578,5 +586,171 @@ export class Game {
         }
         // Filter out finished tweens to prevent the array from growing indefinitely
         this.tweens = this.tweens.filter(tween => !tween.isFinished);
+    }
+}
+
+/**
+ * An entity that displays a texture (a "sprite") and can play animations.
+ * Animations are defined as a sequence of textures.
+ */
+export class Sprite extends Entity {
+    /** The current texture being displayed. This can be a static texture or a frame from an animation. */
+    public texture: Texture | null;
+    /** Whether the sprite is flipped horizontally. */
+    public flipX: boolean;
+    /** Whether the sprite is flipped vertically. */
+    public flipY: boolean;
+
+    public color: Color
+    public offset: Vec2
+
+    private animations = new Map<string, IAnimation>();
+    private currentAnimation: IAnimation | null = null;
+    private currentFrame: number = 0;
+    private frameTimer: number = 0;
+    private isPlaying: boolean = false;
+
+    /**
+     * Creates a new Sprite entity.
+     * @param game - The game instance.
+     * @param options - Configuration for the sprite's transform and initial texture.
+     */
+    constructor(game: Game, options: ISpriteOptions = {}) {
+        super(game, options);
+        this.texture = options.texture ?? null;
+        this.flipX = options.flipX ?? false;
+        this.flipY = options.flipY ?? false;
+
+        this.color = options.color ?? Color.White
+        this.offset = options.offset ?? Vec2.ZERO
+
+        if (options.animations) {
+            this.setAnimations(options.animations)
+        }
+    }
+
+    setAnimations(animations: IAnimation) {
+        this.animations = new Map(Object.entries(animations))
+    }
+
+    /**
+     * Defines a new animation sequence.
+     * @param name - A unique name for the animation (e.g., "walk", "jump").
+     * @param frames - An array of Textures to use as frames.
+     * @param fps - The playback speed in frames per second.
+     * @param loop - Whether the animation should repeat.
+     */
+    public addAnimation(name: string, frames: Texture[], fps: number = 10, loop: boolean = true): void {
+        this.animations.set(name, { name, frames, fps, loop });
+    }
+
+    /**
+     * Plays an animation that has been previously defined with `addAnimation`.
+     * @param name - The name of the animation to play.
+     * @param forceRestart - If true, the animation will restart from the first frame even if it's already playing.
+     */
+    public play(name: string, forceRestart: boolean = false): void {
+        const animation = this.animations.get(name);
+        if (!animation) {
+            console.warn(`Animation "${name}" not found.`);
+            return;
+        }
+
+        if (this.currentAnimation === animation && !forceRestart) {
+            // If it's the same animation and it was paused, just resume it.
+            if (!this.isPlaying) this.isPlaying = true;
+            return;
+        }
+
+        this.currentAnimation = animation;
+        this.currentFrame = 0;
+        this.frameTimer = 0;
+        this.isPlaying = true;
+        this.texture = this.currentAnimation.frames[this.currentFrame];
+    }
+
+    /**
+     * Stops the currently playing animation.
+     * The sprite will remain on the current frame.
+     */
+    public stop(): void {
+        this.isPlaying = false;
+    }
+
+    /**
+     * Updates the animation frame based on the elapsed time.
+     * @param deltaTime - Time in seconds since the last frame.
+     * @override
+     */
+    override onUpdate(deltaTime: number): void {
+        if (!this.isPlaying || !this.currentAnimation) {
+            return;
+        }
+
+        const frameDuration = 1 / this.currentAnimation.fps;
+        this.frameTimer += deltaTime;
+
+        // Advance frames if enough time has passed
+        while (this.frameTimer >= frameDuration) {
+            this.frameTimer -= frameDuration;
+            this.currentFrame++;
+
+            // Check if the animation has ended
+            if (this.currentFrame >= this.currentAnimation.frames.length) {
+                if (this.currentAnimation.loop) {
+                    this.currentFrame = 0;
+                } else {
+                    // Clamp to the last frame and stop
+                    this.currentFrame = this.currentAnimation.frames.length - 1;
+                    this.isPlaying = false;
+                    break; // Exit the while loop
+                }
+            }
+        }
+
+        // Update the visible texture to the current frame
+        this.texture = this.currentAnimation.frames[this.currentFrame];
+    }
+
+    /**
+     * Renders the sprite's current texture to the screen.
+     * @param render - The Rapid rendering instance.
+     * @override
+     */
+    override onRender(render: Rapid): void {
+        if (this.texture) {
+            render.renderSprite({
+                texture: this.texture,
+                flipX: this.flipX,
+                flipY: this.flipY,
+                offset: this.offset,
+                color: this.color
+            });
+        }
+    }
+}
+
+/**
+ * An entity designed specifically to display text on the screen.
+ * It encapsulates a `Text` texture, giving it position, scale, rotation,
+ * and other entity-based properties.
+ */
+export class Label extends Entity {
+    text: Text
+    constructor(game: Game, options: ILabelEntityOptions) {
+        super(game, options)
+        this.text = new Text(game.render, options)
+    }
+    override onRender(render: Rapid): void {
+        render.renderSprite({
+            texture: this.text,
+        });
+    }
+    /**
+     * Updates the displayed text. Re-renders the texture if the text has changed.
+     * @param text - The new text to display.
+     */
+    setText(text: string) {
+        this.text.setText(text)
     }
 }
