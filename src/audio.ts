@@ -1,273 +1,225 @@
-import { ISound } from "./interface";
+// src/audio.ts
+
 import EventEmitter from "eventemitter3";
 
 /**
- * AudioPlayer 发出的事件。
+ * Events emitted by AudioPlayer.
  */
 interface AudioPlayerEvents {
-  /**
-   * 当音频播放结束时触发。
-   */
   ended: () => void;
 }
 
 /**
- * AudioPlayer 类，用于管理单个音频元素。
- * 封装了 HTMLAudioElement 及其相关的 Web Audio API 节点。
- *
- * @internal 这是一个内部辅助类，通常由 AudioManager 管理。
+ * Represents a single, playable audio instance.
+ * Created by the AudioManager.
  */
 export class AudioPlayer extends EventEmitter<AudioPlayerEvents> {
-    public element: HTMLAudioElement;
-    public readonly source: MediaElementAudioSourceNode;
-    public readonly gainNode: GainNode;
-    private readonly audioContext: AudioContext;
-    private readonly boundHandleEnded: () => void;
+    private audioContext: AudioContext | null;
+    private audioBuffer: AudioBuffer | null;
+    private sourceNode: AudioBufferSourceNode | null = null;
+    private gainNode: GainNode | null;
 
-    /**
-     * 创建一个 AudioPlayer 实例。
-     * @param audioElement - 要管理的 HTMLAudioElement。
-     * @param audioContext - Web Audio API 上下文。
-     * @param destinationNode - 此播放器音频应连接到的目标节点（例如主音量控制器）。
-     */
-    constructor(audioElement: HTMLAudioElement, audioContext: AudioContext, destinationNode: AudioNode) {
+    private _volume: number = 1;
+    private _loop: boolean = false;
+    private _isPlaying: boolean = false;
+
+    constructor(audioContext: AudioContext, audioBuffer: AudioBuffer) {
         super();
-        this.element = audioElement;
         this.audioContext = audioContext;
-        
-        // 修正：每个 MediaElement 只能创建一个源节点，因此在构造时创建。
-        this.source = this.audioContext.createMediaElementSource(this.element);
+        this.audioBuffer = audioBuffer;
+
         this.gainNode = this.audioContext.createGain();
-
-        // 建立音频图：Element -> Source -> Gain -> Destination
-        this.source.connect(this.gainNode);
-        this.gainNode.connect(destinationNode);
-
-        // 修正：保存 bind 后的函数引用，以便能正确地移除事件监听器。
-        this.boundHandleEnded = this.handleEnded.bind(this);
-        this.element.addEventListener('ended', this.boundHandleEnded);
+        this.gainNode.connect(this.audioContext.destination);
     }
 
     /**
-     * 处理 'ended' 事件，当音频播放完成时触发。
+     * Plays the audio. If already playing, it will stop the current playback and start over.
      */
-    private handleEnded(): void {
-        this.emit('ended');
+    play(): void {
+        if (!this.audioContext || !this.audioBuffer || !this.gainNode) {
+            console.warn("Cannot play audio on a destroyed AudioPlayer.");
+            return;
+        }
+
+        if (this._isPlaying) {
+            this.stop();
+        }
+
+        this.sourceNode = this.audioContext.createBufferSource();
+        this.sourceNode.buffer = this.audioBuffer;
+        this.sourceNode.loop = this._loop;
+        this.sourceNode.connect(this.gainNode);
+
+        this.sourceNode.onended = () => {
+            // Check if onended was called due to stop() on a destroyed player
+            if (!this._isPlaying) return;
+
+            this._isPlaying = false;
+            this.sourceNode = null;
+            this.emit('ended');
+        };
+
+        this.sourceNode.start(0);
+        this._isPlaying = true;
     }
 
     /**
-     * 播放音频。
-     * @param loop - 是否循环播放 (默认: false)。
-     * @param volume - 本次播放的音量 (0.0 到 1.0, 默认: 1.0)。
+     * Stops the audio playback immediately.
      */
-    async play(loop: boolean = false, volume: number = 1.0): Promise<void> {
-        try {
-            // 确保音频上下文在用户交互后处于 running 状态
-            if (this.audioContext.state === 'suspended') {
-                await this.audioContext.resume();
-            }
-            this.element.loop = loop;
-            this.setVolume(volume);
-            await this.element.play();
-        } catch (error) {
-            console.error(`播放音频失败:`, this.element.src, error);
+    stop(): void {
+        if (this.sourceNode) {
+            this.sourceNode.stop();
+            // onended will be called automatically, which will clear the node
+        }
+        this._isPlaying = false;
+    }
+
+    /**
+     * Gets the volume of the audio, from 0.0 to 1.0.
+     */
+    get volume(): number {
+        return this._volume;
+    }
+
+    /**
+     * Sets the volume of the audio.
+     * @param value - The volume, from 0.0 (silent) to 1.0 (full).
+     */
+    set volume(value: number) {
+        this._volume = Math.max(0, Math.min(1, value)); // Clamp value between 0 and 1
+        if (this.gainNode && this.audioContext) {
+            // Use setTargetAtTime for a smoother volume change
+            this.gainNode.gain.setTargetAtTime(this._volume, this.audioContext.currentTime, 0.01);
         }
     }
 
     /**
-     * 暂停音频。
+     * Gets whether the audio will loop.
      */
-    pause(): void {
-        this.element.pause();
+    get loop(): boolean {
+        return this._loop;
     }
 
     /**
-     * 停止音频并重置播放位置。
+     * Sets whether the audio should loop.
+     * Can be changed while the audio is playing.
      */
-    stop(): void {
-        this.element.pause();
-        this.element.currentTime = 0;
+    set loop(value: boolean) {
+        this._loop = value;
+        if (this.sourceNode) {
+            this.sourceNode.loop = value;
+        }
     }
 
     /**
-     * 设置此音频的独立音量。
-     * @param volume - 音量大小 (0.0 到 1.0)。
+     * Gets whether the audio is currently playing.
      */
-    setVolume(volume: number): void {
-        this.gainNode.gain.value = Math.max(0, Math.min(1, volume));
+    get isPlaying(): boolean {
+        return this._isPlaying;
     }
 
     /**
-     * 清理与此音频相关的资源。
+     * Stops playback, disconnects audio nodes, and removes all event listeners.
+     * This makes the AudioPlayer instance unusable.
      */
-    destroy(): void {
+    destroy() {
+        // 1. Stop any active playback.
         this.stop();
-        this.source.disconnect();
-        this.gainNode.disconnect();
-        this.element.removeEventListener('ended', this.boundHandleEnded);
+
+        // 2. Disconnect the gain node from the audio graph to free it up.
+        if (this.gainNode) {
+            this.gainNode.disconnect();
+        }
+
+        // 3. Remove all event listeners to prevent memory leaks.
         this.removeAllListeners();
+
+        // 4. Nullify references to Web Audio API objects to help the garbage collector.
+        // This effectively makes the player instance unusable.
+        this.audioBuffer = null;
+        this.audioContext = null;
+        this.gainNode = null;
+        this.sourceNode = null;
     }
 }
 
 /**
- * AudioManager 类，用于管理游戏中的所有音频，包括背景音乐(BGM)和音效(SFX)。
- * 实现了音频缓存、分类管理和主音量控制。
+ * Manages loading, decoding, and caching of audio assets.
+ * This is analogous to your TextureCache.
  */
-class AudioManager {
-    private audioContext: AudioContext;
-    private sfxCache = new Map<string, AudioPlayer>();
-    private bgmCache = new Map<string, AudioPlayer>();
-    
-    private sfxMasterGain: GainNode;
-    private bgmMasterGain: GainNode;
-
-    private currentBgm: AudioPlayer | null = null;
+export class AudioManager {
+    private audioContext: AudioContext | null;
+    private cache: Map<string, AudioBuffer> = new Map();
 
     constructor() {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        try {
+            // Create the AudioContext. It's best to create it once.
+            // The 'any' cast is for older browser compatibility (webkitAudioContext).
+            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser.");
+            this.audioContext = null;
+        }
+    }
+
+    /**
+     * Creates an AudioPlayer from a URL.
+     * It fetches, decodes, and caches the audio data. If the URL is already cached,
+     * it skips the network request and uses the cached data.
+     *
+     * @param url - The URL of the audio file.
+     * @returns A Promise that resolves to a new AudioPlayer instance.
+     */
+    async audioFromUrl(url: string): Promise<AudioPlayer> {
+        if (!this.audioContext) {
+            throw new Error("AudioContext is not available. Cannot process audio.");
+        }
         
-        // 为 SFX 和 BGM 创建独立的主音量控制器
-        this.sfxMasterGain = this.audioContext.createGain();
-        this.bgmMasterGain = this.audioContext.createGain();
+        // 1. Check if the raw audio data is in the cache
+        let cachedBuffer = this.cache.get(url);
 
-        // 连接到最终输出
-        this.sfxMasterGain.connect(this.audioContext.destination);
-        this.bgmMasterGain.connect(this.audioContext.destination);
-    }
-
-    /**
-     * 预加载一组音效资源。
-     * @param sounds - 包含音效 id 和 src 的数组。
-     * @returns 当所有音效加载完成时解析的 Promise。
-     */
-    public async preloadSfx(sounds: ISound[]): Promise<void[]> {
-        const promises = sounds.map(sound => this.load(sound, this.sfxCache, this.sfxMasterGain));
-        return Promise.all(promises);
-    }
-
-    /**
-     * 预加载一组背景音乐资源。
-     * @param sounds - 包含 BGM id 和 src 的数组。
-     * @returns 当所有 BGM 加载完成时解析的 Promise。
-     */
-    public async preloadBgm(sounds: ISound[]): Promise<void[]> {
-        const promises = sounds.map(sound => this.load(sound, this.bgmCache, this.bgmMasterGain));
-        return Promise.all(promises);
-    }
-
-    /**
-     * 内部加载函数。
-     * @param sound - 要加载的声音对象。
-     * @param cache - 用于存储的缓存 Map。
-     * @param destinationNode - 音频应连接到的目标节点。
-     * @private
-     */
-    private load(sound: ISound, cache: Map<string, AudioPlayer>, destinationNode: AudioNode): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (cache.has(sound.id)) {
-                return resolve();
+        if (!cachedBuffer) {
+            // 2. If not, fetch and decode it
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch audio from ${url}: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            // Use a try-catch for decodeAudioData as it can fail on corrupt files
+            try {
+                cachedBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            } catch (error) {
+                 throw new Error(`Failed to decode audio from ${url}: ${error}`);
             }
 
-            const audioElement = new Audio();
-            audioElement.crossOrigin = "anonymous"; // 支持跨域资源
-            audioElement.src = sound.src;
+            // 3. Store the decoded data in the cache
+            this.cache.set(url, cachedBuffer);
+        }
 
-            audioElement.addEventListener('canplaythrough', () => {
-                const audioPlayer = new AudioPlayer(audioElement, this.audioContext, destinationNode);
-                cache.set(sound.id, audioPlayer);
-                resolve();
-            }, { once: true }); // 监听一次即可
+        // 4. Create and return a new player instance with the (now-cached) audio data.
+        return new AudioPlayer(this.audioContext, cachedBuffer);
+    }
 
-            audioElement.addEventListener('error', (e) => {
-                console.error(`加载音频文件失败: ${sound.src}`);
-                reject(e);
+    /**
+     * Destroys the AudioManager, clears the audio cache, and closes the AudioContext.
+     * This releases all associated audio resources. After calling this, the AudioManager
+     * and any AudioPlayers created by it will be unusable.
+     */
+    destroy() {
+        // 1. Clear the cache of all decoded AudioBuffer data.
+        this.cache.clear();
+
+        // 2. Close the AudioContext to release system audio resources.
+        // This is an irreversible action.
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.close().catch(err => {
+                // Log error if closing fails, but don't prevent further cleanup.
+                console.error("Error closing AudioContext:", err);
             });
-        });
-    }
-
-    /**
-     * 播放音效 (SFX)。
-     * @param id - 要播放的音效 ID。
-     * @param options - 播放选项。
-     * @param options.volume - 本次播放的音量 (0.0 to 1.0)。
-     */
-    public playSfx(id: string, options: { volume?: number } = {}): void {
-        const sfxPlayer = this.sfxCache.get(id);
-        if (!sfxPlayer) {
-            console.warn(`音效 "${id}" 未找到或未加载。`);
-            return;
         }
-        // SFX 总是从头开始播放
-        sfxPlayer.stop();
-        sfxPlayer.play(false, options.volume);
-    }
-
-    /**
-     * 播放背景音乐 (BGM)。
-     * 会自动停止当前正在播放的 BGM。
-     * @param id - 要播放的 BGM ID。
-     * @param options - 播放选项。
-     * @param options.loop - 是否循环 (默认 true)。
-     * @param options.volume - 音量 (0.0 to 1.0)。
-     */
-    public playBgm(id: string, options: { loop?: boolean; volume?: number } = {}): void {
-        if (this.currentBgm) {
-            this.currentBgm.stop();
-        }
-
-        const bgmPlayer = this.bgmCache.get(id);
-        if (!bgmPlayer) {
-            console.warn(`BGM "${id}" 未找到或未加载。`);
-            return;
-        }
-
-        this.currentBgm = bgmPlayer;
-        const loop = options.loop !== undefined ? options.loop : true;
-        this.currentBgm.play(loop, options.volume);
-    }
-    
-    /**
-     * 停止当前播放的背景音乐。
-     */
-    public stopBgm(): void {
-        if (this.currentBgm) {
-            this.currentBgm.stop();
-            this.currentBgm = null;
-        }
-    }
-
-    /**
-     * 设置所有音效的主音量。
-     * @param volume - 音量 (0.0 到 1.0)。
-     */
-    public setSfxVolume(volume: number): void {
-        this.sfxMasterGain.gain.value = Math.max(0, Math.min(1, volume));
-    }
-
-    /**
-     * 设置所有背景音乐的主音量。
-     * @param volume - 音量 (0.0 到 1.0)。
-     */
-    public setBgmVolume(volume: number): void {
-        this.bgmMasterGain.gain.value = Math.max(0, Math.min(1, volume));
-    }
-
-    /**
-     * 销毁 AudioManager，清理所有资源。
-     * 在应用退出时调用。
-     */
-    public destroy(): void {
-        this.sfxCache.forEach(player => player.destroy());
-        this.bgmCache.forEach(player => player.destroy());
-        this.sfxCache.clear();
-        this.bgmCache.clear();
-
-        this.sfxMasterGain.disconnect();
-        this.bgmMasterGain.disconnect();
         
-        if (this.audioContext.state !== 'closed') {
-            this.audioContext.close();
-        }
+        // 3. Nullify references to make the manager unusable.
+        this.audioContext = null;
     }
 }
 

@@ -423,17 +423,6 @@ export interface IGameOptions extends IRapidOptions {
 
 }
 
-export interface ISound {
-  /**
-   * 声音的唯一标识符
-   */
-  id: string;
-  /**
-   * 声音文件的URL路径
-   */
-  src: string;
-}
-
 /**
  * Interface for an asset to be loaded.
  */

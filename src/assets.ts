@@ -1,15 +1,18 @@
-import { AudioPlayer } from "./audio";
+// src/AssetsLoader.ts
+
+// Assume Game has an 'audio' property of type AudioManager
+import { AudioManager, AudioPlayer } from "./audio"; 
 import { Game } from "./game";
-import { IAsset as IAsset, IAssets } from "./interface";
+import { IAsset, IAssets } from "./interface";
 import EventEmitter from "eventemitter3";
 
 /**
  * Events emitted by AssetsLoader.
  */
 interface AssetsLoaderEvents {
-  progress: (progress: number, loaded: number, total: number) => void;
-  complete: (assets: IAssets) => void;
-  error: (error: { name: string; url: string; error: any }) => void;
+    progress: (progress: number, loaded: number, total: number) => void;
+    complete: (assets: IAssets) => void;
+    error: (error: { name: string; url:string; error: any }) => void;
 }
 
 /**
@@ -44,7 +47,10 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
     loadJson(name: string, url: string): void {
         this.totalAsset++;
         fetch(url)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
             .then(data => {
                 this.assets.json[name] = data;
                 this.assetLoaded();
@@ -53,36 +59,42 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
     }
 
     /**
-     * Loads an audio file asynchronously.
+     * Loads an audio file asynchronously using the AudioManager.
+     * The AudioManager will handle fetching and caching.
      * @param name - The unique identifier for the audio asset.
      * @param url - The URL of the audio file.
      */
-    loadAudio(name: string, url: string): void {
-        this.totalAsset++;
-        const audio = new Audio();
-        audio.src = url;
-        audio.oncanplaythrough = () => {
-            this.assets.audio[name] = new AudioPlayer(audio, this.game.audio.audioContext);
+    async loadAudio(name: string, url: string) {
+        this.totalAsset++; 
+
+        try {
+            const audioPlayer = await this.game.audio.audioFromUrl(url);
+            this.assets.audio[name] = audioPlayer;
+            
             this.assetLoaded();
-            audio.oncanplaythrough = null; // Clear event
-        };
-        audio.onerror = () => this.handleError(name, url, 'Audio load error');
+        } catch (error) {
+            this.handleError(name, url, error);
+            // Even on error, we count it as "processed" to avoid the loader getting stuck.
+            this.assetLoaded();
+        }
     }
 
     /**
-     * Loads an image file asynchronously.
+     * Loads an image file asynchronously using the TextureManager.
      * @param name - The unique identifier for the image asset.
      * @param url - The URL of the image file.
      */
-    loadImage(name: string, url: string): void {
+    async loadImage(name: string, url: string) {
         this.totalAsset++;
-        const img = new Image();
-        img.src = url;
-        img.onload = () => {
-            this.assets.images[name] = this.game.render.texture.textureFromSource(img);
+
+        try {
+            // Assuming `game.render.texture` is your TextureCache instance.
+            this.assets.images[name] = await this.game.render.texture.textureFromUrl(url);
             this.assetLoaded();
-        };
-        img.onerror = () => this.handleError(name, url, 'Image load error');
+        } catch (error) {
+            this.handleError(name, url, error);
+            this.assetLoaded();
+        }
     }
 
     /**
@@ -90,6 +102,13 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
      * @param assetList - Array of assets to load.
      */
     loadAssets(assetList: IAsset[]): void {
+        if (assetList.length === 0) {
+            // Handle case with no assets to prevent division by zero.
+            this.emit('progress', 1, 0, 0);
+            this.emit('complete', this.assets);
+            return;
+        }
+
         assetList.forEach(asset => {
             switch (asset.type) {
                 case 'json':
@@ -102,7 +121,7 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
                     this.loadImage(asset.name, asset.url);
                     break;
                 default:
-                    console.warn(`Unknown asset type: ${asset.type}`);
+                    console.warn(`Unknown asset type: ${(asset as any).type}`);
             }
         });
     }
@@ -113,9 +132,10 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
      */
     private assetLoaded(): void {
         this.loadedAssets++;
-        const progress = this.loadedAssets / this.totalAsset;
+        const progress = this.totalAsset > 0 ? this.loadedAssets / this.totalAsset : 1;
         this.emit('progress', progress, this.loadedAssets, this.totalAsset);
-        if (this.loadedAssets === this.totalAsset) {
+
+        if (this.loadedAssets >= this.totalAsset) {
             this.emit('complete', this.assets);
         }
     }
@@ -128,7 +148,7 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
      */
     private handleError(name: string, url: string, error: any): void {
         this.emit('error', { name, url, error });
-        console.error(`Failed to load asset ${name} from ${url}:`, error);
+        console.error(`Failed to load asset '${name}' from ${url}:`, error);
     }
 
     /**
@@ -168,5 +188,5 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
         return this.assets.images[name];
     }
 }
- 
+
 export default AssetsLoader;
