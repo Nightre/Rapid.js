@@ -271,9 +271,9 @@ export class MatrixStack extends DynamicArrayBuffer {
      * Transforms a point by applying the current matrix stack.
      * @returns The transformed point as an array `[newX, newY]`.
      */
-    apply(x: number | Vec2, y?: number): Vec2 | number[] {
+    transformPoint(x: number | Vec2, y?: number): Vec2 | number[] {
         if (typeof x !== "number") {
-            return new Vec2(...this.apply(x.x, x.y) as number[])
+            return new Vec2(...this.transformPoint(x.x, x.y) as number[])
         }
         const offset = this.usedElemNum - MATRIX_SIZE
         const arr = this.typedArray
@@ -433,7 +433,7 @@ export class MatrixStack extends DynamicArrayBuffer {
     }
 
     localToGlobal(local: Vec2): Vec2 {
-        return this.apply(local) as Vec2;
+        return this.transformPoint(local) as Vec2;
     }
 
     /**
@@ -816,7 +816,7 @@ export class Vec2 implements IMathObject<Vec2> {
         if (Array.isArray(x)) {
             this.x = x[0]
             this.y = x[1]
-        } else if (y) {
+        } else if (y !== undefined) {
             this.x = x
             this.y = y
         } else {
@@ -1051,6 +1051,18 @@ export class Vec2 implements IMathObject<Vec2> {
         // 对 y 坐标进行插值
         this.y += (target.y - this.y) * factor;
 
+        return this;
+    }
+
+    addSelf(v: Vec2): this {
+        this.x += v.x;
+        this.y += v.y;
+        return this;
+    }
+
+    subtractSelf(v: Vec2): this {
+        this.x -= v.x;
+        this.y -= v.y;
         return this;
     }
 }

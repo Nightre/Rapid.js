@@ -34,7 +34,7 @@ class RenderRegion {
     //     return this.MAX_TEXTURE_UNIT_ARRAY.slice(usedTexture, -1)
     // }
     protected addVertex(x: number, y: number, ..._: unknown[]) {
-        const [tx, ty] = this.rapid.matrixStack.apply(x, y) as number[]
+        const [tx, ty] = this.rapid.matrixStack.transformPoint(x, y) as number[]
         this.webglArrayBuffer.pushFloat32(tx)
         this.webglArrayBuffer.pushFloat32(ty)
     }

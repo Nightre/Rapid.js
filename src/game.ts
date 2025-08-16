@@ -7,6 +7,7 @@ import { Color, MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 import { Text, Texture, TextureCache } from "./texture";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
+import { Collider } from "./collision";
 
 // /**
 //  * Base class for components that can be attached to an Entity to extend its functionality.
@@ -80,11 +81,12 @@ export class Entity {
     tags: string[];
     transform = new MatrixStack();
 
-    //readonly components: Component[] = [];
     readonly children: Entity[] = [];
     rapid: Rapid;
     game: Game;
 
+    collider: Collider | null = null; 
+    
     get x() {
         return this.position.x
     }
