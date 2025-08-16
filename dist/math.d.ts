@@ -266,6 +266,12 @@ export declare class Color implements IMathObject<Color> {
      */
     clone(): Color;
     /**
+     * Converts the color to a hexadecimal string representation (e.g., '#RRGGBBAA').
+     * @param includeAlpha - Whether to include the alpha channel in the hex string.
+     * @returns The hexadecimal string representation of the color.
+     */
+    toHexString(includeAlpha?: boolean): string;
+    /**
      * Checks if the current color is equal to another color.
      * @param color - The color to compare with.
      * @returns True if the colors are equal, otherwise false.

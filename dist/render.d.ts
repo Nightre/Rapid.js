@@ -1,11 +1,10 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, IPolygonGraphicRenderOptions } from './interface';
+import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IPolygonGraphicRenderOptions } from './interface';
 import { LightManager } from './light';
 import { Color, MatrixStack, Vec2 } from './math';
 import { default as RenderRegion } from './regions/region';
 import { FrameBufferObject, Texture, TextureCache } from './texture';
 import { TileMapRender, TileSet } from './tilemap';
 import { default as GLShader } from './webgl/glshader';
-import { ParticleEmitter } from './particle';
 /**
  * The `Rapid` class provides a WebGL-based rendering engine.
  */
@@ -115,7 +114,6 @@ declare class Rapid {
      * @param options - The rendering options for the sprite, including texture, position, color, and shader.
      */
     renderSprite(options: ISpriteRenderOptions): void;
-    renderParticles(particleEmitter: ParticleEmitter): void;
     /**
      * Renders a texture directly without additional options.
      * This is a convenience method that calls renderSprite with just the texture.
@@ -247,7 +245,6 @@ declare class Rapid {
      * @param lightSource - The light source position
      */
     drawLightShadowMask(options: ILightRenderOptions): void;
-    createParticleEmitter(options: IParticleOptions): ParticleEmitter;
     cssToGameCoords(x: number | Vec2, y?: number): Vec2;
     gameToCssCoords(x: number | Vec2, y?: number): Vec2;
 }

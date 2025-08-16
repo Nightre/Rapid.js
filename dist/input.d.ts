@@ -8,7 +8,7 @@ import { Entity } from './game';
 export declare class InputManager {
     private rapid;
     private canvas;
-    private mousePosition;
+    mousePosition: Vec2;
     private keysDown;
     private keysDownLastFrame;
     private buttonsDown;
@@ -81,6 +81,8 @@ export declare class InputManager {
      * @returns The mouse position in the entity's local coordinate system.
      */
     getMouseLocal(entity: Entity): Vec2;
+    getAxis(negativeAction: string, positiveAction: string): number;
+    getVector(negativeX: string, positiveX: string, negativeY: string, positiveY: string): Vec2;
     /**
      * Removes all event listeners and cleans up resources.
      */

@@ -1,10 +1,10 @@
 import { default as AssetsLoader } from './assets';
 import { default as AudioManager } from './audio';
 import { InputManager } from './input';
-import { ICameraOptions, IEntityTransformOptions, IGameOptions, IMathObject } from './interface';
-import { MatrixStack, Vec2 } from './math';
+import { IAnimation, ICameraOptions, IEntityTransformOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from './interface';
+import { Color, MatrixStack, Vec2 } from './math';
 import { default as Rapid } from './render';
-import { TextureCache } from './texture';
+import { Text, Texture, TextureCache } from './texture';
 import { EasingFunction, Timer, Tween } from './utils';
 /**
  * Base class for game entities with transform and rendering capabilities.
@@ -31,7 +31,7 @@ export declare class Entity {
      * @param options - Configuration options for position, scale, rotation, and tags.
      */
     constructor(game: Game, options?: IEntityTransformOptions);
-    getRoot(): Scene | null;
+    getScene(): Scene | null;
     /**
      * Gets the parent transform or the renderer's matrix stack if no parent exists.
      * @returns The transform matrix stack.
@@ -100,6 +100,8 @@ export declare class Entity {
      * Hook for custom cleanup logic before disposal.
      */
     protected postDispose(): void;
+    getMouseLocalPosition(): Vec2;
+    getMouseGlobalPosition(): Vec2;
 }
 /**
  * A layer that renders its children directly to the screen, ignoring any camera transforms.
@@ -109,7 +111,7 @@ export declare class Entity {
  * 非常适合用于UI元素，如HUD（状态栏）、菜单和分数显示。
  */
 export declare class CanvasLayer extends Entity {
-    constructor(game: Game);
+    constructor(game: Game, options: IEntityTransformOptions);
     updateTransform(): void;
 }
 /**
@@ -164,6 +166,7 @@ export declare class Game {
     private timers;
     mainCamera: Camera | null;
     renderQueue: Entity[];
+    worldTransform: MatrixStack;
     /**
      * Creates a new game instance.
      * @param options - Configuration options for the game.
@@ -246,4 +249,76 @@ export declare class Game {
      * @private
      */
     private updateTweens;
+}
+/**
+ * An entity that displays a texture (a "sprite") and can play animations.
+ * Animations are defined as a sequence of textures.
+ */
+export declare class Sprite extends Entity {
+    /** The current texture being displayed. This can be a static texture or a frame from an animation. */
+    texture: Texture | null;
+    /** Whether the sprite is flipped horizontally. */
+    flipX: boolean;
+    /** Whether the sprite is flipped vertically. */
+    flipY: boolean;
+    color: Color;
+    offset: Vec2;
+    private animations;
+    private currentAnimation;
+    private currentFrame;
+    private frameTimer;
+    private isPlaying;
+    /**
+     * Creates a new Sprite entity.
+     * @param game - The game instance.
+     * @param options - Configuration for the sprite's transform and initial texture.
+     */
+    constructor(game: Game, options?: ISpriteOptions);
+    setAnimations(animations: IAnimation): void;
+    /**
+     * Defines a new animation sequence.
+     * @param name - A unique name for the animation (e.g., "walk", "jump").
+     * @param frames - An array of Textures to use as frames.
+     * @param fps - The playback speed in frames per second.
+     * @param loop - Whether the animation should repeat.
+     */
+    addAnimation(name: string, frames: Texture[], fps?: number, loop?: boolean): void;
+    /**
+     * Plays an animation that has been previously defined with `addAnimation`.
+     * @param name - The name of the animation to play.
+     * @param forceRestart - If true, the animation will restart from the first frame even if it's already playing.
+     */
+    play(name: string, forceRestart?: boolean): void;
+    /**
+     * Stops the currently playing animation.
+     * The sprite will remain on the current frame.
+     */
+    stop(): void;
+    /**
+     * Updates the animation frame based on the elapsed time.
+     * @param deltaTime - Time in seconds since the last frame.
+     * @override
+     */
+    onUpdate(deltaTime: number): void;
+    /**
+     * Renders the sprite's current texture to the screen.
+     * @param render - The Rapid rendering instance.
+     * @override
+     */
+    onRender(render: Rapid): void;
+}
+/**
+ * An entity designed specifically to display text on the screen.
+ * It encapsulates a `Text` texture, giving it position, scale, rotation,
+ * and other entity-based properties.
+ */
+export declare class Label extends Entity {
+    text: Text;
+    constructor(game: Game, options: ILabelEntityOptions);
+    onRender(render: Rapid): void;
+    /**
+     * Updates the displayed text. Re-renders the texture if the text has changed.
+     * @param text - The new text to display.
+     */
+    setText(text: string): void;
 }

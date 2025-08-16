@@ -1,6 +1,6 @@
 import { AudioPlayer } from './audio';
 import { Game } from './game';
-import { IAsset as IAsset, IAssets } from './interface';
+import { IAsset, IAssets } from './interface';
 import { default as EventEmitter } from 'eventemitter3';
 /**
  * Events emitted by AssetsLoader.
@@ -35,17 +35,18 @@ declare class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
      */
     loadJson(name: string, url: string): void;
     /**
-     * Loads an audio file asynchronously.
+     * Loads an audio file asynchronously using the AudioManager.
+     * The AudioManager will handle fetching and caching.
      * @param name - The unique identifier for the audio asset.
      * @param url - The URL of the audio file.
      */
-    loadAudio(name: string, url: string): void;
+    loadAudio(name: string, url: string): Promise<void>;
     /**
-     * Loads an image file asynchronously.
+     * Loads an image file asynchronously using the TextureManager.
      * @param name - The unique identifier for the image asset.
      * @param url - The URL of the image file.
      */
-    loadImage(name: string, url: string): void;
+    loadImage(name: string, url: string): Promise<void>;
     /**
      * Loads multiple assets from a list.
      * @param assetList - Array of assets to load.

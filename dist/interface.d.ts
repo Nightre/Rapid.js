@@ -114,7 +114,7 @@ export interface ITextTextureOptions {
      * The color of the text.
      * Default is '#000000' (black).
      */
-    color?: string;
+    color?: Color;
     /**
      * The alignment of the text.
      * Possible values: 'left', 'right', 'center', 'start', 'end'.
@@ -370,11 +370,6 @@ export interface IParticleEmitterOptions extends IParticleOptions, IEntityTransf
 }
 export interface IGameOptions extends IRapidOptions {
 }
-export interface ISound {
-    element: HTMLAudioElement;
-    source: MediaElementAudioSourceNode | null;
-    gainNode: GainNode;
-}
 /**
  * Interface for an asset to be loaded.
  */
@@ -396,4 +391,19 @@ export interface IAssets {
     images: {
         [key: string]: Texture;
     };
+}
+export interface IAnimation {
+    /** The name of the animation, used to play it. */
+    name: string;
+    /** An array of Textures that make up the frames of the animation. */
+    frames: Texture[];
+    /** The speed of the animation in frames per second (FPS). */
+    fps: number;
+    /** Whether the animation should loop back to the first frame when it ends. */
+    loop: boolean;
+}
+export interface ISpriteOptions extends IEntityTransformOptions, ISpriteRenderOptions {
+    animations?: IAnimation;
+}
+export interface ILabelEntityOptions extends ITextTextureOptions, IEntityTransformOptions {
 }
