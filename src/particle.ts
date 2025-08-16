@@ -287,7 +287,7 @@ export class ParticleEmitter extends Entity {
      * Updates particle emitter state
      * @param deltaTime - Time in seconds since last update
      */
-    override onUpdate(deltaTime: number) {
+    override processUpdate(deltaTime: number) {
         // ** BUG FIX: Rewritten emission logic for accuracy and simplicity **
         if (this.emitting && this.emitRate > 0) {
             if (this.emitTime > 0) {

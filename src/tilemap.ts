@@ -367,13 +367,13 @@ export class Tilemap extends Entity {
      * Collects renderable entities, excluding children unless they override onRender.
      * @param queue - The array to collect renderable entities.
      */
-    override collectRenderables(queue: Entity[]): void {
+    override render(queue: Entity[]): void {
         if (this.enableYsort) {
             if (this.onRender !== Entity.prototype.onRender) {
                 queue.push(this);
             }
         } else {
-            super.collectRenderables(queue)
+            super.render(queue)
         }
     }
 

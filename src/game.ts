@@ -8,6 +8,63 @@ import Rapid from "./render";
 import { Text, Texture, TextureCache } from "./texture";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
 
+// /**
+//  * Base class for components that can be attached to an Entity to extend its functionality.
+//  */
+// export abstract class Component {
+//     protected entity: Entity;
+//     game: Game
+//     render: Rapid
+
+//     /**
+//      * Creates a component and associates it with an entity.
+//      * @param entity - The entity this component is attached to.
+//      * @param name - Optional name for the component to allow lookup by name.
+//      */
+//     constructor(entity: Entity) {
+//         this.entity = entity;
+//         this.game = entity.game
+//         this.render = entity.rapid
+//     }
+
+//     /**
+//      * Gets the entity this component is attached to.
+//      * @returns The associated entity.
+//      */
+//     getEntity(): Entity {
+//         return this.entity;
+//     }
+
+//     /**
+//      * Hook for custom update logic.
+//      * @param deltaTime - Time elapsed since the last update in seconds.
+//      */
+//     onUpdate(deltaTime: number): void { }
+
+//     onPhysics(deltaTime: number): void { }
+
+//     /**
+//      * Hook for custom rendering logic.
+//      * @param render - The rendering engine instance.
+//      */
+//     onRender(render: Rapid): void { }
+
+//     /**
+//      * Hook for custom cleanup logic before the component is removed.
+//      */
+//     dispose(): void { }
+
+//     /**
+//      * Hook for custom logic when the component is mounted (added to an entity).
+//      */
+//     onMounted(): void { }
+
+//     /**
+//      * Hook for custom cleanup logic when the component is unmounted (removed from an entity).
+//      */
+//     onUnmounted(): void { }
+// }
+
 /**
  * Base class for game entities with transform and rendering capabilities.
  */
@@ -23,9 +80,10 @@ export class Entity {
     tags: string[];
     transform = new MatrixStack();
 
+    //readonly components: Component[] = [];
     readonly children: Entity[] = [];
-    protected rapid: Rapid;
-    protected game: Game;
+    rapid: Rapid;
+    game: Game;
 
     get x() {
         return this.position.x
@@ -87,34 +145,38 @@ export class Entity {
     }
 
     /**
-     * Updates the entity and its children.
+     * Updates the entity, its components, and its children.
      * @param deltaTime - Time elapsed since the last update in seconds.
      */
-    public update(deltaTime: number): void {
-        this.onUpdate(deltaTime);
+    public processUpdate(deltaTime: number): void {
+        this.onUpdate(deltaTime)
         for (const child of this.children) {
-            child.update(deltaTime);
+            child.processUpdate(deltaTime);
         }
     }
 
     /**
-     * Hook for custom update logic.
+     * Updates the entity, its components, and its children.
      * @param deltaTime - Time elapsed since the last update in seconds.
      */
-    protected onUpdate(deltaTime: number): void { }
-
+    public processPhysics(deltaTime: number): void {
+        this.onPhysics(deltaTime)
+        for (const child of this.children) {
+            child.processPhysics(deltaTime);
+        }
+    }
     /**
-     * Collects entities that need rendering.
+     * Collects entities and components that need rendering.
      * @param queue - The array to collect renderable entities.
      * @ignore
      */
-    public collectRenderables(queue: Entity[]): void {
-        this.updateTransform()
+    public render(queue: Entity[]): void {
+        this.updateTransform();
         if (this.onRender !== Entity.prototype.onRender) {
             queue.push(this);
         }
         for (const child of this.children) {
-            child.collectRenderables(queue);
+            child.render(queue);
         }
     }
 
@@ -122,16 +184,21 @@ export class Entity {
      * Prepares the entity's transform before rendering.
      * @ignore
      */
-    beforeOnRender(): void {
+    beforeRender(): void {
         const transform = this.transform;
         this.rapid.matrixStack.setTransform(transform.getTransform());
     }
 
     /**
-     * Hook for custom rendering logic.
+     * Renders the entity and its components.
      * @param render - The rendering engine instance.
      */
-    onRender(render: Rapid): void { }
+    onRender(render: Rapid): void {
+
+    }
+
+    onUpdate(deltaTime: number) { }
+    onPhysics(deltaTime: number) { }
 
     /**
      * Updates the entity's transform, optionally updating parent transforms.
@@ -205,7 +272,7 @@ export class Entity {
      * Finds descendant entities with all specified tags.
      * @param tags - Array of tags to match.
      * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
-     * @returns A single entity, an array of entities, or null if no matches are found.
+     * @returns A single entity, an array of entities, or null if not found.
      */
     public findDescendantByTag(tags: string[], onlyFirst: boolean = false): Entity[] | Entity | null {
         const predicate = (entity: Entity) => {
@@ -216,7 +283,7 @@ export class Entity {
     }
 
     /**
-     * Disposes of the entity and its children.
+     * Disposes of the entity, its components, and its children.
      */
     public dispose(): void {
         this.postDispose();
@@ -234,10 +301,11 @@ export class Entity {
         });
     }
 
-    getMouseLocalPosition(){
+    getMouseLocalPosition() {
         return this.game.input.getMouseLocal(this)
     }
-    getMouseGlobalPosition(){
+
+    getMouseGlobalPosition() {
         return this.game.input.mousePosition
     }
 }
@@ -303,7 +371,7 @@ export class Camera extends Entity {
      * 每帧更新，用于平滑摄像机的【局部】变换属性。
      * @param deltaTime 
      */
-    override onUpdate(deltaTime: number): void {
+    override processUpdate(deltaTime: number): void {
         // --- 位置平滑 ---
         // 这里平滑的是 this.position (局部目标位置) 到 _currentRenderPosition (局部渲染位置)
         if (this.positionSmoothingSpeed > 0) {
@@ -472,8 +540,9 @@ export class Game {
             }
             this.worldTransform.setTransform(this.render.matrixStack.getTransform());
 
-            this.mainScene.update(deltaTime);
-            this.mainScene.collectRenderables(this.renderQueue);
+            this.mainScene.processUpdate(deltaTime);
+            this.mainScene.processPhysics(deltaTime)
+            this.mainScene.render(this.renderQueue);
 
             this.renderQueue.sort((a, b) => {
                 const isBrother = a.parent && a.parent === b.parent;
@@ -488,7 +557,7 @@ export class Game {
             });
 
             this.renderQueue.forEach(entity => {
-                entity.beforeOnRender();
+                entity.beforeRender();
                 entity.onRender(this.render);
             });
 
@@ -682,7 +751,7 @@ export class Sprite extends Entity {
      * @param deltaTime - Time in seconds since the last frame.
      * @override
      */
-    override onUpdate(deltaTime: number): void {
+    override processUpdate(deltaTime: number): void {
         if (!this.isPlaying || !this.currentAnimation) {
             return;
         }
