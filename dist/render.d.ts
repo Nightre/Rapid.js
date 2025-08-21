@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IPolygonGraphicRenderOptions } from './interface';
+import { ICircleRenderOptions, IGraphicRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IPolygonGraphicRenderOptions, ITilemapLayerOptions } from './interface';
 import { LightManager } from './light';
 import { Color, MatrixStack, Vec2 } from './math';
 import { default as RenderRegion } from './regions/region';
@@ -107,7 +107,7 @@ declare class Rapid {
      * @param data - The map data to render.
      * @param options - The options for rendering the tile map layer.
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void;
+    renderTileMapLayer(data: (number | string)[][], options: ITilemapLayerOptions | TileSet): import('./interface').IRegisterTileOptions[];
     /**
      * Renders a sprite with the specified options.
      *

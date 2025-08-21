@@ -1,40 +1,53 @@
-import { Entity } from "./game";
+import EventEmitter from "eventemitter3";
+import { Component, GameObject, Game } from "./game";
+import { BodyType, IBodyOptions, IComponentOptions, IParticleBodyOptions, ITilemapBodyOptions } from "./interface";
 import { Vec2 } from "./math";
+import { Particle, ParticleEmitter } from "./particle"; // Assuming Particle type is exported from here
+import { Tilemap } from "./tilemap";
 
 /**
- * Interface defining the result of a collision check.
+ * Interface defining the result of a collision check between two colliders.
  */
 export interface CollisionResult {
-    /**
-     * Indicates whether a collision occurred.
-     */
     collided: boolean;
-    /**
-     * The Minimum Translation Vector (MTV).
-     * If a collision occurred (collided is true), this vector indicates the direction
-     * to move the first object (A) to resolve the collision, with its magnitude being the overlap depth.
-     * Undefined if no collision occurred.
-     */
     mtv?: Vec2;
 }
+
+/**
+ * Interface defining the detailed results for a collision event,
+ * including the specific colliders involved.
+ */
+export interface DetailedCollisionResult {
+    /** The collider on the body receiving the event. */
+    colliderA: Collider;
+    /** The collider on the other body. */
+    colliderB: Collider;
+    /** The MTV to resolve this specific collider-pair collision. */
+    mtv: Vec2;
+    /** The other entity involved in the collision. */
+    otherEntity: GameObject;
+}
+
 
 /**
  * Abstract base class for all colliders.
  * Each collider is attached to an Entity.
  */
 export abstract class Collider {
-    entity: Entity;
+    entity: GameObject;
     offset: Vec2;
+    /** A place to store extra data, useful for linking back to parent objects like individual particles. */
+    extraData: any
 
-    constructor(entity: Entity, offset: Vec2 = new Vec2(0, 0)) {
-        this.entity = entity;
+    constructor(parent: Body | GameObject, offset: Vec2 = new Vec2(0, 0)) {
+        if (parent instanceof Body) {
+            this.entity = parent.entity!;
+        } else {
+            this.entity = parent;
+        }
         this.offset = offset;
     }
 
-    /**
-     * Gets the world-space position of the collider's center.
-     * @returns The world position as a Vec2.
-     */
     getWorldPosition(): Vec2 {
         this.entity.updateTransform(true);
         return this.entity.transform.transformPoint(this.offset) as Vec2;
@@ -47,16 +60,11 @@ export abstract class Collider {
 export class CircleCollider extends Collider {
     radius: number;
 
-    constructor(entity: Entity, radius: number, offset?: Vec2) {
-        super(entity, offset);
+    constructor(parent: Body | GameObject, radius: number, offset?: Vec2) {
+        super(parent, offset);
         this.radius = radius;
     }
 
-    /**
-     * Gets the world-space radius, accounting for entity scaling.
-     * Uses the larger absolute value of the entity's x or y scale.
-     * @returns The world radius.
-     */
     getWorldRadius(): number {
         const scale = this.entity.scale;
         return this.radius * Math.max(Math.abs(scale.x), Math.abs(scale.y));
@@ -67,8 +75,8 @@ export class CircleCollider extends Collider {
  * Point collider, treated as a circle with zero radius.
  */
 export class PointCollider extends CircleCollider {
-    constructor(entity: Entity, offset?: Vec2) {
-        super(entity, 0, offset);
+    constructor(parent: Body | GameObject, offset?: Vec2) {
+        super(parent, 0, offset);
     }
 }
 
@@ -79,25 +87,17 @@ export class PointCollider extends CircleCollider {
 export class PolygonCollider extends Collider {
     localVertices: Vec2[];
 
-    constructor(entity: Entity, vertices: Vec2[], offset?: Vec2) {
-        super(entity, offset);
+    constructor(parent: Body | GameObject, vertices: Vec2[], offset?: Vec2) {
+        super(parent, offset);
         this.localVertices = vertices;
     }
 
-    /**
-     * Gets the world-space vertices of the polygon.
-     * @returns Array of vertices in world coordinates.
-     */
     getWorldVertices(): Vec2[] {
         this.entity.updateTransform(true);
         const transform = this.entity.transform;
         return this.localVertices.map(v => transform.transformPoint(v.add(this.offset))) as Vec2[];
     }
 
-    /**
-     * Gets normalized axes (normals) for SAT collision detection.
-     * @returns Array of normalized axis vectors.
-     */
     getAxes(): Vec2[] {
         const vertices = this.getWorldVertices();
         const axes: Vec2[] = [];
@@ -126,12 +126,6 @@ export class PolygonCollider extends Collider {
 
 type Projection = { min: number; max: number };
 
-/**
- * Projects vertices onto an axis and returns the projection range.
- * @param vertices Array of vertices to project.
- * @param axis Normalized axis vector.
- * @returns Projection range with min and max values.
- */
 function projectVertices(vertices: Vec2[], axis: Vec2): Projection {
     let min = Infinity;
     let max = -Infinity;
@@ -143,13 +137,6 @@ function projectVertices(vertices: Vec2[], axis: Vec2): Projection {
     return { min, max };
 }
 
-/**
- * Projects a circle onto an axis.
- * @param center Center of the circle.
- * @param radius Radius of the circle.
- * @param axis Normalized axis vector.
- * @returns Projection range with min and max values.
- */
 function projectCircle(center: Vec2, radius: number, axis: Vec2): Projection {
     const centerProjection = center.dot(axis);
     return {
@@ -158,12 +145,6 @@ function projectCircle(center: Vec2, radius: number, axis: Vec2): Projection {
     };
 }
 
-/**
- * Checks collision between two polygon colliders using SAT.
- * @param polyA First polygon collider.
- * @param polyB Second polygon collider.
- * @returns Collision result with MTV if collision occurred.
- */
 function checkPolygonPolygon(polyA: PolygonCollider, polyB: PolygonCollider): CollisionResult {
     const axes = polyA.getAxes().concat(polyB.getAxes());
     let overlap = Infinity;
@@ -172,13 +153,8 @@ function checkPolygonPolygon(polyA: PolygonCollider, polyB: PolygonCollider): Co
     for (const axis of axes) {
         const projA = projectVertices(polyA.getWorldVertices(), axis);
         const projB = projectVertices(polyB.getWorldVertices(), axis);
-
         const currentOverlap = Math.min(projA.max, projB.max) - Math.max(projA.min, projB.min);
-
-        if (currentOverlap <= 0) {
-            return { collided: false };
-        }
-
+        if (currentOverlap <= 0) return { collided: false };
         if (currentOverlap < overlap) {
             overlap = currentOverlap;
             smallestAxis = axis;
@@ -187,24 +163,11 @@ function checkPolygonPolygon(polyA: PolygonCollider, polyB: PolygonCollider): Co
 
     if (!smallestAxis) return { collided: false };
 
-    const centerA = polyA.getWorldPosition();
-    const centerB = polyB.getWorldPosition();
-    const direction = centerA.subtract(centerB);
-
-    if (direction.dot(smallestAxis) < 0) {
-        smallestAxis.invert();
-    }
-
-    const mtv = smallestAxis.multiply(overlap);
-    return { collided: true, mtv: mtv };
+    const direction = polyA.getWorldPosition().subtract(polyB.getWorldPosition());
+    if (direction.dot(smallestAxis) < 0) smallestAxis.invert();
+    return { collided: true, mtv: smallestAxis.multiply(overlap) };
 }
 
-/**
- * Checks collision between two circle colliders.
- * @param circleA First circle collider.
- * @param circleB Second circle collider.
- * @returns Collision result with MTV if collision occurred.
- */
 function checkCircleCircle(circleA: CircleCollider, circleB: CircleCollider): CollisionResult {
     const centerA = circleA.getWorldPosition();
     const centerB = circleB.getWorldPosition();
@@ -215,27 +178,14 @@ function checkCircleCircle(circleA: CircleCollider, circleB: CircleCollider): Co
     const distanceSq = delta.x * delta.x + delta.y * delta.y;
     const radiiSum = radiusA + radiusB;
 
-    if (distanceSq >= radiiSum * radiiSum) {
-        return { collided: false };
-    }
+    if (distanceSq >= radiiSum * radiiSum) return { collided: false };
 
     const distance = Math.sqrt(distanceSq);
     const overlap = radiiSum - distance;
-
-    if (distance === 0) {
-        return { collided: true, mtv: new Vec2(overlap, 0) };
-    }
-
-    const mtv = delta.normalize().multiply(overlap);
-    return { collided: true, mtv: mtv };
+    if (distance === 0) return { collided: true, mtv: new Vec2(overlap, 0) };
+    return { collided: true, mtv: delta.normalize().multiply(overlap) };
 }
 
-/**
- * Checks collision between a polygon and a circle using SAT.
- * @param poly Polygon collider.
- * @param circle Circle collider.
- * @returns Collision result with MTV if collision occurred.
- */
 function checkPolygonCircle(poly: PolygonCollider, circle: CircleCollider): CollisionResult {
     const vertices = poly.getWorldVertices();
     const axes = poly.getAxes();
@@ -264,13 +214,8 @@ function checkPolygonCircle(poly: PolygonCollider, circle: CircleCollider): Coll
     for (const axis of axes) {
         const projPoly = projectVertices(vertices, axis);
         const projCircle = projectCircle(circleCenter, circleRadius, axis);
-
         const currentOverlap = Math.min(projPoly.max, projCircle.max) - Math.max(projPoly.min, projCircle.min);
-
-        if (currentOverlap <= 0) {
-            return { collided: false };
-        }
-
+        if (currentOverlap <= 0) return { collided: false };
         if (currentOverlap < overlap) {
             overlap = currentOverlap;
             smallestAxis = axis;
@@ -279,51 +224,248 @@ function checkPolygonCircle(poly: PolygonCollider, circle: CircleCollider): Coll
 
     if (!smallestAxis) return { collided: false };
 
-    const polyCenter = poly.getWorldPosition();
-    const direction = polyCenter.subtract(circleCenter);
-
-    if (direction.dot(smallestAxis) < 0) {
-        smallestAxis.invert();
-    }
-
-    const mtv = smallestAxis.multiply(overlap);
-    return { collided: true, mtv: mtv };
+    const direction = poly.getWorldPosition().subtract(circleCenter);
+    if (direction.dot(smallestAxis) < 0) smallestAxis.invert();
+    return { collided: true, mtv: smallestAxis.multiply(overlap) };
 }
 
-/**
- * Checks for collision between two entities or colliders and returns detailed results.
- * @param entityA First entity or collider (active participant).
- * @param entityB Second entity or collider (passive participant).
- * @returns Collision result with MTV to push entityA away from entityB.
- */
-export function checkCollision(entityA: Entity | Collider, entityB: Entity | Collider): CollisionResult {
-    const colliderA = entityA instanceof Entity ? entityA.collider : entityA;
-    const colliderB = entityB instanceof Entity ? entityB.collider : entityB;
-
-    if (!colliderA || !colliderB) {
+export function checkCollision(colliderA: Collider, colliderB: Collider): CollisionResult {
+    if (!colliderA || !colliderB || colliderA.entity === colliderB.entity) {
         return { collided: false };
     }
 
     if (colliderA instanceof PolygonCollider) {
-        if (colliderB instanceof PolygonCollider) {
-            return checkPolygonPolygon(colliderA, colliderB);
-        }
-        else if (colliderB instanceof CircleCollider) {
-            return checkPolygonCircle(colliderA, colliderB);
-        }
-    }
-    else if (colliderA instanceof CircleCollider) {
+        if (colliderB instanceof PolygonCollider) return checkPolygonPolygon(colliderA, colliderB);
+        if (colliderB instanceof CircleCollider) return checkPolygonCircle(colliderA, colliderB);
+    } else if (colliderA instanceof CircleCollider) {
         if (colliderB instanceof PolygonCollider) {
             const result = checkPolygonCircle(colliderB, colliderA);
-            if (result.mtv) {
-                result.mtv.invert();
-            }
+            if (result.mtv) result.mtv.invert();
             return result;
         }
-        else if (colliderB instanceof CircleCollider) {
-            return checkCircleCircle(colliderA, colliderB);
+        if (colliderB instanceof CircleCollider) return checkCircleCircle(colliderA, colliderB);
+    }
+    return { collided: false };
+}
+
+export class PhysicsManager {
+    game: Game;
+    components: Set<Body> = new Set();
+
+    constructor(game: Game) {
+        this.game = game;
+    }
+
+    addComponent(component: Body) {
+        this.components.add(component);
+    }
+
+    removeComponent(component: Body) {
+        this.components.delete(component);
+    }
+
+    onPhysics(dt: number) {
+        const componentArray = Array.from(this.components);
+        if (componentArray.length < 2) return;
+
+        // **CHANGE**: Store detailed collision results for each body.
+        const collisionEvents = new Map<Body, DetailedCollisionResult[]>();
+        componentArray.forEach(c => collisionEvents.set(c, []));
+
+        for (let i = 0; i < componentArray.length; i++) {
+            for (let j = i + 1; j < componentArray.length; j++) {
+                const compA = componentArray[i];
+                const compB = componentArray[j];
+
+                if (compA.disabled || compB.disabled) continue;
+
+                for (const colliderA of compA.colliders) {
+                    for (const colliderB of compB.colliders) {
+                        const result = checkCollision(colliderA, colliderB);
+                        if (result.collided) {
+                            const mtvA = result.mtv!;
+                            const mtvB = mtvA.clone().invert();
+
+                            // **CHANGE**: Instead of a simple MTV, push a detailed result object.
+                            collisionEvents.get(compA)!.push({
+                                colliderA: colliderA,
+                                colliderB: colliderB,
+                                mtv: mtvA,
+                                otherEntity: compB.entity!
+                            });
+                            collisionEvents.get(compB)!.push({
+                                colliderA: colliderB,
+                                colliderB: colliderA,
+                                mtv: mtvB,
+                                otherEntity: compA.entity!
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Now, process the results to fire enter/exit events
+        for (const component of this.components) {
+            const allFrameCollisions = collisionEvents.get(component)!;
+            const oldCollisions = component.activeCollisions;
+
+            // **CHANGE**: Group new collisions by the other entity to manage enter/exit events.
+            const newCollisionsGrouped = new Map<GameObject, DetailedCollisionResult[]>();
+            for (const collision of allFrameCollisions) {
+                if (!newCollisionsGrouped.has(collision.otherEntity)) {
+                    newCollisionsGrouped.set(collision.otherEntity, []);
+                }
+                newCollisionsGrouped.get(collision.otherEntity)!.push(collision);
+            }
+
+            // Check for new collisions (onBodyEnter)
+            for (const [entity, results] of newCollisionsGrouped.entries()) {
+                if (!oldCollisions.has(entity)) {
+                    component.onBodyEnter?.(entity, results);
+                }
+            }
+
+            // Check for ended collisions (onBodyExit)
+            for (const entity of oldCollisions.keys()) {
+                if (!newCollisionsGrouped.has(entity)) {
+                    component.onBodyExit?.(entity);
+                }
+            }
+
+            // Update the component's state for the next frame
+            component.activeCollisions = newCollisionsGrouped;
+        }
+    }
+}
+
+type BodyEvents = {
+    onBodyEnter: (otherEntity: GameObject, results: DetailedCollisionResult[]) => void
+    onBodyExit: (entity: GameObject) => void
+}
+
+export class Body extends Component {
+    colliders: Collider[] = [];
+    declare options: IBodyOptions;
+    declare event: EventEmitter<BodyEvents>
+
+    // **CHANGE**: The active collisions map now stores a list of detailed results for each colliding entity.
+    activeCollisions: Map<GameObject, DetailedCollisionResult[]> = new Map();
+
+    velocity: Vec2 = Vec2.ZERO;
+    acceleration: Vec2 = Vec2.ZERO;
+    bodyType: BodyType;
+    disabled: boolean = false;
+
+    constructor(options: IBodyOptions) {
+        super(options);
+        this.bodyType = options.bodyType ?? BodyType.STATIC;
+    }
+
+    getCollidedObjects(){
+        return this.activeCollisions.keys()
+    }
+
+    override onAttach(entity: GameObject): void {
+        super.onAttach(entity);
+        const options = this.options;
+        this.colliders.length = 0;
+        if (Array.isArray(options.colliders)) {
+            this.colliders.push(...options.colliders);
+        } else {
+            this.colliders.push(options.colliders);
+        }
+        this.game.physics.addComponent(this);
+    }
+
+    override onDetach(): void {
+        this.game.physics.removeComponent(this);
+        this.colliders = [];
+        this.activeCollisions.clear();
+        super.onDetach();
+    }
+
+    onBodyEnter(otherEntity: GameObject, results: DetailedCollisionResult[]) {
+        this.event.emit("onBodyEnter", otherEntity, results)
+        if (this.bodyType === BodyType.DYNAMIC) {
+            // Default behavior: sum all MTVs from this collision partner and apply it.
+            const totalMtv = new Vec2(0, 0);
+            for (const result of results) {
+                totalMtv.addSelf(result.mtv);
+            }
+            this.entity.position.addSelf(totalMtv);
         }
     }
 
-    return { collided: false };
+    onBodyExit(entity: GameObject) {
+        this.event.emit("onBodyExit", entity)
+    }
+
+    override onPhysics(dt: number): void {
+        if (this.disabled) return;
+        const entity = this.entity;
+
+        switch (this.bodyType) {
+            case BodyType.STATIC:
+                break;
+            case BodyType.KINEMATIC:
+                if (!this.velocity.equal(Vec2.ZERO)) {
+                    entity.position.addSelf(this.velocity.multiply(dt));
+                }
+                break;
+
+            case BodyType.DYNAMIC:
+                this.velocity.addSelf(this.acceleration.multiply(dt));
+                entity.position.addSelf(this.velocity.multiply(dt));
+                break;
+        }
+    }
+}
+
+export class TilemapBody extends Body {
+    tilemap: Tilemap;
+    constructor(options: ITilemapBodyOptions) {
+        super(options);
+        this.tilemap = options.tilemap;
+    }
+    override onUpdate(_dt: number): void {
+        super.onUpdate(_dt);
+        this.colliders.length = 0;
+        this.tilemap.displayTiles.forEach(tiles => {
+            if (Array.isArray(tiles.colliders)) {
+                this.colliders.push(...tiles.colliders);
+            } else if (tiles.colliders) {
+                this.colliders.push(tiles.colliders);
+            }
+        });
+    }
+}
+
+export class PartcileBody extends Body {
+    particle: ParticleEmitter;
+    constructor(options: IParticleBodyOptions) {
+        super(options);
+        this.particle = options.particle;
+    }
+
+    override onUpdate(_dt: number): void {
+        super.onUpdate(_dt);
+
+        this.colliders.length = 0;
+        this.particle.particles.forEach(particle => {
+            if (particle) {
+                particle.updateOffset();
+                // **IMPORTANT**: Link the collider back to the particle instance.
+                particle.collider.extraData = particle;
+                this.colliders.push(particle.collider);
+            }
+        });
+    }
+
+    override onBodyEnter(otherEntity: GameObject, results: DetailedCollisionResult[]): void {
+        for (const result of results) {
+            const particle = result.colliderA.extraData as Particle;
+            particle.position.addSelf(result.mtv);
+        }
+    }
 }

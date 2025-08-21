@@ -1,9 +1,9 @@
 import Rapid from "./render";
-import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions } from "./interface";
+import { IRegisterTileOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions as ITilemapComponentOptions, ITilemapLayerOptions } from "./interface";
 import { Texture } from "./texture";
 import { Vec2 } from "./math";
 import warn from "./log";
-import { Entity, Game } from "./game";
+import { Component, GameObject, Game } from "./game";
 
 /**
  * Represents a tileset that manages tile textures and their properties.
@@ -70,17 +70,9 @@ export class TileMapRender {
      * @returns Object containing x and y error offsets.
      * @private
      */
-    private getOffset(options: ILayerRenderOptions) {
-        let errorX = (options.errorX ?? 2) + 1;
-        let errorY = (options.errorY ?? 2) + 1;
-        if (typeof options.error === 'number') {
-            const error = (options.error ?? 2) + 1;
-            errorX = error;
-            errorY = error;
-        } else if (options.error) {
-            errorX = options.error.x + 1;
-            errorY = options.error.y + 1;
-        }
+    private getOffset(options: ITilemapLayerOptions) {
+        const errorX = (options.error ? options.error.x : 2) + 1;
+        const errorY = (options.error ? options.error.y : 2) + 1;
         return { errorX, errorY };
     }
 
@@ -91,7 +83,7 @@ export class TileMapRender {
      * @returns Object containing calculated tile rendering data.
      * @private
      */
-    private getTileData(tileSet: TileSet, options: ILayerRenderOptions) {
+    private getTileData(tileSet: TileSet, options: ITilemapLayerOptions) {
         const shape = options.shape ?? TilemapShape.SQUARE;
         const width = tileSet.width;
         const height = shape === TilemapShape.ISOMETRIC ? tileSet.height / 2 : tileSet.height;
@@ -146,10 +138,10 @@ export class TileMapRender {
      * @param data - A 2D array representing the tilemap data.
      * @param options - The rendering options for the tilemap layer.
      */
-    renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void {
-        this.rapid.matrixStack.applyTransform(options);
+    renderLayer(data: (number | string)[][], options: ITilemapLayerOptions) {
+        //this.rapid.matrixStack.applyTransform(options);
         const tileSet = options.tileSet;
-
+        const displayTiles: IRegisterTileOptions[] = []
         const {
             startTile,
             viewportWidth,
@@ -199,6 +191,7 @@ export class TileMapRender {
                         ...edata,
                     }
                 });
+                displayTiles.push(tile)
             }
         }
 
@@ -218,8 +211,8 @@ export class TileMapRender {
                 this.rapid.renderSprite(item.renderSprite);
             }
         }
-
-        this.rapid.matrixStack.applyTransformAfter(options);
+        return displayTiles
+        //this.rapid.matrixStack.applyTransformAfter(options);
     }
 
     /**
@@ -228,7 +221,7 @@ export class TileMapRender {
      * @param options - The rendering options.
      * @returns The map coordinates.
      */
-    localToMap(local: Vec2, options: ILayerRenderOptions) {
+    localToMap(local: Vec2, options: ITilemapLayerOptions) {
         const tileSet = options.tileSet
         if (options.shape === TilemapShape.ISOMETRIC) {
 
@@ -305,7 +298,7 @@ export class TileMapRender {
      * @param options - The rendering options.
      * @returns The local coordinates.
      */
-    mapToLocal(map: Vec2, options: ILayerRenderOptions) {
+    mapToLocal(map: Vec2, options: ITilemapLayerOptions) {
         const tileSet = options.tileSet
         if (options.shape === TilemapShape.ISOMETRIC) {
             let pos = new Vec2(
@@ -329,7 +322,7 @@ export class TileMapRender {
 /**
  * Tilemap entity for rendering tiled maps.
  */
-export class Tilemap extends Entity {
+export class Tilemap extends Component {
     static readonly DEFAULT_ERROR = 0;
     static readonly EMPTY_TILE = -1;
 
@@ -340,23 +333,19 @@ export class Tilemap extends Entity {
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
     ySortCallback: YSortCallback[] = [];
     enableYsort: boolean
+    declare options: ITilemapComponentOptions
 
+    displayTiles: IRegisterTileOptions[] = []
+
+    protected override patchMethods: (keyof GameObject)[] = ['render'];
     /**
      * Creates a tilemap entity.
      * @param game - The game instance this tilemap belongs to.
      * @param options - Configuration options for the tilemap.
      */
-    constructor(game: Game, options: IEntityTilemapLayerOptions) {
-        super(game, options);
-        if (options.error) {
-            if (typeof options.error === "number") {
-                this.error = new Vec2(options.error);
-            } else {
-                this.error = options.error;
-            }
-        } else {
-            this.error = new Vec2(options.errorX ?? Tilemap.DEFAULT_ERROR, options.errorY ?? Tilemap.DEFAULT_ERROR);
-        }
+    constructor(options: ITilemapComponentOptions) {
+        super(options);
+        this.error = options.error ?? new Vec2(Tilemap.DEFAULT_ERROR);
         this.tileSet = options.tileSet;
         this.shape = options.shape ?? TilemapShape.SQUARE;
         this.eachTile = options.eachTile;
@@ -367,13 +356,13 @@ export class Tilemap extends Entity {
      * Collects renderable entities, excluding children unless they override onRender.
      * @param queue - The array to collect renderable entities.
      */
-    override render(queue: Entity[]): void {
+    render(queue: GameObject[]): void {
         if (this.enableYsort) {
-            if (this.onRender !== Entity.prototype.onRender) {
-                queue.push(this);
+            if (this.onRender !== GameObject.prototype.onRender) {
+                queue.push(this.entity);
             }
         } else {
-            super.render(queue)
+            this.callOriginal("render", queue)
         }
     }
 
@@ -448,7 +437,7 @@ export class Tilemap extends Entity {
      * @param local - The local coordinates to convert.
      */
     public localToMap(local: Vec2): void {
-        this.rapid.tileMap.localToMap(local, { tileSet: this.tileSet });
+        this.rapid.tileMap.localToMap(local, this.options);
     }
 
     /**
@@ -456,7 +445,7 @@ export class Tilemap extends Entity {
      * @param local - The map coordinates to convert.
      */
     public mapToLocal(local: Vec2): void {
-        this.rapid.tileMap.mapToLocal(local, { tileSet: this.tileSet });
+        this.rapid.tileMap.mapToLocal(local, this.options);
     }
 
     /**
@@ -465,19 +454,17 @@ export class Tilemap extends Entity {
      */
     override onRender(render: Rapid): void {
         const ySortCallback: YSortCallback[] = [...this.ySortCallback];
-
+        const entity = this.entity
         if (this.enableYsort) {
-            this.children.forEach(child => {
+            entity.children.forEach(child => {
                 ySortCallback.push({
                     ySort: child.localZindex,
                     entity: child
                 });
             });
         }
-        render.renderTileMapLayer(this.data, {
-            error: this.error,
-            tileSet: this.tileSet,
-            eachTile: this.eachTile,
+        this.displayTiles = render.renderTileMapLayer(this.data, {
+            ...this.options,
             ySortCallback
         });
     }

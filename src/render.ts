@@ -1,4 +1,4 @@
-import { ICircleRenderOptions, IGraphicRenderOptions, ILayerRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleOptions, ICameraOptions, IPolygonGraphicRenderOptions, ScaleRadio } from "./interface"
+import { ICircleRenderOptions, IGraphicRenderOptions, IRapidOptions, IRectRenderOptions, IRenderLineOptions, ISpriteRenderOptions, ShaderType as ShaderType, ITransformOptions, MaskType, WebGLContext, BlendMode, ILightRenderOptions, IParticleConfigOptions, ICameraOptions, IPolygonGraphicRenderOptions, ScaleRadio, ITilemapLayerOptions } from "./interface"
 import { LightManager } from "./light"
 import { getLineGeometry } from "./line"
 import { Color, MatrixStack, Vec2 } from "./math"
@@ -318,8 +318,8 @@ class Rapid {
      * @param data - The map data to render.
      * @param options - The options for rendering the tile map layer.
      */
-    renderTileMapLayer(data: (number | string)[][], options: ILayerRenderOptions | TileSet): void {
-        this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
+    renderTileMapLayer(data: (number | string)[][], options: ITilemapLayerOptions | TileSet) {
+        return this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options)
     }
 
     /**

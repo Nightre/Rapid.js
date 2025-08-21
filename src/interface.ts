@@ -1,8 +1,10 @@
 import { AudioPlayer } from "./audio";
-import { Entity } from "./game";
+import { Collider } from "./collision";
+import { Component, GameObject } from "./game";
 import { Color, Vec2 } from "./math";
+import { ParticleEmitter } from "./particle";
 import { Texture } from "./texture";
-import { TileSet } from "./tilemap";
+import { Tilemap, TileSet } from "./tilemap";
 import GLShader from "./webgl/glshader";
 import { Uniform } from "./webgl/uniform";
 
@@ -73,7 +75,7 @@ export interface IAttribute {
     offset?: number
 }
 
-export interface IEntityTransformOptions {
+export interface IEntityOptions {
     position?: Vec2,
     scale?: Vec2 | number,
     rotation?: number,
@@ -84,9 +86,9 @@ export interface IEntityTransformOptions {
     tags?: string[]
 }
 
-export interface ITilemapEntityOptions extends IEntityTransformOptions {
-    tileset: TileSet
-}
+// export interface ITilemapEntityOptions extends IEntityOptions {
+//     tileset: TileSet
+// }
 
 export interface ITransformOptions {
     restoreTransform?: boolean,
@@ -203,25 +205,23 @@ export interface IRegisterTileOptions extends ISpriteRenderOptions {
     texture: Texture,
     offsetX?: number,
     offsetY?: number,
-    ySortOffset?: number
+    ySortOffset?: number,
+    colliders?: Collider | Collider[];
 }
 
 export interface YSortCallback {
     ySort: number,
     render?: () => void,
-    entity?: Entity
+    entity?: GameObject
     renderSprite?: ISpriteRenderOptions
 }
 
-export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IEntityTransformOptions {
+export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IComponentOptions {
     enableYsort: boolean
 }
 
 export interface ITilemapLayerOptions {
-    error?: number | Vec2,
-    errorX?: number,
-    errorY?: number,
-
+    error?: Vec2,
     ySortCallback?: Array<YSortCallback>,
     shape?: TilemapShape,
     tileSet: TileSet,
@@ -229,7 +229,6 @@ export interface ITilemapLayerOptions {
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void,
 }
 
-export interface ILayerRenderOptions extends ITransformOptions, ITilemapLayerOptions { }
 export interface IShaderRenderOptions {
     shader?: GLShader;
     uniforms?: Uniform,
@@ -264,8 +263,11 @@ export interface ILightRenderOptions {
     type?: MaskType
 }
 
+export interface IComponentOptions {
+    name?: string;
+}
 
-export interface ICameraOptions extends ITransformOptions {
+export interface ICameraOptions extends IComponentOptions {
     center?: boolean,
     enable?: boolean,
 
@@ -317,7 +319,7 @@ export interface ParticleAttribute<T extends number | Vec2 | Color> {
 /**
  * Particle system configuration options
  */
-export interface IParticleOptions extends ITransformOptions, IShaderRenderOptions {
+export interface IParticleConfigOptions extends IComponentOptions, IShaderRenderOptions {
     /**
      * Particle texture, can be a single texture, array of textures, or weighted texture array
      */
@@ -391,6 +393,12 @@ export interface IParticleOptions extends ITransformOptions, IShaderRenderOption
      * false means using global coordinates
      */
     localSpace?: boolean;
+
+    colliderRaduis?: number
+}
+
+export interface ICreateEntity extends IEntityOptions {
+    components: Component[]
 }
 
 /**
@@ -416,7 +424,7 @@ export type ParticleAttributeData<T extends ParticleAttributeTypes> = {
      */
     damping?: number,
 }
-export interface IParticleEmitterOptions extends IParticleOptions, IEntityTransformOptions {
+export interface IParticleEmitterOptions extends IParticleConfigOptions, IEntityOptions {
 }
 
 export interface IGameOptions extends IRapidOptions {
@@ -453,9 +461,29 @@ export interface IAnimation {
     loop: boolean;
 }
 
-export interface ISpriteOptions extends IEntityTransformOptions, ISpriteRenderOptions {
+export interface ISpriteOptions extends IComponentOptions, ISpriteRenderOptions {
     animations?: IAnimation;
 }
 
 
-export interface ILabelEntityOptions extends ITextTextureOptions, IEntityTransformOptions {}
+export interface ILabelEntityOptions extends ITextTextureOptions, IComponentOptions { }
+
+export interface IBodyOptions extends IComponentOptions {
+
+    colliders: Collider | Collider[];
+    bodyType?: BodyType
+}
+
+export interface ITilemapBodyOptions extends IBodyOptions {
+    tilemap: Tilemap
+}
+
+export interface IParticleBodyOptions extends IBodyOptions {
+    particle: ParticleEmitter
+}
+
+export enum BodyType {
+    STATIC = "static",
+    DYNAMIC = "dynamic",
+    KINEMATIC = "kinematic"
+}

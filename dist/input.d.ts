@@ -1,6 +1,6 @@
 import { Vec2 } from './math';
 import { default as Rapid } from './render';
-import { Entity } from './game';
+import { GameObject } from './game';
 /**
  * Manages user input for keyboard and mouse events.
  * Tracks key and button states, including pressed/released states for the current and previous frames.
@@ -80,7 +80,7 @@ export declare class InputManager {
      * @param entity - The entity to convert coordinates for.
      * @returns The mouse position in the entity's local coordinate system.
      */
-    getMouseLocal(entity: Entity): Vec2;
+    getMouseLocal(entity: GameObject): Vec2;
     getAxis(negativeAction: string, positiveAction: string): number;
     getVector(negativeX: string, positiveX: string, negativeY: string, positiveY: string): Vec2;
     /**

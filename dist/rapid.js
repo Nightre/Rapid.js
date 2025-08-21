@@ -44,6 +44,12 @@ var ParticleShape = /* @__PURE__ */ ((ParticleShape2) => {
   ParticleShape2["RECT"] = "rect";
   return ParticleShape2;
 })(ParticleShape || {});
+var BodyType = /* @__PURE__ */ ((BodyType2) => {
+  BodyType2["STATIC"] = "static";
+  BodyType2["DYNAMIC"] = "dynamic";
+  BodyType2["KINEMATIC"] = "kinematic";
+  return BodyType2;
+})(BodyType || {});
 const MATRIX_SIZE = 6;
 var ArrayType = /* @__PURE__ */ ((ArrayType2) => {
   ArrayType2[ArrayType2["Float32"] = 0] = "Float32";
@@ -281,9 +287,9 @@ class MatrixStack extends DynamicArrayBuffer {
    * Transforms a point by applying the current matrix stack.
    * @returns The transformed point as an array `[newX, newY]`.
    */
-  apply(x, y) {
+  transformPoint(x, y) {
     if (typeof x !== "number") {
-      return new Vec2(...this.apply(x.x, x.y));
+      return new Vec2(...this.transformPoint(x.x, x.y));
     }
     const offset = this.usedElemNum - MATRIX_SIZE;
     const arr = this.typedArray;
@@ -432,7 +438,7 @@ class MatrixStack extends DynamicArrayBuffer {
     );
   }
   localToGlobal(local) {
-    return this.apply(local);
+    return this.transformPoint(local);
   }
   /**
    * Convert the current matrix to a CSS transform string
@@ -762,7 +768,7 @@ const _Vec2 = class _Vec2 {
     if (Array.isArray(x)) {
       this.x = x[0];
       this.y = x[1];
-    } else if (y) {
+    } else if (y !== void 0) {
       this.x = x;
       this.y = y;
     } else {
@@ -973,6 +979,16 @@ const _Vec2 = class _Vec2 {
   lerp(target, factor) {
     this.x += (target.x - this.x) * factor;
     this.y += (target.y - this.y) * factor;
+    return this;
+  }
+  addSelf(v) {
+    this.x += v.x;
+    this.y += v.y;
+    return this;
+  }
+  subtractSelf(v) {
+    this.x -= v.x;
+    this.y -= v.y;
     return this;
   }
 };
@@ -1529,7 +1545,7 @@ class RenderRegion {
   //     return this.MAX_TEXTURE_UNIT_ARRAY.slice(usedTexture, -1)
   // }
   addVertex(x, y, ..._) {
-    const [tx, ty] = this.rapid.matrixStack.apply(x, y);
+    const [tx, ty] = this.rapid.matrixStack.transformPoint(x, y);
     this.webglArrayBuffer.pushFloat32(tx);
     this.webglArrayBuffer.pushFloat32(ty);
   }
@@ -2864,7 +2880,397 @@ class Timer extends EventEmitter {
     this.isRunning = false;
   }
 }
-class Entity {
+class Collider {
+  constructor(parent, offset = new Vec2(0, 0)) {
+    if (parent instanceof Body) {
+      this.entity = parent.entity;
+    } else {
+      this.entity = parent;
+    }
+    this.offset = offset;
+  }
+  getWorldPosition() {
+    this.entity.updateTransform(true);
+    return this.entity.transform.transformPoint(this.offset);
+  }
+}
+class CircleCollider extends Collider {
+  constructor(parent, radius, offset) {
+    super(parent, offset);
+    this.radius = radius;
+  }
+  getWorldRadius() {
+    const scale = this.entity.scale;
+    return this.radius * Math.max(Math.abs(scale.x), Math.abs(scale.y));
+  }
+}
+class PointCollider extends CircleCollider {
+  constructor(parent, offset) {
+    super(parent, 0, offset);
+  }
+}
+class PolygonCollider extends Collider {
+  constructor(parent, vertices, offset) {
+    super(parent, offset);
+    this.localVertices = vertices;
+  }
+  getWorldVertices() {
+    this.entity.updateTransform(true);
+    const transform = this.entity.transform;
+    return this.localVertices.map((v) => transform.transformPoint(v.add(this.offset)));
+  }
+  getAxes() {
+    const vertices = this.getWorldVertices();
+    const axes = [];
+    for (let i = 0; i < vertices.length; i++) {
+      const p1 = vertices[i];
+      const p2 = vertices[i + 1] || vertices[0];
+      const edge = p2.subtract(p1);
+      const normal = new Vec2(-edge.y, edge.x).normalize();
+      let unique = true;
+      for (const axis of axes) {
+        if (Math.abs(axis.dot(normal)) > 0.9999) {
+          unique = false;
+          break;
+        }
+      }
+      if (unique) {
+        axes.push(normal);
+      }
+    }
+    return axes;
+  }
+}
+function projectVertices(vertices, axis) {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const vertex of vertices) {
+    const projection = vertex.dot(axis);
+    if (projection < min) min = projection;
+    if (projection > max) max = projection;
+  }
+  return { min, max };
+}
+function projectCircle(center, radius, axis) {
+  const centerProjection = center.dot(axis);
+  return {
+    min: centerProjection - radius,
+    max: centerProjection + radius
+  };
+}
+function checkPolygonPolygon(polyA, polyB) {
+  const axes = polyA.getAxes().concat(polyB.getAxes());
+  let overlap = Infinity;
+  let smallestAxis = null;
+  for (const axis of axes) {
+    const projA = projectVertices(polyA.getWorldVertices(), axis);
+    const projB = projectVertices(polyB.getWorldVertices(), axis);
+    const currentOverlap = Math.min(projA.max, projB.max) - Math.max(projA.min, projB.min);
+    if (currentOverlap <= 0) return { collided: false };
+    if (currentOverlap < overlap) {
+      overlap = currentOverlap;
+      smallestAxis = axis;
+    }
+  }
+  if (!smallestAxis) return { collided: false };
+  const direction = polyA.getWorldPosition().subtract(polyB.getWorldPosition());
+  if (direction.dot(smallestAxis) < 0) smallestAxis.invert();
+  return { collided: true, mtv: smallestAxis.multiply(overlap) };
+}
+function checkCircleCircle(circleA, circleB) {
+  const centerA = circleA.getWorldPosition();
+  const centerB = circleB.getWorldPosition();
+  const radiusA = circleA.getWorldRadius();
+  const radiusB = circleB.getWorldRadius();
+  const delta = centerA.subtract(centerB);
+  const distanceSq = delta.x * delta.x + delta.y * delta.y;
+  const radiiSum = radiusA + radiusB;
+  if (distanceSq >= radiiSum * radiiSum) return { collided: false };
+  const distance = Math.sqrt(distanceSq);
+  const overlap = radiiSum - distance;
+  if (distance === 0) return { collided: true, mtv: new Vec2(overlap, 0) };
+  return { collided: true, mtv: delta.normalize().multiply(overlap) };
+}
+function checkPolygonCircle(poly, circle) {
+  const vertices = poly.getWorldVertices();
+  const axes = poly.getAxes();
+  const circleCenter = circle.getWorldPosition();
+  const circleRadius = circle.getWorldRadius();
+  let closestVertex = vertices[0];
+  let minDistanceSq = Infinity;
+  for (const vertex of vertices) {
+    const distSq = circleCenter.distanceTo(vertex) ** 2;
+    if (distSq < minDistanceSq) {
+      minDistanceSq = distSq;
+      closestVertex = vertex;
+    }
+  }
+  const axisToClosest = closestVertex.subtract(circleCenter);
+  if (axisToClosest.length() > 1e-9) {
+    axes.push(axisToClosest.normalize());
+  }
+  let overlap = Infinity;
+  let smallestAxis = null;
+  for (const axis of axes) {
+    const projPoly = projectVertices(vertices, axis);
+    const projCircle = projectCircle(circleCenter, circleRadius, axis);
+    const currentOverlap = Math.min(projPoly.max, projCircle.max) - Math.max(projPoly.min, projCircle.min);
+    if (currentOverlap <= 0) return { collided: false };
+    if (currentOverlap < overlap) {
+      overlap = currentOverlap;
+      smallestAxis = axis;
+    }
+  }
+  if (!smallestAxis) return { collided: false };
+  const direction = poly.getWorldPosition().subtract(circleCenter);
+  if (direction.dot(smallestAxis) < 0) smallestAxis.invert();
+  return { collided: true, mtv: smallestAxis.multiply(overlap) };
+}
+function checkCollision(colliderA, colliderB) {
+  if (!colliderA || !colliderB || colliderA.entity === colliderB.entity) {
+    return { collided: false };
+  }
+  if (colliderA instanceof PolygonCollider) {
+    if (colliderB instanceof PolygonCollider) return checkPolygonPolygon(colliderA, colliderB);
+    if (colliderB instanceof CircleCollider) return checkPolygonCircle(colliderA, colliderB);
+  } else if (colliderA instanceof CircleCollider) {
+    if (colliderB instanceof PolygonCollider) {
+      const result = checkPolygonCircle(colliderB, colliderA);
+      if (result.mtv) result.mtv.invert();
+      return result;
+    }
+    if (colliderB instanceof CircleCollider) return checkCircleCircle(colliderA, colliderB);
+  }
+  return { collided: false };
+}
+class PhysicsManager {
+  constructor(game) {
+    this.components = /* @__PURE__ */ new Set();
+    this.game = game;
+  }
+  addComponent(component) {
+    this.components.add(component);
+  }
+  removeComponent(component) {
+    this.components.delete(component);
+  }
+  onPhysics(dt) {
+    const componentArray = Array.from(this.components);
+    if (componentArray.length < 2) return;
+    const collisionEvents = /* @__PURE__ */ new Map();
+    componentArray.forEach((c) => collisionEvents.set(c, []));
+    for (let i = 0; i < componentArray.length; i++) {
+      for (let j = i + 1; j < componentArray.length; j++) {
+        const compA = componentArray[i];
+        const compB = componentArray[j];
+        if (compA.disabled || compB.disabled) continue;
+        for (const colliderA of compA.colliders) {
+          for (const colliderB of compB.colliders) {
+            const result = checkCollision(colliderA, colliderB);
+            if (result.collided) {
+              const mtvA = result.mtv;
+              const mtvB = mtvA.clone().invert();
+              collisionEvents.get(compA).push({
+                colliderA,
+                colliderB,
+                mtv: mtvA,
+                otherEntity: compB.entity
+              });
+              collisionEvents.get(compB).push({
+                colliderA: colliderB,
+                colliderB: colliderA,
+                mtv: mtvB,
+                otherEntity: compA.entity
+              });
+            }
+          }
+        }
+      }
+    }
+    for (const component of this.components) {
+      const allFrameCollisions = collisionEvents.get(component);
+      const oldCollisions = component.activeCollisions;
+      const newCollisionsGrouped = /* @__PURE__ */ new Map();
+      for (const collision of allFrameCollisions) {
+        if (!newCollisionsGrouped.has(collision.otherEntity)) {
+          newCollisionsGrouped.set(collision.otherEntity, []);
+        }
+        newCollisionsGrouped.get(collision.otherEntity).push(collision);
+      }
+      for (const [entity, results] of newCollisionsGrouped.entries()) {
+        if (!oldCollisions.has(entity)) {
+          component.onBodyEnter?.(entity, results);
+        }
+      }
+      for (const entity of oldCollisions.keys()) {
+        if (!newCollisionsGrouped.has(entity)) {
+          component.onBodyExit?.(entity);
+        }
+      }
+      component.activeCollisions = newCollisionsGrouped;
+    }
+  }
+}
+class Body extends Component {
+  constructor(options) {
+    super(options);
+    this.colliders = [];
+    this.activeCollisions = /* @__PURE__ */ new Map();
+    this.velocity = Vec2.ZERO;
+    this.acceleration = Vec2.ZERO;
+    this.disabled = false;
+    this.bodyType = options.bodyType ?? BodyType.STATIC;
+  }
+  getCollidedObjects() {
+    return this.activeCollisions.keys();
+  }
+  onAttach(entity) {
+    super.onAttach(entity);
+    const options = this.options;
+    this.colliders.length = 0;
+    if (Array.isArray(options.colliders)) {
+      this.colliders.push(...options.colliders);
+    } else {
+      this.colliders.push(options.colliders);
+    }
+    this.game.physics.addComponent(this);
+  }
+  onDetach() {
+    this.game.physics.removeComponent(this);
+    this.colliders = [];
+    this.activeCollisions.clear();
+    super.onDetach();
+  }
+  onBodyEnter(otherEntity, results) {
+    this.event.emit("onBodyEnter", otherEntity, results);
+    if (this.bodyType === BodyType.DYNAMIC) {
+      const totalMtv = new Vec2(0, 0);
+      for (const result of results) {
+        totalMtv.addSelf(result.mtv);
+      }
+      this.entity.position.addSelf(totalMtv);
+    }
+  }
+  onBodyExit(entity) {
+    this.event.emit("onBodyExit", entity);
+  }
+  onPhysics(dt) {
+    if (this.disabled) return;
+    const entity = this.entity;
+    switch (this.bodyType) {
+      case BodyType.STATIC:
+        break;
+      case BodyType.KINEMATIC:
+        if (!this.velocity.equal(Vec2.ZERO)) {
+          entity.position.addSelf(this.velocity.multiply(dt));
+        }
+        break;
+      case BodyType.DYNAMIC:
+        this.velocity.addSelf(this.acceleration.multiply(dt));
+        entity.position.addSelf(this.velocity.multiply(dt));
+        break;
+    }
+  }
+}
+class TilemapBody extends Body {
+  constructor(options) {
+    super(options);
+    this.tilemap = options.tilemap;
+  }
+  onUpdate(_dt) {
+    super.onUpdate(_dt);
+    this.colliders.length = 0;
+    this.tilemap.displayTiles.forEach((tiles) => {
+      if (Array.isArray(tiles.colliders)) {
+        this.colliders.push(...tiles.colliders);
+      } else if (tiles.colliders) {
+        this.colliders.push(tiles.colliders);
+      }
+    });
+  }
+}
+class PartcileBody extends Body {
+  constructor(options) {
+    super(options);
+    this.particle = options.particle;
+  }
+  onUpdate(_dt) {
+    super.onUpdate(_dt);
+    this.colliders.length = 0;
+    this.particle.particles.forEach((particle) => {
+      if (particle) {
+        particle.updateOffset();
+        particle.collider.extraData = particle;
+        this.colliders.push(particle.collider);
+      }
+    });
+  }
+  onBodyEnter(otherEntity, results) {
+    for (const result of results) {
+      const particle = result.colliderA.extraData;
+      particle.position.addSelf(result.mtv);
+    }
+  }
+}
+class Component {
+  constructor(options = {}) {
+    this.unique = true;
+    this.event = new EventEmitter();
+    this.patchMethods = [];
+    this.originalMethods = /* @__PURE__ */ new Map();
+    this.options = options;
+    this.name = options.name ?? this.constructor.name;
+  }
+  onAttach(entity) {
+    this.entity = entity;
+    this.game = entity.game;
+    this.rapid = entity.rapid;
+    this.patchEntityMethods();
+  }
+  onDetach() {
+    this.unpatchEntityMethods();
+  }
+  /**
+   * 辅助方法，用于在组件方法中调用 Entity 的原始方法
+   * @param methodName 要调用的原始方法名
+   * @param args 传递给原始方法的参数
+   */
+  callOriginal(methodName, ...args) {
+    const originalMethod = this.originalMethods.get(methodName);
+    if (originalMethod) {
+      return originalMethod(...args);
+    } else {
+      console.warn(`Original method "${methodName}" not found on entity.`);
+    }
+  }
+  patchEntityMethods() {
+    for (const methodName of this.patchMethods) {
+      const componentMethod = this[methodName];
+      const entityMethod = this.entity[methodName];
+      if (typeof componentMethod === "function" && typeof entityMethod === "function") {
+        this.originalMethods.set(methodName, entityMethod.bind(this.entity));
+        this.entity[methodName] = componentMethod.bind(this);
+      }
+    }
+  }
+  unpatchEntityMethods() {
+    for (const [methodName, originalMethod] of this.originalMethods.entries()) {
+      this.entity[methodName] = originalMethod;
+    }
+    this.originalMethods.clear();
+  }
+  onRenderQueue(queue) {
+  }
+  onUpdate(_dt) {
+  }
+  onRender(_rapid) {
+  }
+  onDispose() {
+  }
+  onPhysics(_dt) {
+  }
+}
+class GameObject {
   /**
    * Creates an entity with optional transform properties.
    * @param game - The game instance this entity belongs to.
@@ -2876,6 +3282,7 @@ class Entity {
     this.localZindex = 0;
     this.transform = new MatrixStack();
     this.children = [];
+    this.components = /* @__PURE__ */ new Map();
     this.transform.pushIdentity();
     this.game = game;
     this.rapid = game.render;
@@ -2906,6 +3313,63 @@ class Entity {
   set y(ny) {
     this.position.y = ny;
   }
+  /**
+   * Adds a component to this entity.
+   * @param component - The component instance to add.
+   * @returns The added component.
+   */
+  addComponent(component) {
+    const name = component.name;
+    if (component.unique && this.components.has(name)) {
+      throw new Error(`Component with name '${name}' already exists on entity.`);
+    }
+    this.components.set(name, component);
+    component.onAttach(this);
+    return component;
+  }
+  /**
+   * Removes a component by name or class.
+   * @param key - The component name (string) or class (constructor).
+   * @returns True if a component was removed, false otherwise.
+   */
+  removeComponent(key) {
+    const name = typeof key === "string" ? key : key.name;
+    const comp = this.components.get(name);
+    if (comp) {
+      comp.onDetach();
+      comp.onDispose();
+      this.components.delete(name);
+      return true;
+    }
+    return false;
+  }
+  /**
+   * Gets a component by name.
+   * @param name - The component name.
+   * @returns The component or null if not found.
+   */
+  getComponentByName(name) {
+    return this.components.get(name) ?? null;
+  }
+  /**
+   * Gets a component by class.
+   * @param ctor - The component class.
+   * @returns The component or null if not found.
+   */
+  getComponent(ctor) {
+    for (const comp of this.components.values()) {
+      if (comp instanceof ctor) {
+        return comp;
+      }
+    }
+    return null;
+  }
+  /**
+   * Checks if a component exists by name or class.
+   */
+  hasComponent(key) {
+    return typeof key === "string" ? this.components.has(key) : this.getComponent(key) !== null;
+  }
   getScene() {
     return this.game.getMainScene();
   }
@@ -2917,48 +3381,23 @@ class Entity {
     return this.parent ? this.parent.transform : this.rapid.matrixStack;
   }
   /**
-   * Updates the entity and its children.
-   * @param deltaTime - Time elapsed since the last update in seconds.
-   */
-  update(deltaTime) {
-    this.onUpdate(deltaTime);
-    for (const child of this.children) {
-      child.update(deltaTime);
-    }
-  }
-  /**
-   * Hook for custom update logic.
-   * @param deltaTime - Time elapsed since the last update in seconds.
-   */
-  onUpdate(deltaTime) {
-  }
-  /**
-   * Collects entities that need rendering.
-   * @param queue - The array to collect renderable entities.
-   * @ignore
-   */
-  collectRenderables(queue) {
-    this.updateTransform();
-    if (this.onRender !== Entity.prototype.onRender) {
-      queue.push(this);
-    }
-    for (const child of this.children) {
-      child.collectRenderables(queue);
-    }
-  }
-  /**
-   * Prepares the entity's transform before rendering.
-   * @ignore
-   */
-  beforeOnRender() {
-    const transform = this.transform;
-    this.rapid.matrixStack.setTransform(transform.getTransform());
-  }
-  /**
-   * Hook for custom rendering logic.
+   * Renders the entity and its components.
    * @param render - The rendering engine instance.
    */
   onRender(render) {
+    this.components.forEach((c) => c.onRender(render));
+  }
+  onRenderQueue(queue) {
+    this.components.forEach((c) => c.onRenderQueue(queue));
+  }
+  onUpdate(deltaTime) {
+    this.components.forEach((c) => c.onUpdate(deltaTime));
+  }
+  onPhysics(deltaTime) {
+    this.components.forEach((c) => c.onPhysics(deltaTime));
+  }
+  onDispose() {
+    this.components.forEach((c) => c.onDispose());
   }
   /**
    * Updates the entity's transform, optionally updating parent transforms.
@@ -2985,6 +3424,7 @@ class Entity {
     }
     child.parent = this;
     this.children.push(child);
+    return this;
   }
   /**
    * Removes a child entity from this entity.
@@ -2996,6 +3436,7 @@ class Entity {
       child.parent = null;
       this.children.splice(index, 1);
     }
+    return this;
   }
   /**
    * Finds descendant entities matching a predicate.
@@ -3027,7 +3468,7 @@ class Entity {
    * Finds descendant entities with all specified tags.
    * @param tags - Array of tags to match.
    * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
-   * @returns A single entity, an array of entities, or null if no matches are found.
+   * @returns A single entity, an array of entities, or null if not found.
    */
   findDescendantByTag(tags, onlyFirst = false) {
     const predicate = (entity) => {
@@ -3037,13 +3478,57 @@ class Entity {
     return this.findDescendant(predicate, onlyFirst);
   }
   /**
-   * Disposes of the entity and its children.
+   * Disposes of the entity, its components, and its children.
    */
   dispose() {
     this.postDispose();
+    this.onDispose();
     if (this.parent) {
       this.parent.removeChild(this);
     }
+  }
+  /**
+   * Updates the entity, its components, and its children.
+   * @param deltaTime - Time elapsed since the last update in seconds.
+   */
+  processUpdate(deltaTime) {
+    this.onUpdate(deltaTime);
+    for (const child of this.children) {
+      child.processUpdate(deltaTime);
+    }
+  }
+  /**
+   * Updates the entity, its components, and its children.
+   * @param deltaTime - Time elapsed since the last update in seconds.
+   */
+  processPhysics(deltaTime) {
+    this.onPhysics(deltaTime);
+    for (const child of this.children) {
+      child.processPhysics(deltaTime);
+    }
+  }
+  /**
+   * Collects entities and components that need rendering.
+   * @param queue - The array to collect renderable entities.
+   * @ignore
+   */
+  render(queue) {
+    this.updateTransform();
+    this.onRenderQueue(queue);
+    if (this.onRender !== GameObject.prototype.onRender) {
+      queue.push(this);
+    }
+    for (const child of this.children) {
+      child.render(queue);
+    }
+  }
+  /**
+   * Prepares the entity's transform before rendering.
+   * @ignore
+   */
+  beforeRender() {
+    const transform = this.transform;
+    this.rapid.matrixStack.setTransform(transform.getTransform());
   }
   /**
    * Hook for custom cleanup logic before disposal.
@@ -3059,27 +3544,40 @@ class Entity {
   getMouseGlobalPosition() {
     return this.game.input.mousePosition;
   }
+  static create(game, options) {
+    const entity = new GameObject(game, options);
+    options.components.forEach((c) => {
+      entity.addComponent(c);
+    });
+    return entity;
+  }
 }
-class CanvasLayer extends Entity {
-  constructor(game, options) {
-    super(game, options);
+class CanvasLayer extends Component {
+  constructor(options) {
+    super(options);
+    this.patchMethods = ["updateTransform"];
+  }
+  onAttach(entity) {
+    super.onAttach(entity);
   }
   updateTransform() {
-    this.transform.identity();
+    this.entity.transform.identity();
   }
 }
-class Camera extends Entity {
-  constructor(game, options = {}) {
-    super(game, options);
+class Camera extends Component {
+  constructor(options = {}) {
+    super(options);
+    this.patchMethods = ["updateTransform"];
     this.enable = false;
     this.center = false;
     this.positionSmoothingSpeed = 0;
     this.rotationSmoothingSpeed = 0;
+    const entity = this.entity;
     this.center = options.center ?? true;
     this.positionSmoothingSpeed = options.positionSmoothingSpeed ?? 0;
     this.rotationSmoothingSpeed = options.rotationSmoothingSpeed ?? 0;
-    this._currentRenderPosition = this.position.clone();
-    this._currentRenderRotation = this.rotation;
+    this._currentRenderPosition = entity.position.clone();
+    this._currentRenderRotation = entity.rotation;
     this.setEnable(options.enable ?? false);
   }
   /**
@@ -3094,25 +3592,30 @@ class Camera extends Entity {
       this.game.setMainCamera(null);
     }
   }
+  onAttach(entity) {
+    super.onAttach(entity);
+  }
   /**
    * 每帧更新，用于平滑摄像机的【局部】变换属性。
    * @param deltaTime 
    */
   onUpdate(deltaTime) {
+    super.onUpdate(deltaTime);
+    const entity = this.entity;
     if (this.positionSmoothingSpeed > 0) {
       const factor = 1 - Math.exp(-this.positionSmoothingSpeed * deltaTime);
-      this._currentRenderPosition.lerp(this.position, factor);
+      this._currentRenderPosition.lerp(entity.position, factor);
     } else {
-      this._currentRenderPosition.copy(this.position);
+      this._currentRenderPosition.copy(entity.position);
     }
     if (this.rotationSmoothingSpeed > 0) {
       const factor = 1 - Math.exp(-this.rotationSmoothingSpeed * deltaTime);
-      let diff = this.rotation - this._currentRenderRotation;
+      let diff = entity.rotation - this._currentRenderRotation;
       while (diff < -Math.PI) diff += Math.PI * 2;
       while (diff > Math.PI) diff -= Math.PI * 2;
       this._currentRenderRotation += diff * factor;
     } else {
-      this._currentRenderRotation = this.rotation;
+      this._currentRenderRotation = entity.rotation;
     }
   }
   /**
@@ -3120,23 +3623,28 @@ class Camera extends Entity {
    * 这个方法现在正确地处理了父子关系。
    */
   updateTransform() {
-    const parentTransform = this.getParentTransform();
-    const globalTransform = this.transform;
+    const entity = this.entity;
+    const render = this.rapid;
+    const parentTransform = entity.getParentTransform();
+    const globalTransform = entity.transform;
     globalTransform.setTransform(parentTransform.getTransform());
     globalTransform.translate(this._currentRenderPosition);
     globalTransform.rotate(this._currentRenderRotation);
-    globalTransform.scale(this.scale);
+    globalTransform.scale(entity.scale);
     const viewMatrix = globalTransform.getInverse();
     if (this.center) {
-      const centerX = this.rapid.logicWidth / 2;
-      const centerY = this.rapid.logicHeight / 2;
+      const centerX = render.logicWidth / 2;
+      const centerY = render.logicHeight / 2;
       viewMatrix[4] = viewMatrix[0] * centerX + viewMatrix[2] * centerY + viewMatrix[4];
       viewMatrix[5] = viewMatrix[1] * centerX + viewMatrix[3] * centerY + viewMatrix[5];
     }
-    this.transform.setTransform(viewMatrix);
+    entity.transform.setTransform(viewMatrix);
+  }
+  getTransform() {
+    return this.entity.transform.getTransform();
   }
 }
-class Scene extends Entity {
+class Scene extends GameObject {
   /**
    * Initializes the scene.
    */
@@ -3161,6 +3669,7 @@ class Game {
     this.input = new InputManager(this.render);
     this.asset = new AssetsLoader(this);
     this.audio = new AudioManager();
+    this.physics = new PhysicsManager(this);
     this.texture = this.render.texture;
   }
   getMainScene() {
@@ -3215,11 +3724,12 @@ class Game {
     this.render.startRender();
     if (this.mainScene) {
       if (this.mainCamera && this.mainCamera.enable) {
-        this.render.matrixStack.setTransform(this.mainCamera.transform.getTransform());
+        this.render.matrixStack.setTransform(this.mainCamera.getTransform());
       }
       this.worldTransform.setTransform(this.render.matrixStack.getTransform());
-      this.mainScene.update(deltaTime);
-      this.mainScene.collectRenderables(this.renderQueue);
+      this.mainScene.processUpdate(deltaTime);
+      this.mainScene.processPhysics(deltaTime);
+      this.mainScene.render(this.renderQueue);
       this.renderQueue.sort((a, b) => {
         const isBrother = a.parent && a.parent === b.parent;
         const global = a.globalZindex - b.globalZindex;
@@ -3232,7 +3742,7 @@ class Game {
         return 0;
       });
       this.renderQueue.forEach((entity) => {
-        entity.beforeOnRender();
+        entity.beforeRender();
         entity.onRender(this.render);
       });
       this.renderQueue.length = 0;
@@ -3319,14 +3829,14 @@ class Game {
     this.tweens = this.tweens.filter((tween) => !tween.isFinished);
   }
 }
-class Sprite extends Entity {
+class Sprite extends Component {
   /**
    * Creates a new Sprite entity.
    * @param game - The game instance.
    * @param options - Configuration for the sprite's transform and initial texture.
    */
-  constructor(game, options = {}) {
-    super(game, options);
+  constructor(options = {}) {
+    super(options);
     this.animations = /* @__PURE__ */ new Map();
     this.currentAnimation = null;
     this.currentFrame = 0;
@@ -3425,10 +3935,10 @@ class Sprite extends Entity {
     }
   }
 }
-class Label extends Entity {
-  constructor(game, options) {
-    super(game, options);
-    this.text = new Text(game.render, options);
+class Label extends Component {
+  constructor(options) {
+    super(options);
+    this.text = new Text(this.game.render, options);
   }
   onRender(render) {
     render.renderSprite({
@@ -3491,16 +4001,8 @@ class TileMapRender {
    * @private
    */
   getOffset(options) {
-    let errorX = (options.errorX ?? 2) + 1;
-    let errorY = (options.errorY ?? 2) + 1;
-    if (typeof options.error === "number") {
-      const error = (options.error ?? 2) + 1;
-      errorX = error;
-      errorY = error;
-    } else if (options.error) {
-      errorX = options.error.x + 1;
-      errorY = options.error.y + 1;
-    }
+    const errorX = (options.error ? options.error.x : 2) + 1;
+    const errorY = (options.error ? options.error.y : 2) + 1;
     return { errorX, errorY };
   }
   /**
@@ -3553,8 +4055,8 @@ class TileMapRender {
    * @param options - The rendering options for the tilemap layer.
    */
   renderLayer(data, options) {
-    this.rapid.matrixStack.applyTransform(options);
     const tileSet = options.tileSet;
+    const displayTiles = [];
     const {
       startTile,
       viewportWidth,
@@ -3591,6 +4093,7 @@ class TileMapRender {
             ...edata
           }
         });
+        displayTiles.push(tile);
       }
     }
     const enableYSort = options.ySortCallback && options.ySortCallback.length > 0;
@@ -3606,7 +4109,7 @@ class TileMapRender {
         this.rapid.renderSprite(item.renderSprite);
       }
     }
-    this.rapid.matrixStack.applyTransformAfter(options);
+    return displayTiles;
   }
   /**
    * Converts local coordinates to map coordinates.
@@ -3676,26 +4179,20 @@ class TileMapRender {
     }
   }
 }
-const _Tilemap = class _Tilemap extends Entity {
+const _Tilemap = class _Tilemap extends Component {
   /**
    * Creates a tilemap entity.
    * @param game - The game instance this tilemap belongs to.
    * @param options - Configuration options for the tilemap.
    */
-  constructor(game, options) {
-    super(game, options);
+  constructor(options) {
+    super(options);
     this.error = new Vec2(_Tilemap.DEFAULT_ERROR);
     this.data = [[]];
     this.ySortCallback = [];
-    if (options.error) {
-      if (typeof options.error === "number") {
-        this.error = new Vec2(options.error);
-      } else {
-        this.error = options.error;
-      }
-    } else {
-      this.error = new Vec2(options.errorX ?? _Tilemap.DEFAULT_ERROR, options.errorY ?? _Tilemap.DEFAULT_ERROR);
-    }
+    this.displayTiles = [];
+    this.patchMethods = ["render"];
+    this.error = options.error ?? new Vec2(_Tilemap.DEFAULT_ERROR);
     this.tileSet = options.tileSet;
     this.shape = options.shape ?? TilemapShape.SQUARE;
     this.eachTile = options.eachTile;
@@ -3705,13 +4202,13 @@ const _Tilemap = class _Tilemap extends Entity {
    * Collects renderable entities, excluding children unless they override onRender.
    * @param queue - The array to collect renderable entities.
    */
-  collectRenderables(queue) {
+  render(queue) {
     if (this.enableYsort) {
-      if (this.onRender !== Entity.prototype.onRender) {
-        queue.push(this);
+      if (this.onRender !== GameObject.prototype.onRender) {
+        queue.push(this.entity);
       }
     } else {
-      super.collectRenderables(queue);
+      this.callOriginal("render", queue);
     }
   }
   /**
@@ -3779,14 +4276,14 @@ const _Tilemap = class _Tilemap extends Entity {
    * @param local - The local coordinates to convert.
    */
   localToMap(local) {
-    this.rapid.tileMap.localToMap(local, { tileSet: this.tileSet });
+    this.rapid.tileMap.localToMap(local, this.options);
   }
   /**
    * Converts map coordinates to local coordinates.
    * @param local - The map coordinates to convert.
    */
   mapToLocal(local) {
-    this.rapid.tileMap.mapToLocal(local, { tileSet: this.tileSet });
+    this.rapid.tileMap.mapToLocal(local, this.options);
   }
   /**
    * Renders the tilemap layer.
@@ -3794,18 +4291,17 @@ const _Tilemap = class _Tilemap extends Entity {
    */
   onRender(render) {
     const ySortCallback = [...this.ySortCallback];
+    const entity = this.entity;
     if (this.enableYsort) {
-      this.children.forEach((child) => {
+      entity.children.forEach((child) => {
         ySortCallback.push({
           ySort: child.localZindex,
           entity: child
         });
       });
     }
-    render.renderTileMapLayer(this.data, {
-      error: this.error,
-      tileSet: this.tileSet,
-      eachTile: this.eachTile,
+    this.displayTiles = render.renderTileMapLayer(this.data, {
+      ...this.options,
       ySortCallback
     });
   }
@@ -4057,7 +4553,7 @@ class Rapid {
    * @param options - The options for rendering the tile map layer.
    */
   renderTileMapLayer(data, options) {
-    this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options);
+    return this.tileMap.renderLayer(data, options instanceof TileSet ? { tileSet: options } : options);
   }
   /**
    * Renders a sprite with the specified options.
@@ -4494,10 +4990,11 @@ class Particle {
    * @param rapid - The Rapid renderer instance
    * @param options - Particle configuration options
    */
-  constructor(rapid, options) {
+  constructor(emitter, options) {
     this.life = 0;
     this.datas = {};
-    this.rapid = rapid;
+    this.emitter = emitter;
+    this.rapid = emitter.rapid;
     this.options = options;
     if (options.texture instanceof Texture) {
       this.texture = options.texture;
@@ -4506,6 +5003,8 @@ class Particle {
     } else if (options.texture instanceof Array) {
       this.texture = Random.pick(options.texture);
     }
+    this.collider = new CircleCollider(emitter.entity, options.colliderRaduis ?? 10);
+    this.collider.extraData = this;
     this.maxLife = Random.scalarOrRange(options.life, 1);
     this.datas = {
       speed: this.processAttribute(options.animation.speed, 0),
@@ -4575,6 +5074,14 @@ class Particle {
     }
     return start;
   }
+  updateOffset() {
+    if (this.options.localSpace) {
+      this.collider.offset = this.position;
+    } else {
+      const entityGlobalPos = this.emitter.entity.transform.getGlobalPosition();
+      this.collider.offset = entityGlobalPos.subtract(this.position);
+    }
+  }
   /**
    * Updates particle state
    * @param deltaTime - Time in seconds since last update
@@ -4593,21 +5100,14 @@ class Particle {
    * Renders the particle at a given position.
    */
   render() {
-    const renderPosition = this.getPosition();
     this.rapid.renderSprite({
       ...this.options,
-      position: renderPosition,
+      position: this.position,
       scale: this.datas.scale.value,
       rotation: this.datas.rotation.value,
       color: this.datas.color.value,
       texture: this.texture
     });
-  }
-  /**
-   * Gets the particle's current position, relative to the emitter if in local space.
-   */
-  getPosition() {
-    return this.position;
   }
   initializePosition() {
     switch (this.options.emitShape) {
@@ -4629,19 +5129,19 @@ class Particle {
         );
         break;
     }
-    if (!this.options.localSpace && this.options.position) {
-      this.position = this.position.add(this.options.position);
+    if (!this.options.localSpace) {
+      this.position.addSelf(this.emitter.entity.transform.getGlobalPosition());
     }
   }
 }
-class ParticleEmitter extends Entity {
+class ParticleEmitter extends Component {
   /**
    * Creates a new particle emitter
    * @param rapid - The Rapid renderer instance
    * @param options - Emitter configuration options
    */
-  constructor(game, options) {
-    super(game, options);
+  constructor(options) {
+    super(options);
     this.particles = [];
     this.emitting = false;
     this.emitTimer = 0;
@@ -4649,16 +5149,9 @@ class ParticleEmitter extends Entity {
     this.emitTime = DEFAULT_EMIT_TIME;
     this.emitTimeCounter = 0;
     this.localSpace = DEFAULT_LOCAL_SPACE;
-    this.options = options;
     this.emitRate = options.emitRate ?? DEFAULT_EMIT_RATE;
     this.emitTime = options.emitTime ?? DEFAULT_EMIT_TIME;
     this.localSpace = options.localSpace ?? DEFAULT_LOCAL_SPACE;
-  }
-  /**
-   * Gets the transform options
-   */
-  getTransform() {
-    return this.options;
   }
   /**
    * Sets particle emission rate.
@@ -4703,10 +5196,10 @@ class ParticleEmitter extends Entity {
    * @param count - Number of particles to emit
    */
   emit(count) {
+    this.entity;
     const actualCount = Math.floor(Math.min(count, (this.options.maxParticles || Infinity) - this.particles.length));
     for (let i = 0; i < actualCount; i++) {
-      const position = this.localSpace ? this.position : this.transform.getGlobalPosition();
-      const particle = new Particle(this.rapid, { ...this.options, position, localSpace: this.localSpace });
+      const particle = new Particle(this, { ...this.options, localSpace: this.localSpace });
       this.particles.unshift(particle);
     }
   }
@@ -4775,22 +5268,32 @@ export {
   ArrayType,
   BaseTexture,
   BlendMode,
+  Body,
+  BodyType,
   Camera,
   CanvasLayer,
+  CircleCollider,
+  Collider,
   Color,
+  Component,
   DynamicArrayBuffer,
-  Entity,
   FrameBufferObject,
   GLShader,
   Game,
+  GameObject,
   InputManager,
   Label,
   LineTextureMode,
   MaskType,
   MathUtils,
   MatrixStack,
+  PartcileBody,
+  Particle,
   ParticleEmitter,
   ParticleShape,
+  PhysicsManager,
+  PointCollider,
+  PolygonCollider,
   Random,
   Rapid,
   SCALEFACTOR,
@@ -4804,11 +5307,13 @@ export {
   TextureWrapMode,
   TileMapRender,
   TileSet,
+  TilemapBody,
   TilemapShape,
   Uniform,
   Vec2,
   WebglBufferArray,
   WebglElementBufferArray,
+  checkCollision,
   graphicAttributes,
   spriteAttributes
 };

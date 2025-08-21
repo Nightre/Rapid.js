@@ -1,11 +1,49 @@
-import { IParticleOptions, ITransformOptions } from './interface';
-import { Entity, Game } from './game';
+import { IParticleConfigOptions } from './interface';
+import { Vec2 } from './math';
+import { Component } from './game';
+import { Collider } from './collision';
+/**
+ * Represents a single particle's properties
+ */
+export declare class Particle {
+    private life;
+    private maxLife;
+    private texture;
+    private rapid;
+    private options;
+    private datas;
+    private emitter;
+    position: Vec2;
+    collider: Collider;
+    /**
+     * Creates a new particle instance
+     * @param rapid - The Rapid renderer instance
+     * @param options - Particle configuration options
+     */
+    constructor(emitter: ParticleEmitter, options: IParticleConfigOptions);
+    private processAttribute;
+    private updateDamping;
+    private updateDelta;
+    private getDelta;
+    updateOffset(): void;
+    /**
+     * Updates particle state
+     * @param deltaTime - Time in seconds since last update
+     * @returns Whether the particle is still active
+     */
+    update(deltaTime: number): boolean;
+    /**
+     * Renders the particle at a given position.
+     */
+    render(): void;
+    private initializePosition;
+}
 /**
  * Particle emitter for creating and managing particle systems
  */
-export declare class ParticleEmitter extends Entity {
-    private particles;
-    private options;
+export declare class ParticleEmitter extends Component {
+    particles: Particle[];
+    options: IParticleConfigOptions;
     private emitting;
     private emitTimer;
     private emitRate;
@@ -17,11 +55,7 @@ export declare class ParticleEmitter extends Entity {
      * @param rapid - The Rapid renderer instance
      * @param options - Emitter configuration options
      */
-    constructor(game: Game, options: IParticleOptions);
-    /**
-     * Gets the transform options
-     */
-    getTransform(): ITransformOptions;
+    constructor(options: IParticleConfigOptions);
     /**
      * Sets particle emission rate.
      * In continuous mode (`emitTime`=0), this is particles per second.

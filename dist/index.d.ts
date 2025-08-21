@@ -14,3 +14,4 @@ export * from './particle';
 export * from './game';
 export * from './input';
 export * from './assets';
+export * from './collision';

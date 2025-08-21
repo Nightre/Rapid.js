@@ -112,7 +112,7 @@ export declare class MatrixStack extends DynamicArrayBuffer {
      * Transforms a point by applying the current matrix stack.
      * @returns The transformed point as an array `[newX, newY]`.
      */
-    apply(x: number | Vec2, y?: number): Vec2 | number[];
+    transformPoint(x: number | Vec2, y?: number): Vec2 | number[];
     /**
      * Obtain the inverse matrix of the current matrix
      * @returns inverse matrix
@@ -462,6 +462,8 @@ export declare class Vec2 implements IMathObject<Vec2> {
      */
     angleBetween(v: Vec2): number;
     lerp(target: Vec2, factor: number): Vec2;
+    addSelf(v: Vec2): this;
+    subtractSelf(v: Vec2): this;
 }
 /**
  * Provides utility methods for mathematical conversions.

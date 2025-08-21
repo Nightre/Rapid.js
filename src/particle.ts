@@ -1,9 +1,10 @@
 import Rapid from "./render";
-import { IParticleOptions, ParticleShape, ITransformOptions, ParticleAttribute, ParticleAttributeTypes, ParticleAttributeData, IParticleEmitterOptions } from "./interface";
+import { IParticleConfigOptions, ParticleShape, ITransformOptions, ParticleAttribute, ParticleAttributeTypes, ParticleAttributeData } from "./interface";
 import { Color, Vec2, Random } from "./math";
 import { Texture } from "./texture";
 import { isPlainObject } from "./utils";
-import { Entity, Game } from "./game";
+import { Component, GameObject, Game } from "./game";
+import { CircleCollider, Collider } from "./collision";
 
 // Define constants for magic numbers
 const DEFAULT_EMIT_RATE = 10;
@@ -13,23 +14,27 @@ const DEFAULT_LOCAL_SPACE = true;
 /**
  * Represents a single particle's properties
  */
-class Particle {
+export class Particle {
     private life: number = 0;
     private maxLife: number;
 
     private texture!: Texture;
     private rapid: Rapid;
-    private options: IParticleOptions;
-    private position: Vec2;
+    private options: IParticleConfigOptions;
     private datas: Record<string, ParticleAttributeData<any>> = {};
+    private emitter: ParticleEmitter
 
+    position: Vec2;
+    collider: Collider
     /**
      * Creates a new particle instance
      * @param rapid - The Rapid renderer instance
      * @param options - Particle configuration options
      */
-    constructor(rapid: Rapid, options: IParticleOptions) {
-        this.rapid = rapid;
+    constructor(emitter: ParticleEmitter, options: IParticleConfigOptions) {
+        this.emitter = emitter
+        this.rapid = emitter.rapid;
+
         this.options = options;
         if (options.texture instanceof Texture) {
             this.texture = options.texture;
@@ -39,6 +44,8 @@ class Particle {
             this.texture = Random.pick(options.texture);
         }
 
+        this.collider = new CircleCollider(emitter.entity, options.colliderRaduis ?? 10)
+        this.collider.extraData = this
         this.maxLife = Random.scalarOrRange(options.life, 1);
 
         this.datas = {
@@ -102,12 +109,7 @@ class Particle {
         }
 
         datas.color.value.clamp();
-
-        // ** BUG FIX: Correct physics for acceleration **
-        // First, update velocity from acceleration.
         datas.velocity.value = datas.velocity.value.add(datas.acceleration.value.multiply(deltaTime));
-
-        // Then, update position from speed and the new velocity.
         const direction = Vec2.fromAngle(datas.rotation.value);
         const speedOffset = direction.multiply(datas.speed.value * deltaTime);
         this.position = this.position.add(speedOffset).add(datas.velocity.value.multiply(deltaTime));
@@ -123,6 +125,15 @@ class Particle {
             return end.subtract(start).divide(lifeTime) as T;
         }
         return start as T;
+    }
+
+    updateOffset() {
+        if (this.options.localSpace) {
+            this.collider.offset = this.position
+        } else {
+            const entityGlobalPos = this.emitter.entity.transform.getGlobalPosition()
+            this.collider.offset = entityGlobalPos.subtract(this.position)
+        }
     }
 
     /**
@@ -145,22 +156,14 @@ class Particle {
      * Renders the particle at a given position.
      */
     render() {
-        const renderPosition = this.getPosition();
         this.rapid.renderSprite({
             ...this.options,
-            position: renderPosition,
+            position: this.position,
             scale: this.datas.scale.value,
             rotation: this.datas.rotation.value,
             color: this.datas.color.value,
             texture: this.texture,
         });
-    }
-
-    /**
-     * Gets the particle's current position, relative to the emitter if in local space.
-     */
-    getPosition(): Vec2 {
-        return this.position;
     }
 
     private initializePosition() {
@@ -186,9 +189,8 @@ class Particle {
                 break;
         }
 
-        // If not in local space, immediately transform the initial position to world space.
-        if (!this.options.localSpace && this.options.position) {
-            this.position = this.position.add(this.options.position);
+        if (!this.options.localSpace) {
+            this.position.addSelf(this.emitter.entity.transform.getGlobalPosition())
         }
     }
 }
@@ -196,9 +198,9 @@ class Particle {
 /**
  * Particle emitter for creating and managing particle systems
  */
-export class ParticleEmitter extends Entity {
-    private particles: Particle[] = [];
-    private options: IParticleOptions;
+export class ParticleEmitter extends Component {
+    particles: Particle[] = [];
+    declare options: IParticleConfigOptions;
     private emitting: boolean = false;
     private emitTimer: number = 0;
     private emitRate: number = DEFAULT_EMIT_RATE; // In continuous mode: particles/sec. In burst mode: particles/burst.
@@ -211,19 +213,11 @@ export class ParticleEmitter extends Entity {
      * @param rapid - The Rapid renderer instance
      * @param options - Emitter configuration options
      */
-    constructor(game: Game, options: IParticleOptions) {
-        super(game, options)
-        this.options = options;
+    constructor(options: IParticleConfigOptions) {
+        super(options)
         this.emitRate = options.emitRate ?? DEFAULT_EMIT_RATE;
         this.emitTime = options.emitTime ?? DEFAULT_EMIT_TIME;
         this.localSpace = options.localSpace ?? DEFAULT_LOCAL_SPACE;
-    }
-
-    /**
-     * Gets the transform options
-     */
-    getTransform(): ITransformOptions {
-        return this.options;
     }
 
     /**
@@ -274,11 +268,12 @@ export class ParticleEmitter extends Entity {
      * @param count - Number of particles to emit
      */
     emit(count: number) {
+        const entity = this.entity
         const actualCount = Math.floor(Math.min(count, (this.options.maxParticles || Infinity) - this.particles.length));
 
         for (let i = 0; i < actualCount; i++) {
-            const position = this.localSpace ? this.position : this.transform.getGlobalPosition()
-            const particle = new Particle(this.rapid, { ...this.options, position, localSpace: this.localSpace });
+            //const position = this.localSpace ? Vec2.ZERO : entity.transform.getGlobalPosition()
+            const particle = new Particle(this, { ...this.options, localSpace: this.localSpace });
             this.particles.unshift(particle);
         }
     }
@@ -287,8 +282,7 @@ export class ParticleEmitter extends Entity {
      * Updates particle emitter state
      * @param deltaTime - Time in seconds since last update
      */
-    override processUpdate(deltaTime: number) {
-        // ** BUG FIX: Rewritten emission logic for accuracy and simplicity **
+    override onUpdate(deltaTime: number) {
         if (this.emitting && this.emitRate > 0) {
             if (this.emitTime > 0) {
                 // Burst emission logic
@@ -353,5 +347,3 @@ export class ParticleEmitter extends Entity {
         this.emit(this.emitRate);
     }
 }
-
-

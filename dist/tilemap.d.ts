@@ -1,8 +1,8 @@
 import { default as Rapid } from './render';
-import { IRegisterTileOptions, ILayerRenderOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions } from './interface';
+import { IRegisterTileOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions as ITilemapComponentOptions, ITilemapLayerOptions } from './interface';
 import { Texture } from './texture';
 import { Vec2 } from './math';
-import { Entity, Game } from './game';
+import { Component, GameObject } from './game';
 /**
  * Represents a tileset that manages tile textures and their properties.
  */
@@ -65,26 +65,26 @@ export declare class TileMapRender {
      * @param data - A 2D array representing the tilemap data.
      * @param options - The rendering options for the tilemap layer.
      */
-    renderLayer(data: (number | string)[][], options: ILayerRenderOptions): void;
+    renderLayer(data: (number | string)[][], options: ITilemapLayerOptions): IRegisterTileOptions[];
     /**
      * Converts local coordinates to map coordinates.
      * @param local - The local coordinates.
      * @param options - The rendering options.
      * @returns The map coordinates.
      */
-    localToMap(local: Vec2, options: ILayerRenderOptions): Vec2;
+    localToMap(local: Vec2, options: ITilemapLayerOptions): Vec2;
     /**
      * Converts map coordinates to local coordinates.
      * @param map - The map coordinates.
      * @param options - The rendering options.
      * @returns The local coordinates.
      */
-    mapToLocal(map: Vec2, options: ILayerRenderOptions): Vec2;
+    mapToLocal(map: Vec2, options: ITilemapLayerOptions): Vec2;
 }
 /**
  * Tilemap entity for rendering tiled maps.
  */
-export declare class Tilemap extends Entity {
+export declare class Tilemap extends Component {
     static readonly DEFAULT_ERROR = 0;
     static readonly EMPTY_TILE = -1;
     error: Vec2;
@@ -94,17 +94,20 @@ export declare class Tilemap extends Entity {
     eachTile?: (tileId: string | number, mapX: number, mapY: number) => ISpriteRenderOptions | undefined | void;
     ySortCallback: YSortCallback[];
     enableYsort: boolean;
+    options: ITilemapComponentOptions;
+    displayTiles: IRegisterTileOptions[];
+    protected patchMethods: (keyof GameObject)[];
     /**
      * Creates a tilemap entity.
      * @param game - The game instance this tilemap belongs to.
      * @param options - Configuration options for the tilemap.
      */
-    constructor(game: Game, options: IEntityTilemapLayerOptions);
+    constructor(options: ITilemapComponentOptions);
     /**
      * Collects renderable entities, excluding children unless they override onRender.
      * @param queue - The array to collect renderable entities.
      */
-    collectRenderables(queue: Entity[]): void;
+    render(queue: GameObject[]): void;
     /**
      * Sets a tile at the specified map coordinates.
      * @param x - The X coordinate (column) on the map.

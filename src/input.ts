@@ -1,6 +1,6 @@
 import { Vec2 } from "./math";
 import Rapid from "./render";
-import { Entity } from "./game";
+import { GameObject } from "./game";
 
 /**
  * Manages user input for keyboard and mouse events.
@@ -149,7 +149,7 @@ export class InputManager {
    * @param entity - The entity to convert coordinates for.
    * @returns The mouse position in the entity's local coordinate system.
    */
-  getMouseLocal(entity: Entity): Vec2 {
+  getMouseLocal(entity: GameObject): Vec2 {
     return entity.transform.globalToLocal(this.mousePosition);
   }
 

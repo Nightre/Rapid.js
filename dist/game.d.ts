@@ -1,26 +1,59 @@
+import { default as EventEmitter } from 'eventemitter3';
 import { default as AssetsLoader } from './assets';
 import { default as AudioManager } from './audio';
 import { InputManager } from './input';
-import { IAnimation, ICameraOptions, IEntityTransformOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from './interface';
+import { IAnimation, ICameraOptions, IComponentOptions, ICreateEntity, IEntityOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from './interface';
 import { Color, MatrixStack, Vec2 } from './math';
 import { default as Rapid } from './render';
 import { Text, Texture, TextureCache } from './texture';
 import { EasingFunction, Timer, Tween } from './utils';
+import { PhysicsManager } from './collision';
+export declare abstract class Component {
+    entity: GameObject;
+    game: Game;
+    rapid: Rapid;
+    readonly name: string;
+    readonly unique: boolean;
+    options: IComponentOptions;
+    event: EventEmitter<any>;
+    /**
+     * @description 子类中需要覆盖的 Entity 方法名列表
+     * @example protected patchMethods: (keyof Entity)[] = ['onUpdate', 'onRender'];
+     */
+    protected patchMethods: (keyof GameObject)[];
+    private originalMethods;
+    constructor(options?: IComponentOptions);
+    onAttach(entity: GameObject): void;
+    onDetach(): void;
+    /**
+     * 辅助方法，用于在组件方法中调用 Entity 的原始方法
+     * @param methodName 要调用的原始方法名
+     * @param args 传递给原始方法的参数
+     */
+    protected callOriginal<T extends keyof GameObject>(methodName: T, ...args: Parameters<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never>): ReturnType<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never> | undefined;
+    private patchEntityMethods;
+    private unpatchEntityMethods;
+    onRenderQueue(queue: GameObject[]): void;
+    onUpdate(_dt: number): void;
+    onRender(_rapid: Rapid): void;
+    onDispose(): void;
+    onPhysics(_dt: number): void;
+}
 /**
  * Base class for game entities with transform and rendering capabilities.
  */
-export declare class Entity {
+export declare class GameObject {
     position: Vec2;
     scale: Vec2;
     rotation: number;
-    parent: Entity | null;
+    parent: GameObject | null;
     globalZindex: number;
     localZindex: number;
     tags: string[];
     transform: MatrixStack;
-    readonly children: Entity[];
-    protected rapid: Rapid;
-    protected game: Game;
+    readonly children: GameObject[];
+    rapid: Rapid;
+    game: Game;
     get x(): number;
     get y(): number;
     set x(nx: number);
@@ -30,7 +63,36 @@ export declare class Entity {
      * @param game - The game instance this entity belongs to.
      * @param options - Configuration options for position, scale, rotation, and tags.
      */
-    constructor(game: Game, options?: IEntityTransformOptions);
+    constructor(game: Game, options?: IEntityOptions);
+    private components;
+    /**
+     * Adds a component to this entity.
+     * @param component - The component instance to add.
+     * @returns The added component.
+     */
+    addComponent<T extends Component>(component: T): T;
+    /**
+     * Removes a component by name or class.
+     * @param key - The component name (string) or class (constructor).
+     * @returns True if a component was removed, false otherwise.
+     */
+    removeComponent(key: string | (new (...args: any[]) => Component)): boolean;
+    /**
+     * Gets a component by name.
+     * @param name - The component name.
+     * @returns The component or null if not found.
+     */
+    getComponentByName<T extends Component>(name: string): T | null;
+    /**
+     * Gets a component by class.
+     * @param ctor - The component class.
+     * @returns The component or null if not found.
+     */
+    getComponent<T extends Component>(ctor: new (...args: any[]) => T): T | null;
+    /**
+     * Checks if a component exists by name or class.
+     */
+    hasComponent(key: string | (new (...args: any[]) => Component)): boolean;
     getScene(): Scene | null;
     /**
      * Gets the parent transform or the renderer's matrix stack if no parent exists.
@@ -38,31 +100,14 @@ export declare class Entity {
      */
     getParentTransform(): MatrixStack;
     /**
-     * Updates the entity and its children.
-     * @param deltaTime - Time elapsed since the last update in seconds.
-     */
-    update(deltaTime: number): void;
-    /**
-     * Hook for custom update logic.
-     * @param deltaTime - Time elapsed since the last update in seconds.
-     */
-    protected onUpdate(deltaTime: number): void;
-    /**
-     * Collects entities that need rendering.
-     * @param queue - The array to collect renderable entities.
-     * @ignore
-     */
-    collectRenderables(queue: Entity[]): void;
-    /**
-     * Prepares the entity's transform before rendering.
-     * @ignore
-     */
-    beforeOnRender(): void;
-    /**
-     * Hook for custom rendering logic.
+     * Renders the entity and its components.
      * @param render - The rendering engine instance.
      */
     onRender(render: Rapid): void;
+    onRenderQueue(queue: GameObject[]): void;
+    onUpdate(deltaTime: number): void;
+    onPhysics(deltaTime: number): void;
+    onDispose(): void;
     /**
      * Updates the entity's transform, optionally updating parent transforms.
      * @param deep - If true, recursively updates parent transforms.
@@ -72,36 +117,58 @@ export declare class Entity {
      * Adds a child entity to this entity.
      * @param child - The entity to add as a child.
      */
-    addChild(child: Entity): void;
+    addChild(child: GameObject): this;
     /**
      * Removes a child entity from this entity.
      * @param child - The entity to remove.
      */
-    removeChild(child: Entity): void;
+    removeChild(child: GameObject): this;
     /**
      * Finds descendant entities matching a predicate.
      * @param predicate - Function to test each entity.
      * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
      * @returns A single entity, an array of entities, or null if no matches are found.
      */
-    findDescendant(predicate: (entity: Entity) => boolean, onlyFirst?: boolean): Entity[] | Entity | null;
+    findDescendant(predicate: (entity: GameObject) => boolean, onlyFirst?: boolean): GameObject[] | GameObject | null;
     /**
      * Finds descendant entities with all specified tags.
      * @param tags - Array of tags to match.
      * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
-     * @returns A single entity, an array of entities, or null if no matches are found.
+     * @returns A single entity, an array of entities, or null if not found.
      */
-    findDescendantByTag(tags: string[], onlyFirst?: boolean): Entity[] | Entity | null;
+    findDescendantByTag(tags: string[], onlyFirst?: boolean): GameObject[] | GameObject | null;
     /**
-     * Disposes of the entity and its children.
+     * Disposes of the entity, its components, and its children.
      */
     dispose(): void;
+    /**
+     * Updates the entity, its components, and its children.
+     * @param deltaTime - Time elapsed since the last update in seconds.
+     */
+    processUpdate(deltaTime: number): void;
+    /**
+     * Updates the entity, its components, and its children.
+     * @param deltaTime - Time elapsed since the last update in seconds.
+     */
+    processPhysics(deltaTime: number): void;
+    /**
+     * Collects entities and components that need rendering.
+     * @param queue - The array to collect renderable entities.
+     * @ignore
+     */
+    render(queue: GameObject[]): void;
+    /**
+     * Prepares the entity's transform before rendering.
+     * @ignore
+     */
+    beforeRender(): void;
     /**
      * Hook for custom cleanup logic before disposal.
      */
     protected postDispose(): void;
     getMouseLocalPosition(): Vec2;
     getMouseGlobalPosition(): Vec2;
+    static create(game: Game, options: ICreateEntity): GameObject;
 }
 /**
  * A layer that renders its children directly to the screen, ignoring any camera transforms.
@@ -110,14 +177,17 @@ export declare class Entity {
  * CanvasLayer 是一个特殊的层，它会直接将其子节点渲染到屏幕上，忽略任何摄像机的变换。
  * 非常适合用于UI元素，如HUD（状态栏）、菜单和分数显示。
  */
-export declare class CanvasLayer extends Entity {
-    constructor(game: Game, options: IEntityTransformOptions);
+export declare class CanvasLayer extends Component {
+    protected patchMethods: (keyof GameObject)[];
+    constructor(options: IComponentOptions);
+    onAttach(entity: GameObject): void;
     updateTransform(): void;
 }
 /**
  * Camera entity for managing the view transform in the game.
  */
-export declare class Camera extends Entity {
+export declare class Camera extends Component {
+    protected patchMethods: (keyof GameObject)[];
     enable: boolean;
     center: boolean;
     positionSmoothingSpeed: number;
@@ -129,7 +199,8 @@ export declare class Camera extends Entity {
      * @param isEnable
      */
     setEnable(isEnable: boolean): void;
-    constructor(game: Game, options?: ICameraOptions);
+    constructor(options?: ICameraOptions);
+    onAttach(entity: GameObject): void;
     /**
      * 每帧更新，用于平滑摄像机的【局部】变换属性。
      * @param deltaTime
@@ -140,11 +211,12 @@ export declare class Camera extends Entity {
      * 这个方法现在正确地处理了父子关系。
      */
     updateTransform(): void;
+    getTransform(): Float32Array;
 }
 /**
  * Scene class representing a game scene with entities.
  */
-export declare class Scene extends Entity {
+export declare class Scene extends GameObject {
     /**
      * Initializes the scene.
      */
@@ -160,12 +232,13 @@ export declare class Game {
     asset: AssetsLoader;
     audio: AudioManager;
     texture: TextureCache;
+    physics: PhysicsManager;
     private isRunning;
     private lastTime;
     private tweens;
     private timers;
     mainCamera: Camera | null;
-    renderQueue: Entity[];
+    renderQueue: GameObject[];
     worldTransform: MatrixStack;
     /**
      * Creates a new game instance.
@@ -191,7 +264,7 @@ export declare class Game {
      * Adds an entity to the render queue.
      * @param entity - The entity to add.
      */
-    addEntityRenderQueue(entity: Entity): void;
+    addEntityRenderQueue(entity: GameObject): void;
     /**
      * Runs the game loop, updating and rendering the scene.
      * @private
@@ -254,7 +327,7 @@ export declare class Game {
  * An entity that displays a texture (a "sprite") and can play animations.
  * Animations are defined as a sequence of textures.
  */
-export declare class Sprite extends Entity {
+export declare class Sprite extends Component {
     /** The current texture being displayed. This can be a static texture or a frame from an animation. */
     texture: Texture | null;
     /** Whether the sprite is flipped horizontally. */
@@ -273,7 +346,7 @@ export declare class Sprite extends Entity {
      * @param game - The game instance.
      * @param options - Configuration for the sprite's transform and initial texture.
      */
-    constructor(game: Game, options?: ISpriteOptions);
+    constructor(options?: ISpriteOptions);
     setAnimations(animations: IAnimation): void;
     /**
      * Defines a new animation sequence.
@@ -312,9 +385,9 @@ export declare class Sprite extends Entity {
  * It encapsulates a `Text` texture, giving it position, scale, rotation,
  * and other entity-based properties.
  */
-export declare class Label extends Entity {
+export declare class Label extends Component {
     text: Text;
-    constructor(game: Game, options: ILabelEntityOptions);
+    constructor(options: ILabelEntityOptions);
     onRender(render: Rapid): void;
     /**
      * Updates the displayed text. Re-renders the texture if the text has changed.

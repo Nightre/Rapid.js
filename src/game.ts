@@ -2,91 +2,110 @@ import EventEmitter from "eventemitter3";
 import AssetsLoader from "./assets";
 import AudioManager from "./audio";
 import { InputManager } from "./input";
-import { IAnimation, ICameraOptions, IEntityTransformOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from "./interface";
+import { IAnimation, ICameraOptions, IComponentOptions, ICreateEntity, IEntityOptions, IGameOptions, ILabelEntityOptions, IMathObject, ISpriteOptions } from "./interface";
 import { Color, MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 import { Text, Texture, TextureCache } from "./texture";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
-import { Collider } from "./collision";
+import { Collider, PhysicsManager } from "./collision";
 
-// /**
-//  * Base class for components that can be attached to an Entity to extend its functionality.
-//  */
-// export abstract class Component {
-//     protected entity: Entity;
-//     game: Game
-//     render: Rapid
+export abstract class Component {
+    entity!: GameObject;
+    game!: Game;
+    rapid!: Rapid;
+    readonly name: string;
+    readonly unique: boolean = true;
+    options: IComponentOptions
+    event: EventEmitter<any> = new EventEmitter()
 
-//     /**
-//      * Creates a component and associates it with an entity.
-//      * @param entity - The entity this component is attached to.
-//      * @param name - Optional name for the component to allow lookup by name.
-//      */
-//     constructor(entity: Entity) {
-//         this.entity = entity;
-//         this.game = entity.game
-//         this.render = entity.rapid
-//     }
+    /**
+     * @description 子类中需要覆盖的 Entity 方法名列表
+     * @example protected patchMethods: (keyof Entity)[] = ['onUpdate', 'onRender'];
+     */
+    protected patchMethods: (keyof GameObject)[] = [];
+    private originalMethods: Map<string, Function> = new Map();
 
-//     /**
-//      * Gets the entity this component is attached to.
-//      * @returns The associated entity.
-//      */
-//     getEntity(): Entity {
-//         return this.entity;
-//     }
+    constructor(options: IComponentOptions = {}) {
+        this.options = options
+        this.name = options.name ?? this.constructor.name;
+    }
 
-//     /**
-//      * Hook for custom update logic.
-//      * @param deltaTime - Time elapsed since the last update in seconds.
-//      */
-//     onUpdate(deltaTime: number): void { }
+    onAttach(entity: GameObject): void {
+        this.entity = entity;
+        this.game = entity.game;
+        this.rapid = entity.rapid;
 
-//     onPhysics(deltaTime: number): void { }
+        this.patchEntityMethods();
+    }
 
-//     /**
-//      * Hook for custom rendering logic.
-//      * @param render - The rendering engine instance.
-//      */
-//     onRender(render: Rapid): void { }
+    onDetach(): void {
+        this.unpatchEntityMethods();
+    }
 
-//     /**
-//      * Hook for custom cleanup logic before the component is removed.
-//      */
-//     dispose(): void { }
+    /**
+     * 辅助方法，用于在组件方法中调用 Entity 的原始方法
+     * @param methodName 要调用的原始方法名
+     * @param args 传递给原始方法的参数
+     */
+    protected callOriginal<T extends keyof GameObject>(methodName: T, ...args: Parameters<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never>): ReturnType<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never> | undefined {
+        const originalMethod = this.originalMethods.get(methodName as string);
+        if (originalMethod) {
+            return originalMethod(...args);
+        } else {
+            // 如果找不到原始方法，可以抛出错误或静默失败
+            console.warn(`Original method "${methodName}" not found on entity.`);
+        }
+    }
 
-//     /**
-//      * Hook for custom logic when the component is mounted (added to an entity).
-//      */
-//     onMounted(): void { }
+    private patchEntityMethods(): void {
+        for (const methodName of this.patchMethods) {
+            const componentMethod = this[methodName as keyof this] as any;
+            const entityMethod = this.entity[methodName as keyof GameObject] as any;
 
-//     /**
-//      * Hook for custom cleanup logic when the component is unmounted (removed from an entity).
-//      */
-//     onUnmounted(): void { }
-// }
+            // 确保组件和实体上都有这个方法，且它们都是函数
+            if (typeof componentMethod === 'function' && typeof entityMethod === 'function') {
+                // 1. 保存原始方法
+                this.originalMethods.set(methodName as string, entityMethod.bind(this.entity));
+
+                // 2. 用组件的方法覆盖实体的方法
+                (this.entity[methodName as keyof GameObject] as any) = componentMethod.bind(this);
+            }
+        }
+    }
+
+    private unpatchEntityMethods(): void {
+        for (const [methodName, originalMethod] of this.originalMethods.entries()) {
+            (this.entity[methodName as keyof GameObject] as any) = originalMethod;
+        }
+        this.originalMethods.clear();
+    }
+
+    onRenderQueue(queue: GameObject[]): void { }
+    onUpdate(_dt: number): void { }
+    onRender(_rapid: Rapid): void { }
+    onDispose(): void { }
+    onPhysics(_dt: number): void { }
+}
 
 /**
  * Base class for game entities with transform and rendering capabilities.
  */
-export class Entity {
+export class GameObject {
     position: Vec2;
     scale: Vec2;
     rotation: number;
 
-    parent: Entity | null = null;
+    parent: GameObject | null = null;
 
     globalZindex: number = 0;
     localZindex: number = 0;
     tags: string[];
     transform = new MatrixStack();
 
-    readonly children: Entity[] = [];
+    readonly children: GameObject[] = [];
     rapid: Rapid;
     game: Game;
 
-    collider: Collider | null = null; 
-    
     get x() {
         return this.position.x
     }
@@ -108,7 +127,7 @@ export class Entity {
      * @param game - The game instance this entity belongs to.
      * @param options - Configuration options for position, scale, rotation, and tags.
      */
-    constructor(game: Game, options: IEntityTransformOptions = {}) {
+    constructor(game: Game, options: IEntityOptions = {}) {
         this.transform.pushIdentity();
         this.game = game;
         this.rapid = game.render;
@@ -134,6 +153,73 @@ export class Entity {
         this.rotation = options.rotation ?? 0;
     }
 
+    private components: Map<string, Component> = new Map();
+
+    /**
+     * Adds a component to this entity.
+     * @param component - The component instance to add.
+     * @returns The added component.
+     */
+    public addComponent<T extends Component>(component: T): T {
+        const name = component.name;
+        if (component.unique && this.components.has(name)) {
+            throw new Error(`Component with name '${name}' already exists on entity.`);
+        }
+        this.components.set(name, component);
+        component.onAttach(this);
+        return component;
+    }
+
+    /**
+     * Removes a component by name or class.
+     * @param key - The component name (string) or class (constructor).
+     * @returns True if a component was removed, false otherwise.
+     */
+    public removeComponent(key: string | (new (...args: any[]) => Component)): boolean {
+        const name = typeof key === "string" ? key : key.name;
+        const comp = this.components.get(name);
+        if (comp) {
+            comp.onDetach();
+            comp.onDispose();
+            this.components.delete(name);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets a component by name.
+     * @param name - The component name.
+     * @returns The component or null if not found.
+     */
+    public getComponentByName<T extends Component>(name: string): T | null {
+        return (this.components.get(name) as T) ?? null;
+    }
+
+    /**
+     * Gets a component by class.
+     * @param ctor - The component class.
+     * @returns The component or null if not found.
+     */
+    public getComponent<T extends Component>(ctor: new (...args: any[]) => T): T | null {
+        for (const comp of this.components.values()) {
+            if (comp instanceof ctor) {
+                return comp as T;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks if a component exists by name or class.
+     */
+    public hasComponent(key: string | (new (...args: any[]) => Component)): boolean {
+        return typeof key === "string"
+            ? this.components.has(key)
+            : this.getComponent(key) !== null;
+    }
+
+
     getScene() {
         return this.game.getMainScene()
     }
@@ -144,6 +230,121 @@ export class Entity {
      */
     getParentTransform(): MatrixStack {
         return this.parent ? this.parent.transform : this.rapid.matrixStack;
+    }
+
+    /**
+     * Renders the entity and its components.
+     * @param render - The rendering engine instance.
+     */
+    onRender(render: Rapid): void {
+        this.components.forEach(c => c.onRender(render))
+    }
+    onRenderQueue(queue: GameObject[]) {
+        this.components.forEach(c => c.onRenderQueue(queue))
+    }
+    onUpdate(deltaTime: number) {
+        this.components.forEach(c => c.onUpdate(deltaTime))
+    }
+    onPhysics(deltaTime: number) {
+        this.components.forEach(c => c.onPhysics(deltaTime))
+    }
+    onDispose(): void {
+        this.components.forEach(c => c.onDispose())
+    }
+
+    /**
+     * Updates the entity's transform, optionally updating parent transforms.
+     * @param deep - If true, recursively updates parent transforms.
+     */
+    public updateTransform(deep: boolean = false): void {
+        if (deep && this.parent) {
+            this.parent.updateTransform(deep);
+        }
+        const transform = this.transform;
+        const parentTransform = this.getParentTransform();
+        transform.setTransform(parentTransform.getTransform());
+
+        transform.translate(this.position);
+        transform.rotate(this.rotation);
+        transform.scale(this.scale);
+    }
+
+    /**
+     * Adds a child entity to this entity.
+     * @param child - The entity to add as a child.
+     */
+    public addChild(child: GameObject) {
+        if (child.parent) {
+            child.parent.removeChild(child);
+        }
+        child.parent = this;
+        this.children.push(child);
+        return this
+    }
+
+    /**
+     * Removes a child entity from this entity.
+     * @param child - The entity to remove.
+     */
+    public removeChild(child: GameObject) {
+        const index = this.children.indexOf(child);
+        if (index > -1) {
+            child.parent = null;
+            this.children.splice(index, 1);
+        }
+        return this
+    }
+
+    /**
+     * Finds descendant entities matching a predicate.
+     * @param predicate - Function to test each entity.
+     * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
+     * @returns A single entity, an array of entities, or null if no matches are found.
+     */
+    public findDescendant(predicate: (entity: GameObject) => boolean, onlyFirst: boolean = true): GameObject[] | GameObject | null {
+        const results: GameObject[] = [];
+        for (const child of this.children) {
+            if (predicate(child)) {
+                if (onlyFirst) {
+                    return child;
+                }
+                results.push(child);
+            }
+            const childFind = child.findDescendant(predicate, onlyFirst);
+            if (onlyFirst) {
+                if (childFind) {
+                    return childFind;
+                }
+            } else {
+                results.push(...(childFind as GameObject[]));
+            }
+        }
+        return onlyFirst ? null : results;
+    }
+
+    /**
+     * Finds descendant entities with all specified tags.
+     * @param tags - Array of tags to match.
+     * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
+     * @returns A single entity, an array of entities, or null if not found.
+     */
+    public findDescendantByTag(tags: string[], onlyFirst: boolean = false): GameObject[] | GameObject | null {
+        const predicate = (entity: GameObject) => {
+            if (tags.length === 0) return false;
+            return tags.every(tag => entity.tags.includes(tag));
+        };
+        return this.findDescendant(predicate, onlyFirst);
+    }
+
+    /**
+     * Disposes of the entity, its components, and its children.
+     */
+    public dispose(): void {
+        this.postDispose();
+        this.onDispose()
+        if (this.parent) {
+            this.parent.removeChild(this);
+        }
     }
 
     /**
@@ -172,9 +373,10 @@ export class Entity {
      * @param queue - The array to collect renderable entities.
      * @ignore
      */
-    public render(queue: Entity[]): void {
+    public render(queue: GameObject[]): void {
         this.updateTransform();
-        if (this.onRender !== Entity.prototype.onRender) {
+        this.onRenderQueue(queue)
+        if (this.onRender !== GameObject.prototype.onRender) {
             queue.push(this);
         }
         for (const child of this.children) {
@@ -189,109 +391,6 @@ export class Entity {
     beforeRender(): void {
         const transform = this.transform;
         this.rapid.matrixStack.setTransform(transform.getTransform());
-    }
-
-    /**
-     * Renders the entity and its components.
-     * @param render - The rendering engine instance.
-     */
-    onRender(render: Rapid): void {
-
-    }
-
-    onUpdate(deltaTime: number) { }
-    onPhysics(deltaTime: number) { }
-
-    /**
-     * Updates the entity's transform, optionally updating parent transforms.
-     * @param deep - If true, recursively updates parent transforms.
-     */
-    public updateTransform(deep: boolean = false): void {
-        if (deep && this.parent) {
-            this.parent.updateTransform(deep);
-        }
-        const transform = this.transform;
-        const parentTransform = this.getParentTransform();
-        transform.setTransform(parentTransform.getTransform());
-
-        transform.translate(this.position);
-        transform.rotate(this.rotation);
-        transform.scale(this.scale);
-    }
-
-    /**
-     * Adds a child entity to this entity.
-     * @param child - The entity to add as a child.
-     */
-    public addChild(child: Entity): void {
-        if (child.parent) {
-            child.parent.removeChild(child);
-        }
-        child.parent = this;
-        this.children.push(child);
-    }
-
-    /**
-     * Removes a child entity from this entity.
-     * @param child - The entity to remove.
-     */
-    public removeChild(child: Entity): void {
-        const index = this.children.indexOf(child);
-        if (index > -1) {
-            child.parent = null;
-            this.children.splice(index, 1);
-        }
-    }
-
-    /**
-     * Finds descendant entities matching a predicate.
-     * @param predicate - Function to test each entity.
-     * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
-     * @returns A single entity, an array of entities, or null if no matches are found.
-     */
-    public findDescendant(predicate: (entity: Entity) => boolean, onlyFirst: boolean = true): Entity[] | Entity | null {
-        const results: Entity[] = [];
-        for (const child of this.children) {
-            if (predicate(child)) {
-                if (onlyFirst) {
-                    return child;
-                }
-                results.push(child);
-            }
-            const childFind = child.findDescendant(predicate, onlyFirst);
-            if (onlyFirst) {
-                if (childFind) {
-                    return childFind;
-                }
-            } else {
-                results.push(...(childFind as Entity[]));
-            }
-        }
-        return onlyFirst ? null : results;
-    }
-
-    /**
-     * Finds descendant entities with all specified tags.
-     * @param tags - Array of tags to match.
-     * @param onlyFirst - If true, returns only the first match; otherwise, returns all matches.
-     * @returns A single entity, an array of entities, or null if not found.
-     */
-    public findDescendantByTag(tags: string[], onlyFirst: boolean = false): Entity[] | Entity | null {
-        const predicate = (entity: Entity) => {
-            if (tags.length === 0) return false;
-            return tags.every(tag => entity.tags.includes(tag));
-        };
-        return this.findDescendant(predicate, onlyFirst);
-    }
-
-    /**
-     * Disposes of the entity, its components, and its children.
-     */
-    public dispose(): void {
-        this.postDispose();
-        if (this.parent) {
-            this.parent.removeChild(this);
-        }
     }
 
     /**
@@ -310,6 +409,14 @@ export class Entity {
     getMouseGlobalPosition() {
         return this.game.input.mousePosition
     }
+
+    static create(game: Game, options: ICreateEntity) {
+        const entity = new GameObject(game, options)
+        options.components.forEach(c => {
+            entity.addComponent(c)
+        })
+        return entity
+    }
 }
 
 /**
@@ -319,20 +426,28 @@ export class Entity {
  * CanvasLayer 是一个特殊的层，它会直接将其子节点渲染到屏幕上，忽略任何摄像机的变换。
  * 非常适合用于UI元素，如HUD（状态栏）、菜单和分数显示。
  */
-export class CanvasLayer extends Entity {
-    constructor(game: Game, options: IEntityTransformOptions) {
-        super(game, options);
+export class CanvasLayer extends Component {
+    protected override patchMethods: (keyof GameObject)[] = ['updateTransform'];
+
+    constructor(options: IComponentOptions) {
+        super(options);
     }
 
-    override updateTransform(): void {
-        this.transform.identity();
+    override onAttach(entity: GameObject): void {
+        super.onAttach(entity)
+    }
+
+    updateTransform(): void {
+        this.entity.transform.identity();
     }
 }
 
 /**
  * Camera entity for managing the view transform in the game.
  */
-export class Camera extends Entity {
+export class Camera extends Component {
+    protected override patchMethods: (keyof GameObject)[] = ['updateTransform'];
+
     enable: boolean = false;
     center: boolean = false;
 
@@ -356,42 +471,47 @@ export class Camera extends Entity {
         }
     }
 
-    constructor(game: Game, options: ICameraOptions = {}) {
-        super(game, options);
+    constructor(options: ICameraOptions = {}) {
+        super(options);
+        const entity = this.entity
         this.center = options.center ?? true;
         this.positionSmoothingSpeed = options.positionSmoothingSpeed ?? 0;
         this.rotationSmoothingSpeed = options.rotationSmoothingSpeed ?? 0;
 
         // 初始化当前渲染位置为初始【局部】位置
-        this._currentRenderPosition = this.position.clone();
-        this._currentRenderRotation = this.rotation;
+        this._currentRenderPosition = entity.position.clone();
+        this._currentRenderRotation = entity.rotation;
 
         this.setEnable(options.enable ?? false);
     }
-
+    override onAttach(entity: GameObject): void {
+        super.onAttach(entity)
+    }
     /**
      * 每帧更新，用于平滑摄像机的【局部】变换属性。
      * @param deltaTime 
      */
-    override processUpdate(deltaTime: number): void {
+    override onUpdate(deltaTime: number): void {
+        super.onUpdate(deltaTime)
+        const entity = this.entity
         // --- 位置平滑 ---
         // 这里平滑的是 this.position (局部目标位置) 到 _currentRenderPosition (局部渲染位置)
         if (this.positionSmoothingSpeed > 0) {
             const factor = 1 - Math.exp(-this.positionSmoothingSpeed * deltaTime);
-            this._currentRenderPosition.lerp(this.position, factor);
+            this._currentRenderPosition.lerp(entity.position, factor);
         } else {
-            this._currentRenderPosition.copy(this.position);
+            this._currentRenderPosition.copy(entity.position);
         }
 
         // --- 旋转平滑 ---
         if (this.rotationSmoothingSpeed > 0) {
             const factor = 1 - Math.exp(-this.rotationSmoothingSpeed * deltaTime);
-            let diff = this.rotation - this._currentRenderRotation;
+            let diff = entity.rotation - this._currentRenderRotation;
             while (diff < -Math.PI) diff += Math.PI * 2;
             while (diff > Math.PI) diff -= Math.PI * 2;
             this._currentRenderRotation += diff * factor;
         } else {
-            this._currentRenderRotation = this.rotation;
+            this._currentRenderRotation = entity.rotation;
         }
     }
 
@@ -399,11 +519,13 @@ export class Camera extends Entity {
      * 根据摄像机的【全局】变换计算最终的视图矩阵。
      * 这个方法现在正确地处理了父子关系。
      */
-    override updateTransform(): void {
+    updateTransform(): void {
+        const entity = this.entity
+        const render = this.rapid
         // --- Part 1: 计算摄像机在世界中的真实全局变换矩阵 ---
         // 我们复用 Entity.updateTransform 的逻辑，但使用平滑后的局部值。
-        const parentTransform = this.getParentTransform();
-        const globalTransform = this.transform; // 使用 this.transform 作为临时计算器
+        const parentTransform = entity.getParentTransform();
+        const globalTransform = entity.transform; // 使用 this.transform 作为临时计算器
 
         // 1a. 从父节点继承变换
         globalTransform.setTransform(parentTransform.getTransform());
@@ -411,7 +533,7 @@ export class Camera extends Entity {
         // 1b. 应用自己的局部变换（使用平滑值）
         globalTransform.translate(this._currentRenderPosition);
         globalTransform.rotate(this._currentRenderRotation);
-        globalTransform.scale(this.scale);
+        globalTransform.scale(entity.scale);
 
         // 此刻, `globalTransform` (即 this.transform) 存储的是摄像机在世界中的精确变换。
 
@@ -423,8 +545,8 @@ export class Camera extends Entity {
         // 我们需要将视图的原点(0,0)移动到屏幕中心。
         // 这相当于对视图矩阵进行一次【前乘】平移变换。
         if (this.center) {
-            const centerX = this.rapid.logicWidth / 2;
-            const centerY = this.rapid.logicHeight / 2;
+            const centerX = render.logicWidth / 2;
+            const centerY = render.logicHeight / 2;
 
             // 手动执行前乘平移： T(center) * M(view)
             // 只会影响最终矩阵的平移分量 (tx, ty)
@@ -433,14 +555,18 @@ export class Camera extends Entity {
         }
 
         // --- Part 4: 将最终计算出的视图矩阵存回 this.transform ---
-        this.transform.setTransform(viewMatrix);
+        entity.transform.setTransform(viewMatrix);
+    }
+
+    getTransform() {
+        return this.entity.transform.getTransform()
     }
 }
 
 /**
  * Scene class representing a game scene with entities.
  */
-export class Scene extends Entity {
+export class Scene extends GameObject {
     /**
      * Initializes the scene.
      */
@@ -456,13 +582,14 @@ export class Game {
     input: InputManager;
     asset: AssetsLoader;
     audio: AudioManager;
-    texture: TextureCache
+    texture: TextureCache;
+    physics: PhysicsManager
     private isRunning: boolean = false;
     private lastTime: number = 0;
     private tweens: Tween<any>[] = [];
     private timers: Timer[] = [];
     mainCamera: Camera | null = null
-    renderQueue: Entity[] = [];
+    renderQueue: GameObject[] = [];
     worldTransform = new MatrixStack()
 
     /**
@@ -474,6 +601,7 @@ export class Game {
         this.input = new InputManager(this.render);
         this.asset = new AssetsLoader(this)
         this.audio = new AudioManager()
+        this.physics = new PhysicsManager(this)
         this.texture = this.render.texture
     }
 
@@ -519,7 +647,7 @@ export class Game {
      * Adds an entity to the render queue.
      * @param entity - The entity to add.
      */
-    public addEntityRenderQueue(entity: Entity): void {
+    public addEntityRenderQueue(entity: GameObject): void {
         this.renderQueue.push(entity);
     }
 
@@ -538,7 +666,7 @@ export class Game {
 
         if (this.mainScene) {
             if (this.mainCamera && this.mainCamera.enable) {
-                this.render.matrixStack.setTransform(this.mainCamera.transform.getTransform());
+                this.render.matrixStack.setTransform(this.mainCamera.getTransform());
             }
             this.worldTransform.setTransform(this.render.matrixStack.getTransform());
 
@@ -664,7 +792,7 @@ export class Game {
  * An entity that displays a texture (a "sprite") and can play animations.
  * Animations are defined as a sequence of textures.
  */
-export class Sprite extends Entity {
+export class Sprite extends Component {
     /** The current texture being displayed. This can be a static texture or a frame from an animation. */
     public texture: Texture | null;
     /** Whether the sprite is flipped horizontally. */
@@ -686,8 +814,8 @@ export class Sprite extends Entity {
      * @param game - The game instance.
      * @param options - Configuration for the sprite's transform and initial texture.
      */
-    constructor(game: Game, options: ISpriteOptions = {}) {
-        super(game, options);
+    constructor(options: ISpriteOptions = {}) {
+        super(options);
         this.texture = options.texture ?? null;
         this.flipX = options.flipX ?? false;
         this.flipY = options.flipY ?? false;
@@ -753,7 +881,7 @@ export class Sprite extends Entity {
      * @param deltaTime - Time in seconds since the last frame.
      * @override
      */
-    override processUpdate(deltaTime: number): void {
+    override onUpdate(deltaTime: number): void {
         if (!this.isPlaying || !this.currentAnimation) {
             return;
         }
@@ -806,11 +934,11 @@ export class Sprite extends Entity {
  * It encapsulates a `Text` texture, giving it position, scale, rotation,
  * and other entity-based properties.
  */
-export class Label extends Entity {
+export class Label extends Component {
     text: Text
-    constructor(game: Game, options: ILabelEntityOptions) {
-        super(game, options)
-        this.text = new Text(game.render, options)
+    constructor(options: ILabelEntityOptions) {
+        super(options)
+        this.text = new Text(this.game.render, options)
     }
     override onRender(render: Rapid): void {
         render.renderSprite({
