@@ -1,0 +1,1 @@
+static ZERO = new Vec2(0, 0); 有问题，不能这样

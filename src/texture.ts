@@ -243,17 +243,19 @@ class Texture {
      * @param spriteHeight - The height of each sprite in the spritesheet.
      * @returns An array of `Texture` instances representing the sprites in the spritesheet.
      */
-    createSpritesheet(spriteWidth: number, spriteHeight: number): Texture[] {
+    createSpritesheet(spriteWidth: number, spriteHeight: number, columns?: number, rows?: number, startX?: number, startY?: number): Texture[] {
         if (!this.base) return [];
         const sprites: Texture[] = [];
-        const columns = Math.floor(this.base.width / spriteWidth);
-        const rows = Math.floor(this.base.height / spriteHeight);
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < columns; x++) {
+
+        const calcColumns = columns ?? Math.floor(this.base.width / spriteWidth);
+        const calcRows = rows ?? Math.floor(this.base.height / spriteHeight);
+
+        for (let y = 0; y < calcRows; y++) {
+            for (let x = 0; x < calcColumns; x++) {
                 const sprite = this.clone();
                 sprite.setClipRegion(
-                    x * spriteWidth,
-                    y * spriteHeight,
+                    (x + (startX ?? 0)) * spriteWidth,
+                    (y + (startY ?? 0)) * spriteHeight,
                     spriteWidth,
                     spriteHeight
                 );

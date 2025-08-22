@@ -512,6 +512,26 @@ export class MatrixStack extends DynamicArrayBuffer {
             this.popMat()
         }
     }
+
+    multiply(mat: Float32Array | number[]): void {
+        const offset = this.usedElemNum - MATRIX_SIZE;
+        const arr = this.typedArray;
+
+        const a1 = arr[offset + 0], b1 = arr[offset + 1];
+        const c1 = arr[offset + 2], d1 = arr[offset + 3];
+        const e1 = arr[offset + 4], f1 = arr[offset + 5];
+
+        const a2 = mat[0], b2 = mat[1];
+        const c2 = mat[2], d2 = mat[3];
+        const e2 = mat[4], f2 = mat[5];
+
+        arr[offset + 0] = a1 * a2 + c1 * b2;
+        arr[offset + 1] = b1 * a2 + d1 * b2;
+        arr[offset + 2] = a1 * c2 + c1 * d2;
+        arr[offset + 3] = b1 * c2 + d1 * d2;
+        arr[offset + 4] = a1 * e2 + c1 * f2 + e1;
+        arr[offset + 5] = b1 * e2 + d1 * f2 + f1;
+    }
 }
 
 /**
@@ -771,21 +791,22 @@ export class Color implements IMathObject<Color> {
         this.b = Math.max(0, Math.min(255, this.b));
         this.a = Math.max(0, Math.min(255, this.a));
     }
-    static Red = new Color(255, 0, 0, 255)
-    static Green = new Color(0, 255, 0, 255)
-    static Blue = new Color(0, 0, 255, 255)
-    static Yellow = new Color(255, 255, 0, 255)
-    static Purple = new Color(128, 0, 128, 255)
-    static Orange = new Color(255, 165, 0, 255)
-    static Pink = new Color(255, 192, 203, 255)
-    static Gray = new Color(128, 128, 128, 255)
-    static Brown = new Color(139, 69, 19, 255)
-    static Cyan = new Color(0, 255, 255, 255)
-    static Magenta = new Color(255, 0, 255, 255)
-    static Lime = new Color(192, 255, 0, 255)
-    static White = new Color(255, 255, 255, 255)
-    static Black = new Color(0, 0, 0, 255)
-    static TRANSPARENT = new Color(0, 0, 0, 0)
+
+    static Red(): Color { return new Color(255, 0, 0, 255); }
+    static Green(): Color { return new Color(0, 255, 0, 255); }
+    static Blue(): Color { return new Color(0, 0, 255, 255); }
+    static Yellow(): Color { return new Color(255, 255, 0, 255); }
+    static Purple(): Color { return new Color(128, 0, 128, 255); }
+    static Orange(): Color { return new Color(255, 165, 0, 255); }
+    static Pink(): Color { return new Color(255, 192, 203, 255); }
+    static Gray(): Color { return new Color(128, 128, 128, 255); }
+    static Brown(): Color { return new Color(139, 69, 19, 255); }
+    static Cyan(): Color { return new Color(0, 255, 255, 255); }
+    static Magenta(): Color { return new Color(255, 0, 255, 255); }
+    static Lime(): Color { return new Color(192, 255, 0, 255); }
+    static White(): Color { return new Color(255, 255, 255, 255); }
+    static Black(): Color { return new Color(0, 0, 0, 255); }
+    static Transparent(): Color { return new Color(0, 0, 0, 0); }
 }
 
 /**
@@ -795,13 +816,29 @@ export class Vec2 implements IMathObject<Vec2> {
     x: number;
     y: number;
 
-    static ZERO = new Vec2(0, 0);
-    static ONE = new Vec2(1, 1);
-    static UP = new Vec2(0, 1);
-    static DOWN = new Vec2(0, -1);
-    static LEFT = new Vec2(-1, 0);
-    static RIGHT = new Vec2(1, 0);
+    static ZERO(): Vec2 {
+        return new Vec2(0, 0);
+    }
 
+    static ONE(): Vec2 {
+        return new Vec2(1, 1);
+    }
+
+    static UP(): Vec2 {
+        return new Vec2(0, 1);
+    }
+
+    static DOWN(): Vec2 {
+        return new Vec2(0, -1);
+    }
+
+    static LEFT(): Vec2 {
+        return new Vec2(-1, 0);
+    }
+
+    static RIGHT(): Vec2 {
+        return new Vec2(1, 0);
+    }
     /**
      * Creates an instance of Vec2.
      * @param x - The x coordinate (default is 0).

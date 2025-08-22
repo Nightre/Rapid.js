@@ -1,6 +1,7 @@
 import { AudioPlayer } from "./audio";
 import { Collider } from "./collision";
-import { Component, GameObject } from "./game";
+import { Component } from "./component";
+import { GameObject } from "./game";
 import { Color, Vec2 } from "./math";
 import { ParticleEmitter } from "./particle";
 import { Texture } from "./texture";
@@ -217,7 +218,7 @@ export interface YSortCallback {
 }
 
 export interface IEntityTilemapLayerOptions extends ITilemapLayerOptions, IComponentOptions {
-    enableYsort: boolean
+    enableYsort?: boolean
 }
 
 export interface ITilemapLayerOptions {
@@ -451,18 +452,16 @@ export interface IAssets {
 
 
 export interface IAnimation {
-    /** The name of the animation, used to play it. */
-    name: string;
     /** An array of Textures that make up the frames of the animation. */
     frames: Texture[];
     /** The speed of the animation in frames per second (FPS). */
-    fps: number;
+    fps?: number;
     /** Whether the animation should loop back to the first frame when it ends. */
-    loop: boolean;
+    loop?: boolean;
 }
 
 export interface ISpriteOptions extends IComponentOptions, ISpriteRenderOptions {
-    animations?: IAnimation;
+    animations?: Record<string, IAnimation>;
 }
 
 

@@ -52,6 +52,8 @@ class Rapid {
     private currentTransform: ITransformOptions[] = []
     private currentFBO: FrameBufferObject[] = []
     private lastTime: number = 0
+
+    static MASK_COLOR = Color.Black()
     /**
      * Constructs a new `Rapid` instance with the given options.
      * @param options - Options for initializing the `Rapid` instance.
@@ -664,7 +666,7 @@ class Rapid {
         shadowPolygon.forEach(polygon => {
             this.renderGraphic({
                 points: polygon,
-                color: Color.Black,
+                color: Rapid.MASK_COLOR,
             })
         })
         this.endDrawMask()

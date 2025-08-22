@@ -7,85 +7,8 @@ import { Color, MatrixStack, Vec2 } from "./math";
 import Rapid from "./render";
 import { Text, Texture, TextureCache } from "./texture";
 import { Easing, EasingFunction, Timer, Tween } from "./utils";
-import { Collider, PhysicsManager } from "./collision";
-
-export abstract class Component {
-    entity!: GameObject;
-    game!: Game;
-    rapid!: Rapid;
-    readonly name: string;
-    readonly unique: boolean = true;
-    options: IComponentOptions
-    event: EventEmitter<any> = new EventEmitter()
-
-    /**
-     * @description 子类中需要覆盖的 Entity 方法名列表
-     * @example protected patchMethods: (keyof Entity)[] = ['onUpdate', 'onRender'];
-     */
-    protected patchMethods: (keyof GameObject)[] = [];
-    private originalMethods: Map<string, Function> = new Map();
-
-    constructor(options: IComponentOptions = {}) {
-        this.options = options
-        this.name = options.name ?? this.constructor.name;
-    }
-
-    onAttach(entity: GameObject): void {
-        this.entity = entity;
-        this.game = entity.game;
-        this.rapid = entity.rapid;
-
-        this.patchEntityMethods();
-    }
-
-    onDetach(): void {
-        this.unpatchEntityMethods();
-    }
-
-    /**
-     * 辅助方法，用于在组件方法中调用 Entity 的原始方法
-     * @param methodName 要调用的原始方法名
-     * @param args 传递给原始方法的参数
-     */
-    protected callOriginal<T extends keyof GameObject>(methodName: T, ...args: Parameters<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never>): ReturnType<GameObject[T] extends (...args: any[]) => any ? GameObject[T] : never> | undefined {
-        const originalMethod = this.originalMethods.get(methodName as string);
-        if (originalMethod) {
-            return originalMethod(...args);
-        } else {
-            // 如果找不到原始方法，可以抛出错误或静默失败
-            console.warn(`Original method "${methodName}" not found on entity.`);
-        }
-    }
-
-    private patchEntityMethods(): void {
-        for (const methodName of this.patchMethods) {
-            const componentMethod = this[methodName as keyof this] as any;
-            const entityMethod = this.entity[methodName as keyof GameObject] as any;
-
-            // 确保组件和实体上都有这个方法，且它们都是函数
-            if (typeof componentMethod === 'function' && typeof entityMethod === 'function') {
-                // 1. 保存原始方法
-                this.originalMethods.set(methodName as string, entityMethod.bind(this.entity));
-
-                // 2. 用组件的方法覆盖实体的方法
-                (this.entity[methodName as keyof GameObject] as any) = componentMethod.bind(this);
-            }
-        }
-    }
-
-    private unpatchEntityMethods(): void {
-        for (const [methodName, originalMethod] of this.originalMethods.entries()) {
-            (this.entity[methodName as keyof GameObject] as any) = originalMethod;
-        }
-        this.originalMethods.clear();
-    }
-
-    onRenderQueue(queue: GameObject[]): void { }
-    onUpdate(_dt: number): void { }
-    onRender(_rapid: Rapid): void { }
-    onDispose(): void { }
-    onPhysics(_dt: number): void { }
-}
+import { PhysicsManager } from "./collision";
+import { Component } from "./component";
 
 /**
  * Base class for game entities with transform and rendering capabilities.
@@ -105,6 +28,8 @@ export class GameObject {
     readonly children: GameObject[] = [];
     rapid: Rapid;
     game: Game;
+    camera: GameObject | null = null
+    screenTransform!: Float32Array
 
     get x() {
         return this.position.x
@@ -237,10 +162,20 @@ export class GameObject {
      * @param render - The rendering engine instance.
      */
     onRender(render: Rapid): void {
+        const transform = this.transform;
+        
+        if (this.camera) {
+            this.rapid.matrixStack.setTransform(this.camera.transform.getTransform());
+            this.rapid.matrixStack.multiply(transform.getTransform())
+        }else{
+            this.rapid.matrixStack.setTransform(transform.getTransform());
+        }
+        this.screenTransform = this.rapid.matrixStack.getTransform()
         this.components.forEach(c => c.onRender(render))
     }
     onRenderQueue(queue: GameObject[]) {
         this.components.forEach(c => c.onRenderQueue(queue))
+        queue.push(this)
     }
     onUpdate(deltaTime: number) {
         this.components.forEach(c => c.onUpdate(deltaTime))
@@ -385,15 +320,6 @@ export class GameObject {
     }
 
     /**
-     * Prepares the entity's transform before rendering.
-     * @ignore
-     */
-    beforeRender(): void {
-        const transform = this.transform;
-        this.rapid.matrixStack.setTransform(transform.getTransform());
-    }
-
-    /**
      * Hook for custom cleanup logic before disposal.
      */
     protected postDispose(): void {
@@ -451,12 +377,7 @@ export class Camera extends Component {
     enable: boolean = false;
     center: boolean = false;
 
-    positionSmoothingSpeed: number = 0;
-    rotationSmoothingSpeed: number = 0;
-
-    // 用于平滑处理的内部变量，代表摄像机当前实际渲染的【局部】位置和旋转
-    private _currentRenderPosition: Vec2;
-    private _currentRenderRotation: number;
+    declare options: ICameraOptions;
 
     /**
      * 设置此摄像机是否为当前场景的主摄像机。
@@ -473,88 +394,45 @@ export class Camera extends Component {
 
     constructor(options: ICameraOptions = {}) {
         super(options);
-        const entity = this.entity
-        this.center = options.center ?? true;
-        this.positionSmoothingSpeed = options.positionSmoothingSpeed ?? 0;
-        this.rotationSmoothingSpeed = options.rotationSmoothingSpeed ?? 0;
+    }
 
-        // 初始化当前渲染位置为初始【局部】位置
-        this._currentRenderPosition = entity.position.clone();
-        this._currentRenderRotation = entity.rotation;
+    override onAttach(entity: GameObject): void {
+        super.onAttach(entity)
+        const options = this.options
+        this.center = options.center ?? true;
 
         this.setEnable(options.enable ?? false);
     }
-    override onAttach(entity: GameObject): void {
-        super.onAttach(entity)
-    }
-    /**
-     * 每帧更新，用于平滑摄像机的【局部】变换属性。
-     * @param deltaTime 
-     */
-    override onUpdate(deltaTime: number): void {
-        super.onUpdate(deltaTime)
-        const entity = this.entity
-        // --- 位置平滑 ---
-        // 这里平滑的是 this.position (局部目标位置) 到 _currentRenderPosition (局部渲染位置)
-        if (this.positionSmoothingSpeed > 0) {
-            const factor = 1 - Math.exp(-this.positionSmoothingSpeed * deltaTime);
-            this._currentRenderPosition.lerp(entity.position, factor);
-        } else {
-            this._currentRenderPosition.copy(entity.position);
-        }
 
-        // --- 旋转平滑 ---
-        if (this.rotationSmoothingSpeed > 0) {
-            const factor = 1 - Math.exp(-this.rotationSmoothingSpeed * deltaTime);
-            let diff = entity.rotation - this._currentRenderRotation;
-            while (diff < -Math.PI) diff += Math.PI * 2;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            this._currentRenderRotation += diff * factor;
-        } else {
-            this._currentRenderRotation = entity.rotation;
-        }
-    }
-
-    /**
-     * 根据摄像机的【全局】变换计算最终的视图矩阵。
-     * 这个方法现在正确地处理了父子关系。
-     */
     updateTransform(): void {
         const entity = this.entity
         const render = this.rapid
+
         // --- Part 1: 计算摄像机在世界中的真实全局变换矩阵 ---
-        // 我们复用 Entity.updateTransform 的逻辑，但使用平滑后的局部值。
         const parentTransform = entity.getParentTransform();
         const globalTransform = entity.transform; // 使用 this.transform 作为临时计算器
 
         // 1a. 从父节点继承变换
         globalTransform.setTransform(parentTransform.getTransform());
 
-        // 1b. 应用自己的局部变换（使用平滑值）
-        globalTransform.translate(this._currentRenderPosition);
-        globalTransform.rotate(this._currentRenderRotation);
+        // 1b. 应用自己的局部变换（直接用 position/rotation/scale）
+        globalTransform.translate(entity.position);
+        globalTransform.rotate(entity.rotation);
         globalTransform.scale(entity.scale);
 
-        // 此刻, `globalTransform` (即 this.transform) 存储的是摄像机在世界中的精确变换。
-
         // --- Part 2: 将全局变换转换为视图矩阵 ---
-        // 视图矩阵是全局变换的逆矩阵。
         const viewMatrix = globalTransform.getInverse();
 
         // --- Part 3: 应用屏幕居中偏移 ---
-        // 我们需要将视图的原点(0,0)移动到屏幕中心。
-        // 这相当于对视图矩阵进行一次【前乘】平移变换。
         if (this.center) {
             const centerX = render.logicWidth / 2;
             const centerY = render.logicHeight / 2;
 
-            // 手动执行前乘平移： T(center) * M(view)
-            // 只会影响最终矩阵的平移分量 (tx, ty)
             viewMatrix[4] = viewMatrix[0] * centerX + viewMatrix[2] * centerY + viewMatrix[4];
             viewMatrix[5] = viewMatrix[1] * centerX + viewMatrix[3] * centerY + viewMatrix[5];
         }
 
-        // --- Part 4: 将最终计算出的视图矩阵存回 this.transform ---
+        // --- Part 4: 存回 ---
         entity.transform.setTransform(viewMatrix);
     }
 
@@ -562,6 +440,7 @@ export class Camera extends Component {
         return this.entity.transform.getTransform()
     }
 }
+
 
 /**
  * Scene class representing a game scene with entities.
@@ -603,6 +482,8 @@ export class Game {
         this.audio = new AudioManager()
         this.physics = new PhysicsManager(this)
         this.texture = this.render.texture
+
+        this.start()
     }
 
     getMainScene() {
@@ -665,9 +546,9 @@ export class Game {
         this.render.startRender();
 
         if (this.mainScene) {
-            if (this.mainCamera && this.mainCamera.enable) {
-                this.render.matrixStack.setTransform(this.mainCamera.getTransform());
-            }
+            // if (this.mainCamera && this.mainCamera.enable) {
+            //     this.render.matrixStack.setTransform(this.mainCamera.getTransform());
+            // }
             this.worldTransform.setTransform(this.render.matrixStack.getTransform());
 
             this.mainScene.processUpdate(deltaTime);
@@ -687,7 +568,6 @@ export class Game {
             });
 
             this.renderQueue.forEach(entity => {
-                entity.beforeRender();
                 entity.onRender(this.render);
             });
 
@@ -820,15 +700,15 @@ export class Sprite extends Component {
         this.flipX = options.flipX ?? false;
         this.flipY = options.flipY ?? false;
 
-        this.color = options.color ?? Color.White
-        this.offset = options.offset ?? Vec2.ZERO
+        this.color = options.color ?? Color.White()
+        this.offset = options.offset ?? Vec2.ZERO()
 
         if (options.animations) {
             this.setAnimations(options.animations)
         }
     }
 
-    setAnimations(animations: IAnimation) {
+    setAnimations(animations: Record<string, IAnimation>) {
         this.animations = new Map(Object.entries(animations))
     }
 
@@ -840,7 +720,7 @@ export class Sprite extends Component {
      * @param loop - Whether the animation should repeat.
      */
     public addAnimation(name: string, frames: Texture[], fps: number = 10, loop: boolean = true): void {
-        this.animations.set(name, { name, frames, fps, loop });
+        this.animations.set(name, { frames, fps, loop });
     }
 
     /**
@@ -886,7 +766,7 @@ export class Sprite extends Component {
             return;
         }
 
-        const frameDuration = 1 / this.currentAnimation.fps;
+        const frameDuration = 1 / (this.currentAnimation.fps ?? 1);
         this.frameTimer += deltaTime;
 
         // Advance frames if enough time has passed

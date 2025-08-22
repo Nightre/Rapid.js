@@ -3,8 +3,9 @@ import { IParticleConfigOptions, ParticleShape, ITransformOptions, ParticleAttri
 import { Color, Vec2, Random } from "./math";
 import { Texture } from "./texture";
 import { isPlainObject } from "./utils";
-import { Component, GameObject, Game } from "./game";
+import { GameObject, Game } from "./game";
 import { CircleCollider, Collider } from "./collision";
+import { Component } from "./component";
 
 // Define constants for magic numbers
 const DEFAULT_EMIT_RATE = 10;
@@ -52,12 +53,12 @@ export class Particle {
             speed: this.processAttribute(options.animation.speed, 0)!,
             rotation: this.processAttribute(options.animation.rotation, 0)!,
             scale: this.processAttribute(options.animation.scale, 1)!,
-            color: this.processAttribute(options.animation.color, Color.White)!,
-            velocity: this.processAttribute(options.animation.velocity, Vec2.ZERO)!,
-            acceleration: this.processAttribute(options.animation.acceleration, Vec2.ZERO)!,
+            color: this.processAttribute(options.animation.color, Color.White())!,
+            velocity: this.processAttribute(options.animation.velocity, Vec2.ZERO())!,
+            acceleration: this.processAttribute(options.animation.acceleration, Vec2.ZERO())!,
         };
 
-        this.position = Vec2.ZERO;
+        this.position = Vec2.ZERO();
 
         this.initializePosition();
     }
@@ -169,7 +170,7 @@ export class Particle {
     private initializePosition() {
         switch (this.options.emitShape) {
             case ParticleShape.POINT:
-                this.position = Vec2.ZERO;
+                this.position = Vec2.ZERO();
                 break;
             case ParticleShape.CIRCLE:
                 const angle = Math.random() * Math.PI * 2;

@@ -9,7 +9,7 @@ import { GameObject } from "./game";
 export class InputManager {
   private rapid: Rapid;
   private canvas: HTMLCanvasElement;
-  mousePosition: Vec2 = Vec2.ZERO;
+  mousePosition: Vec2 = Vec2.ZERO();
 
   // Tracks keys pressed in the current frame (e.g., "KeyW", "Space", "ArrowUp").
   private keysDown: Set<string> = new Set();

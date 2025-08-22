@@ -44,9 +44,9 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
      * @param name - The unique identifier for the JSON asset.
      * @param url - The URL of the JSON file.
      */
-    loadJson(name: string, url: string): void {
+    async loadJson(name: string, url: string) {
         this.totalAsset++;
-        fetch(url)
+        return await fetch(url)
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
@@ -54,6 +54,7 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
             .then(data => {
                 this.assets.json[name] = data;
                 this.assetLoaded();
+                return this.assets.json[name]
             })
             .catch(error => this.handleError(name, url, error));
     }
@@ -72,6 +73,7 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
             this.assets.audio[name] = audioPlayer;
             
             this.assetLoaded();
+            return this.assets.audio[name]
         } catch (error) {
             this.handleError(name, url, error);
             // Even on error, we count it as "processed" to avoid the loader getting stuck.
@@ -91,6 +93,7 @@ class AssetsLoader extends EventEmitter<AssetsLoaderEvents> {
             // Assuming `game.render.texture` is your TextureCache instance.
             this.assets.images[name] = await this.game.render.texture.textureFromUrl(url);
             this.assetLoaded();
+            return this.assets.images[name]
         } catch (error) {
             this.handleError(name, url, error);
             this.assetLoaded();

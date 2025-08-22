@@ -1,9 +1,10 @@
 import EventEmitter from "eventemitter3";
-import { Component, GameObject, Game } from "./game";
+import { GameObject, Game } from "./game";
 import { BodyType, IBodyOptions, IComponentOptions, IParticleBodyOptions, ITilemapBodyOptions } from "./interface";
 import { Vec2 } from "./math";
 import { Particle, ParticleEmitter } from "./particle"; // Assuming Particle type is exported from here
 import { Tilemap } from "./tilemap";
+import { Component } from "./component";
 
 /**
  * Interface defining the result of a collision check between two colliders.
@@ -352,8 +353,8 @@ export class Body extends Component {
     // **CHANGE**: The active collisions map now stores a list of detailed results for each colliding entity.
     activeCollisions: Map<GameObject, DetailedCollisionResult[]> = new Map();
 
-    velocity: Vec2 = Vec2.ZERO;
-    acceleration: Vec2 = Vec2.ZERO;
+    velocity: Vec2 = Vec2.ZERO();
+    acceleration: Vec2 = Vec2.ZERO();
     bodyType: BodyType;
     disabled: boolean = false;
 
@@ -409,7 +410,7 @@ export class Body extends Component {
             case BodyType.STATIC:
                 break;
             case BodyType.KINEMATIC:
-                if (!this.velocity.equal(Vec2.ZERO)) {
+                if (!this.velocity.equal(Vec2.ZERO())) {
                     entity.position.addSelf(this.velocity.multiply(dt));
                 }
                 break;

@@ -1,9 +1,10 @@
 import Rapid from "./render";
 import { IRegisterTileOptions, YSortCallback, TilemapShape, ISpriteRenderOptions, IEntityTilemapLayerOptions as ITilemapComponentOptions, ITilemapLayerOptions } from "./interface";
 import { Texture } from "./texture";
-import { Vec2 } from "./math";
+import { MatrixStack, Vec2 } from "./math";
 import warn from "./log";
-import { Component, GameObject, Game } from "./game";
+import { GameObject, Game } from "./game";
+import { Component } from "./component";
 
 /**
  * Represents a tileset that manages tile textures and their properties.
@@ -83,12 +84,14 @@ export class TileMapRender {
      * @returns Object containing calculated tile rendering data.
      * @private
      */
-    private getTileData(tileSet: TileSet, options: ITilemapLayerOptions) {
+    private getTileData(tileSet: TileSet, options: ITilemapLayerOptions, screenTransform: Float32Array) {
         const shape = options.shape ?? TilemapShape.SQUARE;
         const width = tileSet.width;
         const height = shape === TilemapShape.ISOMETRIC ? tileSet.height / 2 : tileSet.height;
 
-        const matrix = this.rapid.matrixStack;
+        const matrix = new MatrixStack();
+        matrix.setTransform(screenTransform)
+
         const { errorX, errorY } = this.getOffset(options);
 
         // 1. 获取屏幕的四个角点
@@ -138,7 +141,7 @@ export class TileMapRender {
      * @param data - A 2D array representing the tilemap data.
      * @param options - The rendering options for the tilemap layer.
      */
-    renderLayer(data: (number | string)[][], options: ITilemapLayerOptions) {
+    renderLayer(data: (number | string)[][], options: ITilemapLayerOptions, screenTransform: Float32Array) {
         //this.rapid.matrixStack.applyTransform(options);
         const tileSet = options.tileSet;
         const displayTiles: IRegisterTileOptions[] = []
@@ -146,7 +149,7 @@ export class TileMapRender {
             startTile,
             viewportWidth,
             viewportHeight,
-        } = this.getTileData(tileSet, options);
+        } = this.getTileData(tileSet, options, screenTransform);
 
         // --- 核心改动点 ---
         // 1. 创建一个统一的渲染队列，用于存放所有需要渲染的对象 (瓦片和其他实体)
@@ -463,9 +466,10 @@ export class Tilemap extends Component {
                 });
             });
         }
-        this.displayTiles = render.renderTileMapLayer(this.data, {
+
+        this.displayTiles = render.tileMap.renderLayer(this.data, {
             ...this.options,
             ySortCallback
-        });
+        }, this.entity.screenTransform);
     }
 }
