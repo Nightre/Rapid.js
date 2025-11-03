@@ -329,10 +329,18 @@ class Text extends Texture {
         context.textAlign = this.options.textAlign || 'left';
         context.textBaseline = this.options.textBaseline || 'top';
 
+        // Adjust x position based on text alignment
+        let xPosition = 0;
+        if (this.options.textAlign === 'center') {
+            xPosition = maxWidth / 2;
+        } else if (this.options.textAlign === 'right') {
+            xPosition = maxWidth;
+        }
+		
         // 3. Draw text
         let yOffset = 0;
         for (const line of lines) {
-            context.fillText(line, 0, yOffset);
+            context.fillText(line, xPosition, yOffset);
             yOffset += fontSize;
         }
 
