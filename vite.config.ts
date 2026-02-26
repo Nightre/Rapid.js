@@ -8,6 +8,7 @@ export default defineConfig({
       name: 'RapidRender',
       fileName: 'rapid-render',
     },
+    target: 'esnext',
   },
   plugins: [dts()],
 })

@@ -7,5 +7,7 @@ export default defineConfig({
     build: {
         outDir: path.resolve(__dirname, '../pages-dist/example'),
         emptyOutDir: true,
+        target: 'esnext',
     },
 })
+

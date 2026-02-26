@@ -113,6 +113,9 @@ export class Rapid {
     /** Manager for creating and organizing textures. */
     texture: TextureManager;
 
+    /** Internal ping-pong RenderTextures for multi-filter chains. */
+    private _filterRT: [RenderTexture | null, RenderTexture | null] = [null, null];
+
     /**
      * Creates a new Rapid application instance.
      * @param options Initialization options including the target canvas.
@@ -146,7 +149,8 @@ export class Rapid {
         }
 
         gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        // Premultiplied alpha blending: RGB is already multiplied by A in the texture
+        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
         gl.enable(gl.STENCIL_TEST);
 
@@ -268,7 +272,6 @@ export class Rapid {
     addCircleVertex(r: number, color?: Color, segments: number = 32): void {
         const angleStep = (Math.PI * 2) / segments;
         const unitColor = color?.uint32 ?? 0xFFFFFFFF;
-
         for (let i = 0; i < segments; i++) {
             const angle = angleStep * i;
             const x = Math.cos(angle) * r;
@@ -382,15 +385,86 @@ export class Rapid {
     }
 
     /**
-     * Begins rendering to an offscreen render texture.
-     * @param rt The render texture to target.
+     * Applies a chain of shaders to a texture sequentially using ping-pong RenderTextures.
+     * Each shader receives the output of the previous one as its input.
+     * Two internal RenderTextures are reused across calls (resized as needed).
+     *
+     * @param source   The input texture to start the filter chain from.
+     * @param shaders  An ordered array of CustomGlShader to apply in sequence.
+     * @returns The RenderTexture containing the final filtered result.
+     *          Draw it with `rapid.drawSprite(result)` to display it on screen.
+     *
+     * @example
+     * const result = rapid.applyFilters(tex, [blurShader, outlineShader]);
+     * rapid.drawSprite(result);
      */
+    applyFilters(source: Texture, shaders: CustomGlShader[]): RenderTexture {
+        if (shaders.length === 0) {
+            throw new Error("applyFilters: shaders array must not be empty.");
+        }
+
+        // source.width/height already reflects the region size (not the full base texture).
+        // drawSprite uses the region UV, so only the region pixels are rendered into the RT.
+        // The output RT contains the "baked" region content — no region metadata needed.
+        const w = source.width;
+        const h = source.height;
+
+        // Ensure both ping-pong RTs exist and match the source size (grow-only: no GPU
+        // reallocation unless size exceeds the previous maximum)
+        for (let i = 0; i < 2; i++) {
+            if (!this._filterRT[i]) {
+                this._filterRT[i] = this.texture.createRenderTexture(w, h);
+            } else {
+                this._filterRT[i]!.resize(w, h);
+            }
+        }
+
+        let inputTex: Texture = source;
+        let rtIndex = 0;
+
+        this.matrixStack.save()
+        this.matrixStack.identity();
+        for (let i = 0; i < shaders.length; i++) {
+            const outputRT = this._filterRT[rtIndex % 2]!;
+
+            this.enterRenderTexture(outputRT);
+            this.clearRenderTexture();
+            // Draw the full source (or previous pass output) as a full-RT quad at (0,0).
+            // The projection is already set to (0, w, h, 0) by enterRenderTexture.
+
+            this.drawSprite(inputTex, undefined, false, false, shaders[i]);
+
+            this.leaveRenderTexture();
+
+            inputTex = outputRT;
+            rtIndex++;
+        }
+        this.matrixStack.restore()
+
+        return inputTex as RenderTexture;
+    }
+
+
     enterRenderTexture(rt: RenderTexture): void {
         this.flush();
         rt.activate();
 
         this.gl.viewport(0, 0, rt.width, rt.height);
         this.updateProjection(0, rt.width, rt.height, 0);
+    }
+
+    /**
+     * Clears a RenderTexture to a solid color.
+     * Must be called while the RT is the active render target (i.e. inside enterRenderTexture/leaveRenderTexture).
+     * Can also be called standalone — it will bind the RT, clear it, but NOT restore the main framebuffer.
+     * @param rt    The render texture to clear.
+     * @param color Clear color. Defaults to transparent black (0, 0, 0, 0).
+     */
+    clearRenderTexture(color: Color = new Color(0, 0, 0, 0)): void {
+        this.flush();
+        const gl = this.gl;
+        gl.clearColor(color.r, color.g, color.b, color.a);
+        gl.clear(gl.COLOR_BUFFER_BIT);
     }
 
     /**
@@ -490,17 +564,17 @@ export class Rapid {
         // Important for offscreen targets (FBOs) to resolve alpha mixing issues (e.g., rendering darkening bugs)
         switch (mode) {
             case BlendMode.NORMAL:
-                // Standard semi-transparent blending
-                gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                // Premultiplied alpha: source RGB is already multiplied by A
+                gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 break;
 
             case BlendMode.ADD:
-                // Additive blending (glow effects)
-                gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ONE, gl.ONE);
+                // Additive blending (glow effects) — works the same with premultiplied
+                gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ONE);
                 break;
 
             case BlendMode.MULTIPLY:
-                // Multiply blending (shadows and dark zones)
+                // Multiply blending (shadows)
                 gl.blendFuncSeparate(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
                 break;
 
@@ -510,7 +584,7 @@ export class Rapid {
                 break;
 
             case BlendMode.ERASE:
-                // Erase mode (subtract source alpha from destination)
+                // Erase: subtract source alpha from destination
                 gl.blendFuncSeparate(gl.ZERO, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA);
                 break;
         }

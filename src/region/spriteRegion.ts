@@ -97,9 +97,6 @@ export class SpriteRegion extends Region {
         if (this.freeTextureUnitNum === 0) {
             this.flush();
         }
-        if (this.customShader && this.customShader.uniformDirty.has(this.KEY)) {
-            this.flush();
-        }
 
         const textureId = this.useTexture(texture);
 

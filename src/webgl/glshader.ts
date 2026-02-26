@@ -1,4 +1,5 @@
 import { Region } from "../region/region";
+import { Rapid } from "../render";
 import { createShaderProgram, generateFragShader, FLOAT, vertexAttribDivisor } from "./utils";
 
 export type WebGLContext = WebGL2RenderingContext;
@@ -303,10 +304,12 @@ export class CustomGlShader {
     uniformTextures: Record<string, WebGLTexture> = {};
     /** Number of texture units reserved by this custom shader */
     usedTextureUnitNum: number = 0;
+    rapid: Rapid
 
-    constructor(vs: string, fs: string, usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
+    constructor(rapid: Rapid, vs: string, fs: string, usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
         this.vs = vs;
         this.fs = fs;
+        this.rapid = rapid
         this.uniforms = uniforms ?? {};
         this.usedTextureUnitNum = usedTextureUnitNum;
     }
@@ -316,6 +319,7 @@ export class CustomGlShader {
      * @param uniforms Map of uniform values or WebGL textures to apply.
      */
     setUniforms(uniforms: Record<string, UniformValue | WebGLTexture>) {
+        this.rapid.flush()
         const normalUniforms: Record<string, UniformValue> = {};
         const textureUniforms: Record<string, WebGLTexture> = {};
 

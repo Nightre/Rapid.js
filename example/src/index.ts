@@ -1,10 +1,16 @@
 import performanceCode from './performance.ts?raw';
 import shaderCode from './shader.ts?raw';
 import blendCode from './blend.ts?raw';
+import outlineCode from './outline.ts?raw';
+import filtersCode from './filters.ts?raw';
+import waterCode from './water.ts?raw';
 
 import * as performanceModule from './performance.ts';
 import * as shaderModule from './shader.ts';
 import * as blendModule from './blend.ts';
+import * as outlineModule from './outline.ts';
+import * as filtersModule from './filters.ts';
+import * as waterModule from './water.ts';
 
 export interface Example {
     name: string;
@@ -32,4 +38,20 @@ export const examples: Example[] = [
         code: shaderCode,
         init: async () => shaderModule.init(),
     },
+    {
+        name: 'Outline Shader',
+        code: outlineCode,
+        init: async () => outlineModule.init(),
+    },
+    {
+        name: 'Multi Filters',
+        code: filtersCode,
+        init: async () => filtersModule.init(),
+    },
+    {
+        name: 'Render Texture',
+        code: waterCode,
+        init: async () => waterModule.init(),
+    },
 ];
+

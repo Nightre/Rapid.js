@@ -269,11 +269,10 @@ export class WebglBufferArray extends DynamicArrayBuffer {
         if (this.dirty) {
             const gl = this.gl
             if (this.maxElemNum > this.webglBufferSize) {
-                gl.bufferData(this.type, this.getArray(), this.usage)
+                gl.bufferData(this.type, this.maxElemNum * this.bytePerElem, this.usage)
                 this.webglBufferSize = this.maxElemNum
-            } else {
-                gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
             }
+            gl.bufferSubData(this.type, 0, this.getArray(0, this.usedElemNum))
             this.dirty = false
         }
     }

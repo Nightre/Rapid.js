@@ -158,6 +158,26 @@ export class Color {
     }
 
     /**
+     * Creates a Color instance from normalized float components (0–1 range).
+     * Use this instead of `new Color()` when working with shader-style 0.0–1.0 values.
+     * @param r - Red channel (0.0–1.0)
+     * @param g - Green channel (0.0–1.0)
+     * @param b - Blue channel (0.0–1.0)
+     * @param a - Alpha channel (0.0–1.0), defaults to 1.0
+     * @returns A new Color instance with components scaled to 0–255.
+     * @example
+     * Color.fromNorm(0.9, 0.87, 0.55, 0.1) // moon glow
+     */
+    static fromNorm(r: number, g: number, b: number, a: number = 1.0): Color {
+        return new Color(
+            Math.round(r * 255),
+            Math.round(g * 255),
+            Math.round(b * 255),
+            Math.round(a * 255)
+        );
+    }
+
+    /**
      * Creates a Color instance from a hexadecimal color string.
      * @param hexString - The hexadecimal color string, e.g., '#RRGGBB' or '#RRGGBBAA'.
      * @returns A new Color instance.

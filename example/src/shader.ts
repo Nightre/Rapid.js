@@ -31,7 +31,7 @@ export async function init() {
         rapid.texture.load(trUrl),
     ]);
 
-    const customShader = new CustomGlShader(
+    const customShader = new CustomGlShader(rapid,
         `
 uniform float u_time;
 void vertex(inout vec4 position, inout vec2 region) {
@@ -50,7 +50,7 @@ void fragment(inout vec4 color){
 }`, 1 // use one texture
     );
 
-    const customShader2 = new CustomGlShader(
+    const customShader2 = new CustomGlShader(rapid,
         `
 void vertex(inout vec4 position, inout vec2 region) {}`,
         `

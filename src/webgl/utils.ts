@@ -105,10 +105,14 @@ export function createTexture(
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 
     if (onlySize) {
+        // RenderTexture: blank allocation, no source pixels to premultiply
         const s = source as { width: number; height: number };
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, s.width, s.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     } else {
+        // Let the browser premultiply alpha for us — fixes edge fringing artifacts
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     }
 
     gl.bindTexture(gl.TEXTURE_2D, null);
@@ -128,7 +132,7 @@ export function generateFragShader(fs: string, max: number) {
             } else {
                 code += `else if(vTextureId == ${index})`
             }
-            code += `{fragColor = texture(uTextures[${index}], vRegion) * vColor;}`
+            code += `{return texture(uTextures[${index}], uv) * vColor;}`
         }
         fs = fs.replace("%GET_COLOR%", code)
     }

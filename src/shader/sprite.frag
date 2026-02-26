@@ -8,10 +8,14 @@ in vec4 vColor;
 
 out vec4 fragColor;
 
+vec4 sampleTexture(vec2 uv) {
+    %GET_COLOR%
+}
+
 // CUSTOM_CODE
 
 void main(void) {
-    %GET_COLOR%
+    fragColor = sampleTexture(vRegion);
 
     // CUSTOM_CODE_CALL
 }

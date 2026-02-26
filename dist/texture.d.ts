@@ -1,4 +1,4 @@
-import { Rapid } from './main';
+import { Rapid } from './render';
 import { Color } from './color';
 export type Images = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas;
 export declare enum TextureWrapMode {

@@ -196,6 +196,7 @@ class BaseTexture {
         gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
         if (this.width === source.width && this.height === source.height) {
             // High-performance path: replace texture content when size is identical
@@ -206,6 +207,8 @@ class BaseTexture {
             this.width = source.width;
             this.height = source.height;
         }
+
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     }
 
     /**
@@ -237,6 +240,12 @@ class Texture {
 
     public flipY: boolean = false;
     public glTexture: WebGLTexture | null = null;
+
+    // Stored pixel-space region (before UV conversion), used by withPadding()
+    protected _px: number = 0;
+    protected _py: number = 0;
+    protected _pw: number = 0;
+    protected _ph: number = 0;
 
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
@@ -272,6 +281,9 @@ class Texture {
      */
     setRegion(x: number, y: number, w: number, h: number): this {
         if (!this.base) return this;
+
+        // Store pixel-space region for use by withPadding()
+        this._px = x; this._py = y; this._pw = w; this._ph = h;
 
         this.uvX = x / this.base.width;
         this.uvY = y / this.base.height;
@@ -316,12 +328,34 @@ class Texture {
      * @returns A new Texture instance.
      */
     clone(): Texture {
-        const t = new Texture(this.base); // setBase handles ref count
+        const t = new Texture(this.base);
         t.scale = this.scale;
         t.uvX = this.uvX; t.uvY = this.uvY;
         t.uvW = this.uvW; t.uvH = this.uvH;
         t.width = this.width; t.height = this.height;
         t.flipY = this.flipY;
+        // Copy stored pixel region so withPadding() works on clones too
+        t._px = this._px; t._py = this._py;
+        t._pw = this._pw; t._ph = this._ph;
+        return t;
+    }
+
+    /**
+     * Returns a new Texture with the rendered quad expanded by `pixels` on all sides.
+     * The UV coordinates are adjusted outward so the padded border samples outside
+     * the original texture region (which is transparent when using CLAMP wrap mode).
+     *
+     * Use this with outline or glow shaders that need to draw beyond the texture edge.
+     * @param pixels - Number of pixels to expand on each side.
+     * @example
+     * const padded = catTex.withPadding(6);
+     * rapid.drawSprite(padded, Color.White(), false, false, outlineShader);
+     */
+    withPadding(pixels: number): Texture {
+        if (!this.base) return new Texture();
+        const t = this.clone();
+        // Expand the pixel region outward — setRegion recomputes UV and dimensions
+        t.setRegion(this._px - pixels, this._py - pixels, this._pw + pixels * 2, this._ph + pixels * 2);
         return t;
     }
 
@@ -374,6 +408,10 @@ class RenderTexture extends Texture {
     private _base: BaseTexture;
     public flipY: boolean = true;
 
+    /** Actual GPU-allocated dimensions — grow-only, never shrink */
+    private _allocW: number = 0;
+    private _allocH: number = 0;
+
     constructor(render: Rapid, width: number, height: number, options?: ITextureOptions) {
         super();
         this.gl = render.gl;
@@ -396,34 +434,60 @@ class RenderTexture extends Texture {
     }
 
     /**
-     * Resizes the render texture buffers.
-     * @param width - The new width.
-     * @param height - The new height.
-     * @param force - Force regeneration even if the size is the same.
+     * Resizes the render texture using a grow-only GPU allocation strategy.
+     *
+     * - GPU memory is only reallocated when the new size **exceeds** the current allocation.
+     * - Shrinking only updates the logical dimensions and UV sub-region — no GPU work.
+     *
+     * This makes it safe to call every frame with varying sizes (e.g. inside applyFilters).
+     *
+     * @param width  - New logical width.
+     * @param height - New logical height.
+     * @param force  - Force full GPU reallocation regardless of current allocation size.
      */
     resize(width: number, height: number, force: boolean = false): void {
-        if (!force && this.width === width && this.height === height) return;
+        const sameLogical = this.width === width && this.height === height;
+        if (!force && sameLogical) return;
 
         const gl = this.gl;
+        const needsGpuAlloc = force || width > this._allocW || height > this._allocH;
+
+        if (needsGpuAlloc) {
+            this._allocW = Math.max(this._allocW, width);
+            this._allocH = Math.max(this._allocH, height);
+            this._base.width = this._allocW;
+            this._base.height = this._allocH;
+
+            gl.bindTexture(gl.TEXTURE_2D, this._base.glTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._allocW, this._allocH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+            gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderbuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, this._allocW, this._allocH);
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._base.glTexture, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.renderbuffer);
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+
+        // Update logical dimensions
         this.width = width;
         this.height = height;
-        this._base.width = width;
-        this._base.height = height;
 
-        gl.bindTexture(gl.TEXTURE_2D, this._base.glTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-        // 2D only mode - use STENCIL_INDEX8, no depth buffer
-        gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderbuffer);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, width, height);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._base.glTexture, 0);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.renderbuffer);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-        gl.bindTexture(gl.TEXTURE_2D, null);
+        // UV maps the logical portion within the (possibly larger) GPU allocation.
+        // flipY=true swaps uvY/uvH so FBO output renders right-side-up.
+        this.uvX = 0;
+        this.uvW = width / this._allocW;
+        if (this.flipY) {
+            this.uvY = height / this._allocH;
+            this.uvH = 0;
+        } else {
+            this.uvY = 0;
+            this.uvH = height / this._allocH;
+        }
     }
 
     /**
