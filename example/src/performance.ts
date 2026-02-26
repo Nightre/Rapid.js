@@ -1,4 +1,6 @@
 // @ts-ignore
+import catUrl from '../cat.png';
+import cat2Url from '../cat2.png';
 export async function init() {
     // noshow start
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -17,8 +19,8 @@ export async function init() {
     });
 
     const [tex1, tex2] = await Promise.all([
-        rapid.texture.load('./cat.png'),
-        rapid.texture.load('./cat2.png'),
+        rapid.texture.load(catUrl),
+        rapid.texture.load(cat2Url),
     ]);
 
     const SPRITE_W = tex1.width;

@@ -1,4 +1,6 @@
 import { Color } from '../../src/color.ts';
+import catUrl from '../cat.png';
+import cat2Url from '../cat2.png';
 
 // @ts-ignore
 export async function init() {
@@ -14,8 +16,8 @@ export async function init() {
         backgroundColor: new Color(0.05, 0.05, 0.12, 1)
     });
 
-    const tex1 = await rapid.texture.load('./cat.png');
-    const tex2 = await rapid.texture.load('./cat2.png');
+    const tex1 = await rapid.texture.load(catUrl);
+    const tex2 = await rapid.texture.load(cat2Url);
     let time = 0;
 
     return {

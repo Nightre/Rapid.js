@@ -1,5 +1,10 @@
 import { Color } from '../../src/color.ts';
 import { MaskType } from '../../src/render.ts';
+import catUrl from '../cat.png';
+import cat2Url from '../cat2.png';
+import cat3Url from '../cat3.png';
+import stickUrl from '../stick.png';
+import trUrl from '../tr.png';
 
 // @ts-ignore
 export async function init() {
@@ -19,12 +24,11 @@ export async function init() {
     });
 
     const [tex1, tex2, tex3, texStick, texTr] = await Promise.all([
-        rapid.texture.load('./cat.png'),
-        rapid.texture.load('./cat2.png'),
-        rapid.texture.load('./cat3.png'),
-
-        rapid.texture.load('./stick.png'),
-        rapid.texture.load('./tr.png'),
+        rapid.texture.load(catUrl),
+        rapid.texture.load(cat2Url),
+        rapid.texture.load(cat3Url),
+        rapid.texture.load(stickUrl),
+        rapid.texture.load(trUrl),
     ]);
 
     const customShader = new CustomGlShader(
