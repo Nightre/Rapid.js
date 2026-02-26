@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
+import path from 'path'
 
 export default defineConfig({
     base: '/Rapid.js/example/',
-    root: '.',
+    root: __dirname,
     build: {
-        outDir: 'pages-dist/example',
+        outDir: path.resolve(__dirname, '../pages-dist/example'),
         emptyOutDir: true,
     },
 })
