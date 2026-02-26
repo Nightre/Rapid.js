@@ -1,17 +1,21 @@
+#version 300 es
 precision mediump float;
-varying vec2 vRegion;
-varying vec4 vColor;
+
+in vec4 vColor;
+in vec2 vRegion;
 
 uniform sampler2D uTexture;
 uniform int uUseTexture;
 
+out vec4 fragColor;
+
+// CUSTOM_CODE
+
 void main(void) {
-    vec4 color;
-    if(uUseTexture > 0){
-        color = texture2D(uTexture, vRegion) * vColor;
-    }else{
-        color = vColor;
+    if (uUseTexture > 0) {
+        fragColor = texture(uTexture, vRegion) * vColor;
+    } else {
+        fragColor = vColor;
     }
-    // fragment
-    gl_FragColor = color;
+    // CUSTOM_CODE_CALL
 }

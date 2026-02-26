@@ -1,206 +1,228 @@
-import { default as Rapid } from './render';
-import { Images, ITextTextureOptions, TextureWrapMode, WebGLContext } from './interface';
-import { Color } from './math';
+import { Rapid } from './main';
+import { Color } from './color';
+export type Images = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas;
+export declare enum TextureWrapMode {
+    REPEAT = 0,
+    CLAMP = 1,
+    MIRRORED_REPEAT = 2
+}
 /**
- * texture manager
- * @ignore
+ * Options for configuring texture creation.
  */
-declare class TextureCache {
+export interface ITextureOptions {
+    antialias?: boolean;
+    wrap?: TextureWrapMode;
+    key?: string;
+}
+/**
+ * Manages texture loading, caching, and creation.
+ */
+declare class TextureManager {
     private render;
     private cache;
-    private antialias;
-    constructor(render: Rapid, antialias: boolean);
+    constructor(render: Rapid);
     /**
-     * create texture from url
-     * Equivalent to {@link Texture.fromUrl} method
-     * @param url
-     * @param antialias
-     * @returns
+     * Asynchronously loads a texture from a URL.
+     * @param url - The image URL to load.
+     * @param options - Optional configuration for the texture.
+     * @returns A promise that resolves to the loaded Texture.
      */
-    textureFromUrl(url: string, antialias?: boolean, wrapMode?: TextureWrapMode): Promise<Texture>;
+    load(url: string, options?: ITextureOptions): Promise<Texture>;
     /**
-     * Create a new `Texture` instance from a FrameBufferObject.
-     * @param fbo - The FrameBufferObject to create the texture from.
-     * @returns A new `Texture` instance created from the specified FrameBufferObject.
+     * Creates a texture synchronously from an existing HTML element (Image, Canvas, Video).
+     * @param source - The source image element.
+     * @param options - Optional configuration for the texture.
+     * @returns The newly created Texture.
      */
-    textureFromFrameBufferObject(fbo: FrameBufferObject): Texture;
+    create(source: Images, options?: ITextureOptions): Texture;
     /**
-     * Create a new `Texture` instance from an image source.
-     * @param source - The image source to create the texture from.
-     * @param antialias - Whether to enable antialiasing.
-     * @returns A new `Texture` instance created from the specified image source.
+     * Creates a generic Render Texture (FrameBuffer).
+     * @param width - The width of the render texture.
+     * @param height - The height of the render texture.
+     * @param options - Optional configuration for the texture.
+     * @returns The newly created RenderTexture.
      */
-    textureFromSource(source: Images, antialias?: boolean, wrapMode?: TextureWrapMode): Texture;
+    createRenderTexture(width: number, height: number, options?: ITextureOptions): RenderTexture;
     /**
-     * Load an image from the specified URL.
-     * @param url - The URL of the image to load.
-     * @returns A promise that resolves to the loaded HTMLImageElement.
+     * Creates a TextTexture for rendering text.
+     * @param text - The text to display.
+     * @param style - Optional styling for the text.
+     * @param options - Optional configuration for the texture.
+     * @returns The newly created TextTexture.
      */
-    loadImage(url: string): Promise<HTMLImageElement>;
+    createTextTexture(text: string, style?: ITextStyle, options?: ITextureOptions): TextTexture;
     /**
-     * Create a new `Text` instance.
-     * @param options - The options for rendering the text, such as font, size, color, etc.
-     * @returns A new `Text` instance.
+     * Destroys a texture and potentially removes its BaseTexture from the cache.
+     * If a Texture instance is provided, it decrements the reference count of the BaseTexture.
+     * The BaseTexture will only be destroyed if its reference count drops to 0, or if `force` is true.
+     * @param textureOrUrl - The texture instance, base texture, or cache key (URL) to destroy.
+     * @param force - If true, destroys the underlying BaseTexture immediately regardless of reference count.
      */
-    createText(options: ITextTextureOptions): Text;
+    destroy(textureOrUrl: Texture | BaseTexture | string, force?: boolean): void;
     /**
-     * Destroy the texture
-     * @param texture
+     * Destroys all cached textures and clears the cache, ignoring reference counts.
      */
-    destroy(texture: Texture | BaseTexture): void;
-    /**
-     * Create a new FrameBufferObject instance
-     * @param width - Width of the framebuffer
-     * @param height - Height of the framebuffer
-     * @param antialias - Whether to enable antialiasing
-     * @returns A new FrameBufferObject instance
-     */
-    createFrameBufferObject(width: number, height: number, antialias?: boolean): FrameBufferObject;
-    private removeCache;
+    destroyAll(): void;
+    private _fetchImage;
 }
 /**
- * Each {@link Texture} references a baseTexture, and different textures may have the same baseTexture
+ * The underlying GPU resource holder for a texture.
+ * Implements simple reference counting.
  */
 declare class BaseTexture {
-    texture: WebGLTexture;
+    glTexture: WebGLTexture | null;
     width: number;
     height: number;
-    wrapMode: TextureWrapMode;
-    cacheKey: string | Images | null;
-    constructor(texture: WebGLTexture, width: number, height: number, wrapMode?: TextureWrapMode);
-    static fromImageSource(r: Rapid, image: Images, antialias?: boolean, wrapMode?: TextureWrapMode): BaseTexture;
+    uid?: string;
+    refCount: number;
+    constructor(texture: WebGLTexture, width: number, height: number);
     /**
-     * Destroy the texture
-     * @param gl
-     * @ignore
+     * Creates a BaseTexture from an image source.
+     * @param render - The Rapid renderer instance.
+     * @param source - The image source.
+     * @param options - Optional configuration.
+     * @returns The created BaseTexture.
      */
-    destroy(gl: WebGLContext): void;
-}
-declare class Texture {
+    static fromSource(render: Rapid, source: Images, options?: ITextureOptions): BaseTexture;
     /**
-     * Reference to the {@link BaseTexture} used by this texture.
+     * Updates the content of the existing texture (e.g. for Video or dynamic Canvas).
+     * Uses texSubImage2D if dimensions haven't changed for better performance.
+     * @param gl - The WebGL rendering context.
+     * @param source - The new image source.
      */
-    base?: BaseTexture;
+    updateSource(gl: WebGL2RenderingContext, source: Images): void;
     /**
-     * The x-coordinate of the top-left corner of the clipped region.
+     * Destroys the WebGL texture resource.
+     * @param gl - The WebGL rendering context.
      */
-    clipX: number;
-    /**
-     * The y-coordinate of the top-left corner of the clipped region.
-     */
-    clipY: number;
-    /**
-     * The width of the clipped region.
-     */
-    clipW: number;
-    /**
-     * The height of the clipped region.
-     */
-    clipH: number;
-    /**
-     * The width of the texture.
-     */
-    width: number;
-    /**
-     * The height of the texture.
-     */
-    height: number;
-    /**
-     * Image scaling factor
-     */
-    protected scale: number;
-    /**
-     * Creates a new `Texture` instance with the specified base texture reference.
-     * @param base - The {@link BaseTexture} to be used by the texture.
-     */
-    constructor(base?: BaseTexture);
-    /**
-     * Set or change BaseTexture
-     * @param base
-     * @param scale
-     */
-    setBaseTexture(base?: BaseTexture): void;
-    /**
-     * Sets the region of the texture to be used for rendering.
-     * @param x - The x-coordinate of the top-left corner of the region.
-     * @param y - The y-coordinate of the top-left corner of the region.
-     * @param w - The width of the region.
-     * @param h - The height of the region.
-     */
-    setClipRegion(x: number, y: number, w: number, h: number): this | undefined;
-    /**
-     * Creates a new `Texture` instance from the specified image source.
-     * @param rapid - The Rapid instance to use.
-     * @param image - The image source to create the texture from.
-     * @param antialias - Whether to enable antialiasing for the texture. Default is `false`.
-     * @returns A new `Texture` instance created from the image source.
-     */
-    static fromImageSource(rapid: Rapid, image: Images, antialias?: boolean): Texture;
-    static fromFrameBufferObject(fbo: FrameBufferObject): Texture;
-    /**
-     * Converts the current texture into a spritesheet.
-     * @param rapid - The Rapid instance to use.
-     * @param spriteWidth - The width of each sprite in the spritesheet.
-     * @param spriteHeight - The height of each sprite in the spritesheet.
-     * @returns An array of `Texture` instances representing the sprites in the spritesheet.
-     */
-    createSpritesheet(spriteWidth: number, spriteHeight: number): Texture[];
-    /**
-     * Clone the current texture
-     * @returns A new `Texture` instance with the same base texture reference.
-     */
-    clone(): Texture;
+    destroy(gl: WebGL2RenderingContext): void;
 }
 /**
- * @ignore
+ * A lightweight reference to a BaseTexture, containing UV clipping and logical size information.
  */
-export declare const SCALEFACTOR = 2.5;
-declare class Text extends Texture {
-    private readonly options;
-    private readonly rapid;
-    protected scale: number;
-    text: string;
-    constructor(rapid: Rapid, options: ITextTextureOptions);
-    private updateTextImage;
-    private createTextCanvas;
+declare class Texture {
+    base?: BaseTexture;
+    uvX: number;
+    uvY: number;
+    uvW: number;
+    uvH: number;
+    width: number;
+    height: number;
+    scale: number;
+    flipY: boolean;
+    glTexture: WebGLTexture | null;
+    constructor(base?: BaseTexture);
     /**
-     * Updates the displayed text. Re-renders the texture if the text has changed.
-     * @param text - The new text to display.
+     * Sets the base texture and increments its reference count.
+     * @param base - The BaseTexture instance.
+     * @returns The current Texture instance.
      */
-    setText(text: string): void;
+    setBase(base: BaseTexture): this;
+    /**
+     * Sets the visible region (clipping) in pixels relative to the BaseTexture.
+     * @param x - The x coordinate in pixels.
+     * @param y - The y coordinate in pixels.
+     * @param w - The width in pixels.
+     * @param h - The height in pixels.
+     * @returns The current Texture instance.
+     */
+    setRegion(x: number, y: number, w: number, h: number): this;
+    /**
+     * Creates a new Texture representing a sub-region of this Texture.
+     * @param x - The x coordinate in pixels, relative to this texture's logical start.
+     * @param y - The y coordinate in pixels, relative to this texture's logical start.
+     * @param width - The width of the sub-texture in pixels.
+     * @param height - The height of the sub-texture in pixels.
+     * @returns A new Texture pointing to the sub-region.
+     */
+    getSubTexture(x: number, y: number, width: number, height: number): Texture;
+    /**
+     * Creates a shallow copy of this Texture, sharing the same BaseTexture.
+     * @returns A new Texture instance.
+     */
+    clone(): Texture;
+    /**
+     * Utility to split this texture into a grid of sprite textures.
+     * Sub-textures will respect the current UV offsets.
+     * @param cellWidth - The width of each cell in pixels.
+     * @param cellHeight - The height of each cell in pixels.
+     * @param cols - Optional number of columns. Truncates based on texture width if omitted.
+     * @param rows - Optional number of rows. Truncates based on texture height if omitted.
+     * @returns An array of split Textures.
+     */
+    splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number): Texture[];
+    /**
+     * Marks this Texture as destroyed, decrementing the BaseTexture reference count.
+     */
+    destroy(): void;
 }
-declare class FrameBufferObject extends BaseTexture {
+/**
+ * A texture that can be rendered to (wraps a WebGL Framebuffer).
+ */
+declare class RenderTexture extends Texture {
     private framebuffer;
+    private renderbuffer;
     private gl;
-    private readonly stencilBuffer;
+    private _base;
+    flipY: boolean;
+    constructor(render: Rapid, width: number, height: number, options?: ITextureOptions);
     /**
-     * Creates a new FrameBufferObject instance
-     * @param render - The Rapid instance to use
-     * @param width - Width of the framebuffer
-     * @param height - Height of the framebuffer
-     * @param antialias - Whether to enable antialiasing
+     * Resizes the render texture buffers.
+     * @param width - The new width.
+     * @param height - The new height.
+     * @param force - Force regeneration even if the size is the same.
      */
-    constructor(render: Rapid, width: number, height: number, antialias?: boolean);
+    resize(width: number, height: number, force?: boolean): void;
     /**
-     * Bind the framebuffer for rendering
-     * @ignore
+     * Activates this texture as the current render target.
+     * @param clearColor - Optional color to clear the buffer with.
      */
-    bind(bgColor: Color): void;
+    activate(clearColor?: Color): void;
     /**
-     * Unbind the framebuffer and restore default framebuffer
-     * @ignore
+     * Deactivates this texture, returning rendering to the default frame buffer.
      */
-    unbind(): void;
+    deactivate(): void;
     /**
-     * Resize the framebuffer
-     * @param width - New width
-     * @param height - New height
+     * Destroys the framebuffer, renderbuffer, and base texture.
      */
-    resize(width: number, height: number): void;
-    /**
-     * Override destroy method to clean up framebuffer resources
-     * @param gl - WebGL context
-     */
-    destroy(gl: WebGLContext): void;
+    destroy(): void;
 }
-export { Text, Texture, BaseTexture, TextureCache, FrameBufferObject };
+export interface ITextStyle {
+    fontFamily?: string;
+    fontSize?: number;
+    fontWeight?: string;
+    fill?: string | CanvasGradient | CanvasPattern;
+    stroke?: string | CanvasGradient | CanvasPattern;
+    strokeThickness?: number;
+    align?: "left" | "center" | "right";
+    baseline?: CanvasTextBaseline;
+    lineHeight?: number;
+}
+/**
+ * A texture that renders text using an internal HTML Canvas.
+ */
+declare class TextTexture extends Texture {
+    private canvas;
+    private ctx;
+    private render;
+    private _text;
+    private _style;
+    private _base;
+    flipY: boolean;
+    constructor(render: Rapid, text: string, style?: ITextStyle, options?: ITextureOptions);
+    get text(): string;
+    /**
+     * Set new text and update the texture
+     */
+    set text(value: string);
+    get style(): ITextStyle;
+    /**
+     * Set new style partially and update the texture
+     */
+    set style(value: Partial<ITextStyle>);
+    /**
+     * Updates the internal canvas and uploads it to WebGL
+     */
+    update(): void;
+}
+export { TextureManager, Texture, RenderTexture, TextTexture };

@@ -1,13 +1,17 @@
+#version 300 es
 precision mediump float;
 uniform sampler2D uTextures[%TEXTURE_NUM%];
 
-varying vec2 vRegion;
-varying float vTextureId;
-varying vec4 vColor;
+in vec2 vRegion;
+flat in int vTextureId;
+in vec4 vColor;
+
+out vec4 fragColor;
+
+// CUSTOM_CODE
 
 void main(void) {
-    vec4 color;
     %GET_COLOR%
-    // fragment
-    gl_FragColor = color * vColor;
+
+    // CUSTOM_CODE_CALL
 }

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid WebGL Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        body {
+            background: #fff;
+            display: flex;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #222;
+            font-size: 13px;
+        }
+
+        /* ---- Sidebar ---- */
+        #sidebar {
+            width: 180px;
+            flex-shrink: 0;
+            background: #f5f5f5;
+            border-right: 1px solid #d0d0d0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        #sidebar-header {
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            border-bottom: 1px solid #d0d0d0;
+            user-select: none;
+        }
+
+        #example-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .example-item {
+            padding: 7px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+            border-bottom: 1px solid #e8e8e8;
+            user-select: none;
+        }
+
+        .example-item:hover {
+            background: #e8e8e8;
+        }
+
+        .example-item.active {
+            background: #222;
+            color: #fff;
+        }
+
+        /* ---- Main ---- */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        /* ---- Top bar ---- */
+        #topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #d0d0d0;
+            font-size: 12px;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        #topbar #info {
+            font-weight: 700;
+            color: #222;
+        }
+
+        /* ---- Content Area ---- */
+        #content-area {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* ---- Canvas Panel ---- */
+        #canvas-panel {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #d0d0d0;
+        }
+
+        #canvas-panel canvas {
+            display: block;
+            background: #000;
+        }
+
+        /* ---- Code Panel ---- */
+        #code-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        #code-panel-header {
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+            user-select: none;
+        }
+
+        #code-display {
+            flex: 1;
+            overflow: auto;
+            padding: 10px 14px;
+            background: #fff;
+        }
+
+        #code-display code {
+            display: block;
+            white-space: pre;
+            word-break: normal;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #24292e;
+        }
+
+        /* ---- highlight.js overrides ---- */
+        .hljs {
+            background: none;
+            color: #24292e;
+            padding: 0;
+        }
+
+        .hljs-attr {
+            color: #005cc5;
+        }
+
+        .hljs-string {
+            color: #22863a;
+        }
+
+        .hljs-number {
+            color: #d73a49;
+        }
+
+        .hljs-literal {
+            color: #d73a49;
+        }
+
+        .hljs-keyword {
+            color: #d73a49;
+        }
+
+        .hljs-function {
+            color: #6f42c1;
+        }
+
+        .hljs-comment {
+            color: #6a737d;
+            font-style: italic;
+        }
+
+        .hljs-tag {
+            color: #22863a;
+        }
+
+        .hljs-name {
+            color: #22863a;
+        }
+
+        .hljs-built_in {
+            color: #005cc5;
+        }
+
+        .hljs-params {
+            color: #e36209;
+        }
+
+        .hljs-title {
+            color: #6f42c1;
+        }
+
+        /* ---- Scrollbar ---- */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c0c0c0;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <div id="sidebar-header">Examples</div>
+        <div id="example-list"></div>
+    </div>
+
+    <div id="main-content">
+        <div id="topbar">
+            <span id="info">—</span>
+        </div>
+        <div id="content-area">
+            <div id="canvas-panel">
+                <canvas id="canvas" width="640" height="480"></canvas>
+            </div>
+            <div id="code-panel">
+                <div id="code-panel-header">Source Code</div>
+                <div id="code-display">
+                    <code>// Select an example to view code.</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+</body>
+
+</html>

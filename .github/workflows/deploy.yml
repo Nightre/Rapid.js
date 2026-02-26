@@ -1,0 +1,91 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (root)
+        run: yarn install
+
+      # 构建 example（Vite 应用）
+      - name: Build Example
+        run: npx vite build --config example/vite.config.ts
+
+      # 生成 API 文档（TypeDoc）
+      - name: Generate API Docs
+        run: npx typedoc
+        # TypeDoc 会读取根目录的 typedoc.json，输出到 /doc
+
+      # 将 /doc 复制到 pages-dist/api
+      - name: Copy API docs
+        run: |
+          mkdir -p pages-dist/api
+          cp -r doc/. pages-dist/api/
+
+      # 创建根目录 index.html，跳转到 example 或显示导航
+      - name: Create root index.html
+        run: |
+          cat > pages-dist/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Rapid - WebGL 2D Rendering Engine</title>
+            <style>
+              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #111; color: #eee; gap: 16px; }
+              h1 { font-size: 2rem; }
+              p { color: #aaa; }
+              .links { display: flex; gap: 24px; margin-top: 16px; }
+              a { color: #7eb6ff; text-decoration: none; font-size: 1.1rem; border: 1px solid #7eb6ff; padding: 8px 24px; border-radius: 6px; }
+              a:hover { background: #7eb6ff; color: #111; }
+            </style>
+          </head>
+          <body>
+            <h1>⚡ Rapid</h1>
+            <p>A stateless, data-driven, high-performance WebGL 2D rendering engine.</p>
+            <div class="links">
+              <a href="./example/">🎮 Examples</a>
+              <a href="./api/">📖 API Docs</a>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
