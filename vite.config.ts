@@ -4,7 +4,7 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
   build: {
     lib: {
-      entry: './src/main.ts',
+      entry: './src/index.ts',
       name: 'RapidRender',
       fileName: 'rapid-render',
     },
