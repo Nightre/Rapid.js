@@ -6,6 +6,7 @@ import { MatrixStack, MatrixStore } from "./matrix-engine";
 import { GraphicRegion } from "./region/graphicRegion";
 import { RenderTexture, Texture, TextureManager } from "./texture";
 import { Color } from "./color";
+import { ILineRenderOptions, getLineGeometry } from "./line";
 
 /**
  * Options for initializing the Rapid application.
@@ -133,12 +134,15 @@ export class Rapid {
         this.spriteRegion = new SpriteRegion(this);
         this.graphicRegion = new GraphicRegion(this);
 
-        this.logicWidth = options.logicWidth || 640;
-        this.logicHeight = options.logicHeight || 480;
+        const cssW = this.canvas.clientWidth || this.canvas.width;
+        const cssH = this.canvas.clientHeight || this.canvas.height;
 
-        // Initialize physics dimensions; resize() validates these along with canvas dimensions.
-        this.physicsWidth = options.physicsWidth || 0;
-        this.physicsHeight = options.physicsHeight || 0;
+        // Initialize physics dimensions; fall back to CSS size * DPR if not provided
+        this.physicsWidth = options.physicsWidth || Math.round(cssW * this.dpr);
+        this.physicsHeight = options.physicsHeight || Math.round(cssH * this.dpr);
+
+        this.logicWidth = options.logicWidth || (this.physicsWidth / this.dpr);
+        this.logicHeight = options.logicHeight || (this.physicsHeight / this.dpr);
 
         this.resize(this.logicWidth, this.logicHeight, this.physicsWidth, this.physicsHeight);
 
@@ -212,6 +216,34 @@ export class Rapid {
             h,
             color?.uint32 ?? 0xFFFFFFFF,
         );
+    }
+
+    /**
+     * Draws a line geometry based on the provided options.
+     * @param options Line rendering options.
+     * @param color An optional tint color applied to the line.
+     * @param customShader An optional custom shader overriding the region's default shader.
+     * @param customMatrix An optional custom matrix to use for transformation.
+     */
+    drawLine(
+        options: ILineRenderOptions,
+        color?: Color,
+        customShader?: GLShader | CustomGlShader,
+        customMatrix?: number
+    ): void {
+        if (this.inCreateMask) {
+            return;
+        }
+
+        const { vertices, uv } = getLineGeometry(options);
+        if (vertices.length === 0) return;
+
+        this.startGraphic(this.gl.TRIANGLES, options.texture, customShader, customMatrix);
+        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        for (let i = 0; i < vertices.length; i++) {
+            this.addGraphicVertex(vertices[i].x, vertices[i].y, uv[i].x, uv[i].y, unitColor);
+        }
+        this.endGraphic();
     }
 
     /**
