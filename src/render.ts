@@ -620,4 +620,37 @@ export class Rapid {
                 break;
         }
     }
+
+    /**
+     * Enables rectangular scissor clipping. Only pixels within the specified
+     * rectangle (in logical coordinates) will be rendered.
+     * Coordinates use the same system as your drawing calls (top-left origin).
+     * @param x Left edge in logical pixels.
+     * @param y Top edge in logical pixels.
+     * @param width Width in logical pixels.
+     * @param height Height in logical pixels.
+     */
+    startScissor(x: number, y: number, width: number, height: number): void {
+        this.flush();
+        const gl = this.gl;
+        const scaleX = this.physicsWidth / this.logicWidth;
+        const scaleY = this.physicsHeight / this.logicHeight;
+
+        // Convert logical coords to physical pixels, flipping Y for WebGL (bottom-left origin)
+        const px = Math.round(x * scaleX);
+        const py = Math.round(this.physicsHeight - (y + height) * scaleY);
+        const pw = Math.round(width * scaleX);
+        const ph = Math.round(height * scaleY);
+
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(px, py, pw, ph);
+    }
+
+    /**
+     * Disables scissor clipping, restoring full-canvas rendering.
+     */
+    endScissor(): void {
+        this.flush();
+        this.gl.disable(this.gl.SCISSOR_TEST);
+    }
 }
