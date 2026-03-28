@@ -207,9 +207,8 @@ export class Rapid {
         if (flipY) { v += h; h = -h; }
 
         this.spriteRegion.drawSprite(
-            texture.glTexture!,
+            texture,
             customMatrix ?? this.matrixStack.curWorldM,
-            texture.width, texture.height,
             u,
             v,
             w,

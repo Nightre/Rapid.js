@@ -19,6 +19,7 @@ export class Region {
     fs: string = ""
 
     protected usedTextures: WebGLTexture[] = []
+    protected usedTexturePadding: number[] = []
 
     constructor(public rapid: Rapid) {
         this.gl = rapid.gl;
@@ -42,10 +43,14 @@ export class Region {
             (_, index) => index);
     }
 
-    useTexture(texture: WebGLTexture) {
+    useTexture(texture: WebGLTexture, paddingX: number = 0, paddingY: number = 0) {
         const textureUnit = this.usedTextures.indexOf(texture)
         if (textureUnit == -1) {
             this.usedTextures.push(texture)
+
+            this.usedTexturePadding.push(paddingX)
+            this.usedTexturePadding.push(paddingY)
+
             return this.usedTextures.length - 1
         }
         return textureUnit
@@ -134,10 +139,14 @@ export class Region {
         shader.setUniform("uTextures", Int32Array.from(
             { length: this.usedTextures.length }, (_, i) => i
         ));
+        shader.setUniform("uPadding", Float32Array.from(
+            { length: this.usedTexturePadding.length }, (_, i) => this.usedTexturePadding[i]
+        ));
     }
 
     resetRender() {
         this.usedTextures.length = 0;
+        this.usedTexturePadding.length = 0;
     }
 
     hasPendingContent(): boolean {

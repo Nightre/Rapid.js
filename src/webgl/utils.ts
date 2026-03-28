@@ -120,7 +120,7 @@ export function createTexture(
     return texture;
 }
 
-export function generateFragShader(fs: string, max: number) {
+export function generateShader(fs: string, max: number) {
     if (fs.includes("%TEXTURE_NUM%")) fs = fs.replace("%TEXTURE_NUM%", max.toString())
     if (fs.includes("%GET_COLOR%")) {
         let code = ""
@@ -141,8 +141,6 @@ export function generateFragShader(fs: string, max: number) {
 }
 export const FLOAT = 5126;
 export const UNSIGNED_BYTE = 5121;
-
-// ── Instanced rendering helpers ───────────────────────────────────────────────
 
 export function vertexAttribDivisor(gl: WebGLContext, index: number, divisor: number): void {
     gl.vertexAttribDivisor(index, divisor);

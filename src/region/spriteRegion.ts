@@ -2,10 +2,11 @@ import { Rapid } from "../render";
 import { Region } from "./region";
 import { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
-import { drawArraysInstanced, generateFragShader, UNSIGNED_BYTE } from "../webgl/utils";
+import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
 
 import VsShaderSource from "../shader/sprite.vert?raw";
 import FsShaderSource from "../shader/sprite.frag?raw";
+import { Texture } from "../texture";
 
 // Per-instance buffer stride: 12 floats + 2 uint32 = 48 bytes
 // layout:
@@ -41,8 +42,9 @@ export class SpriteRegion extends Region {
         // write both float32 and uint32 into the same ArrayBuffer
         this.instanceBuffer = new WebglBufferArray(gl, ArrayType.Uint32, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
 
-        const fs = generateFragShader(FsShaderSource, rapid.maxTextureUnits);
-        this.createDefaultShader(VsShaderSource, fs);
+        const fs = generateShader(FsShaderSource, rapid.maxTextureUnits);
+        const vs = generateShader(VsShaderSource, rapid.maxTextureUnits);
+        this.createDefaultShader(vs, fs);
     }
 
     createShader(vs: string, fs: string) {
@@ -70,8 +72,10 @@ export class SpriteRegion extends Region {
     }
 
     createCustomShader(customShader: CustomGlShader) {
-        const fs = generateFragShader(FsShaderSource, this.rapid.maxTextureUnits - customShader.usedTextureUnitNum);
-        return customShader.getGLShader(this, this.KEY, this.vs, fs)
+        const fs = generateShader(FsShaderSource, this.rapid.maxTextureUnits - customShader.usedTextureUnitNum);
+        const vs = generateShader(VsShaderSource, this.rapid.maxTextureUnits - customShader.usedTextureUnitNum);
+
+        return customShader.getGLShader(this, this.KEY, vs, fs)
     }
 
     /**
@@ -87,9 +91,8 @@ export class SpriteRegion extends Region {
      * @param color The tint color as packed ABGR uniform uint32 (default 0xFFFFFFFF).
      */
     drawSprite(
-        texture: WebGLTexture,
+        texture: Texture,
         matrixIndex: number,
-        width: number, height: number,
         u0: number = 0, v0: number = 0, u1: number = 1, v1: number = 1,
         color: number = 0xFFFFFFFF,
     ): void {
@@ -98,8 +101,13 @@ export class SpriteRegion extends Region {
             this.flush();
         }
 
-        const textureId = this.useTexture(texture);
+        const width = texture.width;
+        const height = texture.height;
 
+        const paddingX = texture.padding / texture.base!.width;
+        const paddingY = texture.padding / texture.base!.height;
+
+        const textureId = this.useTexture(texture.glTexture!, paddingX, paddingY);
         // Read 2×3 affine matrix from MatrixStore and bake width/height into it.
         // We scale columns by width/height so the unit quad maps to pixel size.
         const o = matrixIndex * 6;
@@ -114,11 +122,11 @@ export class SpriteRegion extends Region {
 
         f32[index] = md[o] * width;
         f32[index + 1] = md[o + 2] * height;
-        f32[index + 2] = md[o + 4];
+        f32[index + 2] = md[o + 4] - texture.padding;
 
         f32[index + 3] = md[o + 1] * width;
         f32[index + 4] = md[o + 3] * height;
-        f32[index + 5] = md[o + 5];
+        f32[index + 5] = md[o + 5] - texture.padding;
 
         f32[index + 6] = u0;
         f32[index + 7] = v0;

@@ -1,6 +1,6 @@
 import { Region } from "../region/region";
 import { Rapid } from "../render";
-import { createShaderProgram, generateFragShader, FLOAT, vertexAttribDivisor } from "./utils";
+import { createShaderProgram, FLOAT, vertexAttribDivisor } from "./utils";
 
 export type WebGLContext = WebGL2RenderingContext;
 
@@ -150,26 +150,6 @@ class GLShader {
     destroy() {
         this.gl.deleteProgram(this.program);
     }
-
-    // ── Factory helpers ───────────────────────────────────────────────────────
-
-    /**
-     * Create a shader that supports dynamic multi-texture sampling.
-     * Replaces %TEXTURE_NUM% and %GET_COLOR% placeholders in the fragment source.
-     */
-    static createMultiTexture(
-        gl: WebGLContext,
-        vs: string,
-        fs: string,
-        attributes: IAttribute[],
-        maxTextureUnits: number,
-        reservedUnits: number = 0
-    ): GLShader {
-        const processedFs = generateFragShader(fs, maxTextureUnits - reservedUnits);
-        return new GLShader(gl, vs, processedFs, attributes);
-    }
-
-    // ── Private ───────────────────────────────────────────────────────────────
 
     /** Parse attribute/uniform names and GLSL types from raw shader source */
     private parseShader(source: string) {

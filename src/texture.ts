@@ -247,6 +247,8 @@ class Texture {
     protected _pw: number = 0;
     protected _ph: number = 0;
 
+    public padding: number = 0;
+
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
     }
@@ -354,8 +356,14 @@ class Texture {
     withPadding(pixels: number): Texture {
         if (!this.base) return new Texture();
         const t = this.clone();
+        t.padding = pixels;
         // Expand the pixel region outward — setRegion recomputes UV and dimensions
-        t.setRegion(this._px - pixels, this._py - pixels, this._pw + pixels * 2, this._ph + pixels * 2);
+        t.setRegion(
+            this._px - pixels,
+            this._py - pixels,
+            this._pw + pixels * 2,
+            this._ph + pixels * 2
+        );
         return t;
     }
 
