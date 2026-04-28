@@ -81,7 +81,7 @@ void fragment(inout vec4 color) {
                 ms.identity();
                 ms.translate(60 + i * 120, 140 + Math.sin(time + i) * 40);
                 ms.rotateWithOffset(time * 0.4 + i, padded1.width / 2, padded1.height / 2);
-                rapid.drawSprite(padded1, Color.White(), false, false, outlineShader);
+                rapid.drawSprite(padded1, Color.White, false, false, outlineShader);
             }
 
             // --- Blue outlined sprites (tex2) ---
@@ -91,7 +91,7 @@ void fragment(inout vec4 color) {
             for (let i = 0; i < 5; i++) {
                 ms.identity();
                 ms.translate(60 + i * 120, 320 + Math.cos(time + i) * 30);
-                rapid.drawSprite(padded2, Color.White(), false, false, outlineShader);
+                rapid.drawSprite(padded2, Color.White, false, false, outlineShader);
             }
 
             rapid.flush();

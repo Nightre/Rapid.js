@@ -27,6 +27,12 @@ export interface IAppOptions {
 
     /** The default clear color for the application background. */
     backgroundColor?: Color;
+
+    /** Whether to enable MSAA antialiasing on the WebGL canvas. Default: false. */
+    antialias?: boolean;
+
+    /** Whether textures are uploaded with premultiplied alpha. Default: true. */
+    premultipliedAlpha?: boolean;
 }
 
 /**
@@ -78,7 +84,7 @@ export class Rapid {
     dpr: number;
 
     /** Background clear color [r, g, b, a], values range from 0 to 1. */
-    backgroundColor: Color = Color.Black();
+    backgroundColor: Color = Color.Black;
 
     /** Logical width in CSS pixels, used for coordinate system and projection matrix. */
     logicWidth: number = 0;
@@ -114,6 +120,9 @@ export class Rapid {
     /** Manager for creating and organizing textures. */
     texture: TextureManager;
 
+    /** Whether textures use premultiplied alpha. Set once at construction. */
+    premultipliedAlpha: boolean;
+
     /** Internal ping-pong RenderTextures for multi-filter chains. */
     private _filterRT: [RenderTexture | null, RenderTexture | null] = [null, null];
 
@@ -124,8 +133,9 @@ export class Rapid {
     constructor(options: IAppOptions) {
         this.canvas = options.canvas;
         this.dpr = window.devicePixelRatio || 1;
+        this.premultipliedAlpha = options.premultipliedAlpha ?? true;
 
-        const gl = getContext(this.canvas);
+        const gl = getContext(this.canvas, options.antialias ?? false, this.premultipliedAlpha);
         this.gl = gl;
 
         this.maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
@@ -153,8 +163,13 @@ export class Rapid {
         }
 
         gl.enable(gl.BLEND);
-        // Premultiplied alpha blending: RGB is already multiplied by A in the texture
-        gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        if (this.premultipliedAlpha) {
+            // Premultiplied alpha: RGB is already multiplied by A
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        } else {
+            // Straight alpha
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
 
         gl.enable(gl.STENCIL_TEST);
 
@@ -595,8 +610,11 @@ export class Rapid {
         // Important for offscreen targets (FBOs) to resolve alpha mixing issues (e.g., rendering darkening bugs)
         switch (mode) {
             case BlendMode.NORMAL:
-                // Premultiplied alpha: source RGB is already multiplied by A
-                gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                if (this.premultipliedAlpha) {
+                    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                } else {
+                    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                }
                 break;
 
             case BlendMode.ADD:

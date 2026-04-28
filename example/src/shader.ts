@@ -124,26 +124,26 @@ color.a = 1.0;
 
             ms.updateMatrix(stick1)
 
-            rapid.drawSprite(texStick, Color.White(), false, false, undefined, stick1.world);
-            rapid.drawSprite(texStick, Color.White(), false, false, undefined, stick2.world);
+            rapid.drawSprite(texStick, Color.White, false, false, undefined, stick1.world);
+            rapid.drawSprite(texStick, Color.White, false, false, undefined, stick2.world);
 
             // MatrixStack 普通用法：层级变换（parent → child → grandchild）
             ms.identity();
             ms.save();
             ms.translate(300, 140);
             ms.rotateWithOffset(time, tex1.width / 2, tex1.height / 2);
-            rapid.drawSprite(tex1, Color.Red());
+            rapid.drawSprite(tex1, Color.Red);
             ms.translate(50, 50)
             ms.save();
             ms.scale(Math.sin(time) / 2 + 1, Math.sin(time) / 2 + 1)
-            rapid.drawSprite(tex1, Color.Cyan());
+            rapid.drawSprite(tex1, Color.Cyan);
             ms.translate(50, 50)
             ms.rotateWithOffset(time * 5, tex1.width / 2, tex1.height / 2);
-            rapid.drawSprite(tex1, Color.Brown());
+            rapid.drawSprite(tex1, Color.Brown);
             ms.restore()
 
             ms.translate(0, 50)
-            rapid.drawSprite(tex1, Color.Green());
+            rapid.drawSprite(tex1, Color.Green);
 
             ms.restore();
 

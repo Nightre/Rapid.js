@@ -7,8 +7,8 @@ export type WebGLContext = WebGL2RenderingContext;
  * @param canvas
  * @returns webgl2
  */
-export const getContext = (canvas: HTMLCanvasElement): WebGLContext => {
-    const gl = canvas.getContext("webgl2", { stencil: true });
+export const getContext = (canvas: HTMLCanvasElement, antialias: boolean = false, premultipliedAlpha: boolean = true): WebGLContext => {
+    const gl = canvas.getContext("webgl2", { stencil: true, antialias, premultipliedAlpha });
     if (!gl) {
         throw new Error("WebGL2 is not supported in this browser.");
     }
@@ -79,7 +79,8 @@ export function createTexture(
     source: TexImageSource | { width: number; height: number },
     antialias: boolean,
     wrapMode: TextureWrapMode = TextureWrapMode.CLAMP,
-    onlySize: boolean = false
+    onlySize: boolean = false,
+    premultipliedAlpha: boolean = true
 ): WebGLTexture {
     const texture = gl.createTexture();
     if (!texture) {
@@ -109,10 +110,13 @@ export function createTexture(
         const s = source as { width: number; height: number };
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, s.width, s.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     } else {
-        // Let the browser premultiply alpha for us — fixes edge fringing artifacts
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        if (premultipliedAlpha) {
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        }
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        if (premultipliedAlpha) {
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        }
     }
 
     gl.bindTexture(gl.TEXTURE_2D, null);

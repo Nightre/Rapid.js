@@ -181,7 +181,7 @@ class BaseTexture {
     static fromSource(render: Rapid, source: Images, options?: ITextureOptions): BaseTexture {
         const antialias = options?.antialias ?? false;
         const wrap = options?.wrap ?? TextureWrapMode.CLAMP;
-        const glTexture = createTexture(render.gl, source, antialias, wrap);
+        const glTexture = createTexture(render.gl, source, antialias, wrap, false, render.premultipliedAlpha);
         return new BaseTexture(glTexture, source.width, source.height);
     }
 
@@ -191,12 +191,14 @@ class BaseTexture {
      * @param gl - The WebGL rendering context.
      * @param source - The new image source.
      */
-    updateSource(gl: WebGL2RenderingContext, source: Images): void {
+    updateSource(gl: WebGL2RenderingContext, source: Images, premultipliedAlpha: boolean = true): void {
         if (!this.glTexture) return;
         gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        if (premultipliedAlpha) {
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        }
 
         if (this.width === source.width && this.height === source.height) {
             // High-performance path: replace texture content when size is identical
@@ -208,7 +210,9 @@ class BaseTexture {
             this.height = source.height;
         }
 
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        if (premultipliedAlpha) {
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        }
     }
 
     /**
@@ -239,6 +243,7 @@ class Texture {
     public scale: number = 1;
 
     public flipY: boolean = false;
+    public isRotated: boolean = false;
     public glTexture: WebGLTexture | null = null;
 
     // Stored pixel-space region (before UV conversion), used by withPadding()
@@ -298,8 +303,8 @@ class Texture {
             this.uvH = v;
         }
 
-        this.width = w * this.scale;
-        this.height = h * this.scale;
+        this.width  = (this.isRotated ? h : w) * this.scale;
+        this.height = (this.isRotated ? w : h) * this.scale;
 
         return this;
     }
@@ -318,8 +323,8 @@ class Texture {
         const tex = this.clone();
 
         // Convert current UV offset back to pixels and add the sub-coordinates
-        const startX = this.uvX * this.base.width;
-        const startY = this.uvY * this.base.height;
+        const startX = this._px;
+        const startY = this._py;
 
         tex.setRegion(startX + x, startY + y, width, height);
         return tex;
@@ -336,6 +341,7 @@ class Texture {
         t.uvW = this.uvW; t.uvH = this.uvH;
         t.width = this.width; t.height = this.height;
         t.flipY = this.flipY;
+        t.isRotated = this.isRotated;
         // Copy stored pixel region so withPadding() works on clones too
         t._px = this._px; t._py = this._py;
         t._pw = this._pw; t._ph = this._ph;
@@ -351,7 +357,7 @@ class Texture {
      * @param pixels - Number of pixels to expand on each side.
      * @example
      * const padded = catTex.withPadding(6);
-     * rapid.drawSprite(padded, Color.White(), false, false, outlineShader);
+     * rapid.drawSprite(padded, Color.White, false, false, outlineShader);
      */
     withPadding(pixels: number): Texture {
         if (!this.base) return new Texture();
@@ -392,6 +398,18 @@ class Texture {
             }
         }
         return res;
+    }
+
+    /**
+     * Creates a Texture directly from an image source, bypassing the TextureManager.
+     * @param source - The image element, canvas, video, or bitmap.
+     * @param options - Optional antialias and wrap mode settings.
+     */
+    static fromImageSource(render: Rapid, source: Images, options?: ITextureOptions): Texture {
+        const antialias = options?.antialias ?? false;
+        const wrap = options?.wrap ?? TextureWrapMode.CLAMP;
+        const glTex = createTexture(render.gl, source, antialias, wrap, false, render.premultipliedAlpha);
+        return new Texture(new BaseTexture(glTex, source.width, source.height));
     }
 
     /**
@@ -581,7 +599,7 @@ class TextTexture extends Texture {
         this.canvas.width = 1;
         this.canvas.height = 1;
 
-        const glTexture = createTexture(render.gl, this.canvas, options?.antialias ?? true, options?.wrap ?? TextureWrapMode.CLAMP);
+        const glTexture = createTexture(render.gl, this.canvas, options?.antialias ?? true, options?.wrap ?? TextureWrapMode.CLAMP, false, render.premultipliedAlpha);
         this._base = new BaseTexture(glTexture, 1, 1);
         this.setBase(this._base);
 
@@ -673,8 +691,8 @@ class TextTexture extends Texture {
             y += lineHeight;
         }
 
-        this._base.updateSource(this.render.gl, this.canvas);
-        this.setRegion(0, 0, this._base.width, this._base.height);
+        this._base.updateSource(this.render.gl, this.canvas, this.render.premultipliedAlpha);
+        this.setRegion(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 

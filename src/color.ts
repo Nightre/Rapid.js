@@ -5,6 +5,12 @@ export class Color {
     private _a: number;
     uint32!: number;
 
+    private static clampByte(value: number): number {
+        if (value <= 0) return 0;
+        if (value >= 255) return 255;
+        return Math.round(value);
+    }
+
     /**
      * Creates an instance of Color.
      * @param r - The red component (0-255).
@@ -92,6 +98,14 @@ export class Color {
         this.uint32 = ((this._a << 24) | (this._b << 16) | (this._g << 8) | this._r) >>> 0;
     }
 
+    get premultipliedUint32() {
+        const a = Color.clampByte(this._a);
+        const r = Color.clampByte((this._r * a) / 255);
+        const g = Color.clampByte((this._g * a) / 255);
+        const b = Color.clampByte((this._b * a) / 255);
+        return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+    }
+
     reset(): void {
         this._r = 0;
         this._g = 0;
@@ -113,6 +127,33 @@ export class Color {
         this.b = b;
         this.a = a;
         this.updateUint();
+    }
+
+    setHSL(h: number, s: number, l: number): Color {
+        h = ((h % 360) + 360) % 360;
+        s = Math.max(0, Math.min(100, s)) / 100;
+        l = Math.max(0, Math.min(100, l)) / 100;
+
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = l - c / 2;
+
+        let r = 0, g = 0, b = 0;
+        if (h < 60)       [r, g, b] = [c, x, 0];
+        else if (h < 120) [r, g, b] = [x, c, 0];
+        else if (h < 180) [r, g, b] = [0, c, x];
+        else if (h < 240) [r, g, b] = [0, x, c];
+        else if (h < 300) [r, g, b] = [x, 0, c];
+        else              [r, g, b] = [c, 0, x];
+
+        this.setRGBA((r + m) * 255, (g + m) * 255, (b + m) * 255, 255);
+        return this;
+    }
+
+    toHex(): string {
+        const c = (v: number) =>
+            Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+        return `#${c(this._r)}${c(this._g)}${c(this._b)}${c(this._a)}`;
     }
 
     /**
@@ -157,6 +198,10 @@ export class Color {
             color.a === this.a;
     }
 
+    equals(color: Color) {
+        return this.equal(color);
+    }
+
     /**
      * Creates a Color instance from normalized float components (0–1 range).
      * Use this instead of `new Color()` when working with shader-style 0.0–1.0 values.
@@ -168,6 +213,14 @@ export class Color {
      * @example
      * Color.fromNorm(0.9, 0.87, 0.55, 0.1) // moon glow
      */
+    static FromHSL(h: number, s: number, l: number): Color {
+        return new Color(0, 0, 0).setHSL(h, s, l);
+    }
+
+    static FromRGB(r: number, g: number, b: number): Color {
+        return new Color(r, g, b);
+    }
+
     static fromNorm(r: number, g: number, b: number, a: number = 1.0): Color {
         return new Color(
             Math.round(r * 255),
@@ -265,19 +318,20 @@ export class Color {
         this.a = Math.max(0, Math.min(255, this.a));
     }
 
-    static Red(): Color { return new Color(255, 0, 0, 255); }
-    static Green(): Color { return new Color(0, 255, 0, 255); }
-    static Blue(): Color { return new Color(0, 0, 255, 255); }
-    static Yellow(): Color { return new Color(255, 255, 0, 255); }
-    static Purple(): Color { return new Color(128, 0, 128, 255); }
-    static Orange(): Color { return new Color(255, 165, 0, 255); }
-    static Pink(): Color { return new Color(255, 192, 203, 255); }
-    static Gray(): Color { return new Color(128, 128, 128, 255); }
-    static Brown(): Color { return new Color(139, 69, 19, 255); }
-    static Cyan(): Color { return new Color(0, 255, 255, 255); }
-    static Magenta(): Color { return new Color(255, 0, 255, 255); }
-    static Lime(): Color { return new Color(192, 255, 0, 255); }
-    static White(): Color { return new Color(255, 255, 255, 255); }
-    static Black(): Color { return new Color(0, 0, 0, 255); }
-    static Transparent(): Color { return new Color(0, 0, 0, 0); }
+    static Red = new Color(255, 0, 0, 255);
+    static Green = new Color(0, 255, 0, 255);
+    static Blue = new Color(0, 0, 255, 255);
+    static Yellow = new Color(255, 255, 0, 255);
+    static Purple = new Color(128, 0, 128, 255);
+    static Orange = new Color(255, 165, 0, 255);
+    static Pink = new Color(255, 192, 203, 255);
+    static Gray = new Color(128, 128, 128, 255);
+    static Brown = new Color(139, 69, 19, 255);
+    static Cyan = new Color(0, 255, 255, 255);
+    static Magenta = new Color(255, 0, 255, 255);
+    static Lime = new Color(192, 255, 0, 255);
+    static White = new Color(255, 255, 255, 255);
+    static Black = new Color(0, 0, 0, 255);
+    static Transparent = new Color(0, 0, 0, 0);
+    static TRANSPARENT = new Color(0, 0, 0, 0);
 }

@@ -41,7 +41,7 @@ export async function init() {
                 width: 10,
                 closed: true,
                 roundCap: true
-            }, Color.Cyan());
+            }, Color.Cyan);
 
             // 2. Draw a sine line
             const sinPoints: Vec2[] = [];
@@ -55,7 +55,7 @@ export async function init() {
                 width: 5,
                 roundCap: true,
                 closed: false
-            }, Color.Yellow());
+            }, Color.Yellow);
 
             // 3. Draw a textured line
             const texturedPoints: Vec2[] = [];
@@ -71,7 +71,7 @@ export async function init() {
                 textureMode: LineTextureMode.REPEAT,
                 roundCap: true,
                 closed: false
-            }, Color.White()); // White so original color shows
+            }, Color.White); // White so original color shows
 
             time += dt;
             rapid.flush();
