@@ -126,6 +126,12 @@ export class Rapid {
     /** Internal ping-pong RenderTextures for multi-filter chains. */
     private _filterRT: [RenderTexture | null, RenderTexture | null] = [null, null];
 
+    get height() {
+        return this.logicHeight
+    }
+    get width() {
+        return this.logicWidth
+    }
     /**
      * Creates a new Rapid application instance.
      * @param options Initialization options including the target canvas.
@@ -256,6 +262,73 @@ export class Rapid {
         const unitColor = color?.uint32 ?? 0xFFFFFFFF;
         for (let i = 0; i < vertices.length; i++) {
             this.addGraphicVertex(vertices[i].x, vertices[i].y, uv[i].x, uv[i].y, unitColor);
+        }
+        this.endGraphic();
+    }
+
+    /**
+     * Draws a filled rectangle at the current world transform.
+     * @param w Width of the rectangle.
+     * @param h Height of the rectangle.
+     * @param color Fill color.
+     * @param customShader Optional custom shader.
+     * @param customMatrix Optional custom transform matrix.
+     */
+    drawRect(
+        w: number, h: number,
+        color?: Color,
+        customShader?: GLShader | CustomGlShader,
+        customMatrix?: number
+    ): void {
+        this.startGraphic(this.gl.TRIANGLE_FAN, undefined, customShader, customMatrix);
+        this.addRectVertex(w, h, color);
+        this.endGraphic();
+    }
+
+    /**
+     * Draws a filled circle centered at the current world transform origin.
+     * @param r Radius of the circle.
+     * @param color Fill color.
+     * @param segments Number of segments used to approximate the circle. Default: 32.
+     * @param customShader Optional custom shader.
+     * @param customMatrix Optional custom transform matrix.
+     */
+    drawCircle(
+        r: number,
+        color?: Color,
+        segments: number = 32,
+        customShader?: GLShader | CustomGlShader,
+        customMatrix?: number
+    ): void {
+        this.startGraphic(this.gl.TRIANGLE_FAN, undefined, customShader, customMatrix);
+        // Center vertex first for TRIANGLE_FAN
+        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        this.addGraphicVertex(0, 0, 0.5, 0.5, unitColor);
+        this.addCircleVertex(r, color, segments);
+        // Close the fan by repeating the first edge vertex
+        this.addGraphicVertex(r, 0, 1, 0.5, unitColor);
+        this.endGraphic();
+    }
+
+    /**
+     * Draws a filled polygon from an array of vertices using the current world transform.
+     * Vertices are expected in order (convex or simple polygons work best with TRIANGLE_FAN).
+     * @param points Array of {x, y} points.
+     * @param color Fill color.
+     * @param customShader Optional custom shader.
+     * @param customMatrix Optional custom transform matrix.
+     */
+    drawPolygon(
+        points: { x: number; y: number }[],
+        color?: Color,
+        customShader?: GLShader | CustomGlShader,
+        customMatrix?: number
+    ): void {
+        if (points.length < 3) return;
+        this.startGraphic(this.gl.TRIANGLE_FAN, undefined, customShader, customMatrix);
+        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        for (const p of points) {
+            this.addGraphicVertex(p.x, p.y, 0, 0, unitColor);
         }
         this.endGraphic();
     }

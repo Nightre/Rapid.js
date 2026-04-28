@@ -1,5 +1,23 @@
 import { DynamicArrayBuffer, ArrayType } from "./buffer.ts";
 import { Rapid } from "./render.ts";
+import { Vec2 } from "./math.ts";
+
+export interface ITransformOptions {
+    /** Whether to push a save before applying transforms. Default: true. */
+    saveTransform?: boolean;
+    /** Called immediately after the save (if any). */
+    afterSave?: () => void;
+    x?: number;
+    y?: number;
+    position?: Vec2;
+    rotation?: number;
+    scale?: Vec2;
+    offsetX?: number;
+    offsetY?: number;
+    offset?: Vec2;
+    /** Normalized anchor point (0~1). Number applies uniformly; Vec2 applies per-axis. */
+    origin?: number | Vec2;
+}
 
 const NUM_ELEMENTS = 6;
 
@@ -537,5 +555,64 @@ export class MatrixStack {
 
     toCSSMatrix(): string {
         return this.matrix.toCSSMatrix(this.curWorldM);
+    }
+
+    /**
+     * Returns the current world matrix as Float32Array [a, b, c, d, tx, ty].
+     */
+    getTransform(): Float32Array {
+        const o = this.curWorldM * NUM_ELEMENTS;
+        return this.matrix.data.slice(o, o + NUM_ELEMENTS);
+    }
+
+    /**
+     * Directly overwrites the current world matrix with the given 6-element 2D transform.
+     */
+    setTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+        const o = this.curWorldM * NUM_ELEMENTS;
+        const data = this.matrix.data;
+        data[o] = a; data[o + 1] = b;
+        data[o + 2] = c; data[o + 3] = d;
+        data[o + 4] = tx; data[o + 5] = ty;
+    }
+
+    /**
+     * Applies a transform options object to the current matrix state.
+     * Optionally saves the matrix first (saveTransform defaults to true).
+     */
+    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0) {
+        if (transform.saveTransform ?? true) {
+            this.save();
+        }
+        transform.afterSave?.();
+
+        const x = transform.x ?? 0;
+        const y = transform.y ?? 0;
+        if (x || y) this.translate(x, y);
+
+        if (transform.position) this.translate(transform.position.x, transform.position.y);
+        if (transform.rotation) this.rotate(transform.rotation);
+        if (transform.scale) this.scale(transform.scale.x, transform.scale.y);
+
+        let offsetX = transform.offsetX ?? 0;
+        let offsetY = transform.offsetY ?? 0;
+
+        if (transform.offset) {
+            offsetX += transform.offset.x;
+            offsetY += transform.offset.y;
+        }
+
+        const origin = transform.origin;
+        if (origin !== undefined) {
+            if (typeof origin === "number") {
+                offsetX -= origin * width;
+                offsetY -= origin * height;
+            } else {
+                offsetX -= origin.x * width;
+                offsetY -= origin.y * height;
+            }
+        }
+
+        this.translate(offsetX, offsetY)
     }
 }
