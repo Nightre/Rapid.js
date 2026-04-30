@@ -126,6 +126,7 @@ export class SpriteRegion extends Region {
         f32[index + 1] = md[o + 2] * (height + 2 * p);
 
         // A naive `tx - p` would only work for axis-aligned sprites;
+        // need md[o] * p - md[o + 2] * p to correctly offset based on scale and rotation
         f32[index + 2] = md[o + 4] - md[o] * p - md[o + 2] * p;
 
         f32[index + 3] = md[o + 1] * (width  + 2 * p);
