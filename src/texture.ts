@@ -304,7 +304,7 @@ class Texture {
             this.uvH = v;
         }
 
-        this.width  = (this.isRotated ? h : w) * this.scale;
+        this.width = (this.isRotated ? h : w) * this.scale;
         this.height = (this.isRotated ? w : h) * this.scale;
 
         return this;
@@ -574,6 +574,7 @@ const defaultTextStyle: ITextStyle = {
     baseline: "top",
 };
 
+export const TEXT_SCALEFACTOR = 2
 /**
  * A texture that renders text using an internal HTML Canvas.
  */
@@ -591,6 +592,7 @@ class TextTexture extends Texture {
         this.render = render;
         this._style = { ...defaultTextStyle, ...style };
         this._text = text;
+        this.scale = 1 / TEXT_SCALEFACTOR
 
         this.canvas = document.createElement("canvas");
         const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
@@ -639,13 +641,16 @@ class TextTexture extends Texture {
     public update(): void {
         const ctx = this.ctx;
         const yOffset = (isMobileOrTablet() && iOS()) ? -7 : 0;
-        const font = `${this._style.fontWeight} ${this._style.fontSize}px ${this._style.fontFamily}`;
+        const fontSize = this._style.fontSize ?? 24;
+        const fontWeight = this._style.fontWeight ?? "normal";
+        const fontFamily = this._style.fontFamily ?? "Arial";
+        const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
-
+        
         const lines = this._text.split('\n');
         let maxWidth = 0;
         let totalHeight = 0;
-        const lineHeight = this._style.lineHeight ?? (this._style.fontSize! * 1.2);
+        const lineHeight = this._style.lineHeight ?? fontSize * 1.2;
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);
@@ -654,16 +659,20 @@ class TextTexture extends Texture {
         }
 
         const padding = (this._style.strokeThickness || 0) * 2;
-        const canvasWidth = Math.ceil(maxWidth + padding) || 1;
-        const canvasHeight = Math.ceil(totalHeight + padding) || 1;
+        const logicalWidth = Math.ceil(maxWidth + padding) || 1;
+        const logicalHeight = Math.ceil(totalHeight + padding) || 1;
+
+        const pixelWidth = logicalWidth * TEXT_SCALEFACTOR;
+        const pixelHeight = logicalHeight * TEXT_SCALEFACTOR;
 
         // Only resize if actually changed, because resizing clears canvas
-        if (this.canvas.width !== canvasWidth || this.canvas.height !== canvasHeight) {
-            this.canvas.width = canvasWidth;
-            this.canvas.height = canvasHeight;
-        } else {
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
+            this.canvas.width = pixelWidth;
+            this.canvas.height = pixelHeight;
         }
+
+        ctx.setTransform(TEXT_SCALEFACTOR, 0, 0, TEXT_SCALEFACTOR, 0, 0);
+        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
         // Must set font again if canvas resized
         ctx.font = font;
@@ -674,9 +683,9 @@ class TextTexture extends Texture {
         for (const line of lines) {
             let x = padding / 2;
             if (this._style.align === "center") {
-                x = this.canvas.width / 2;
+                x = logicalWidth / 2;
             } else if (this._style.align === "right") {
-                x = this.canvas.width - padding / 2;
+                x = logicalWidth - padding / 2;
             }
 
             if (this._style.stroke && this._style.strokeThickness! > 0) {
