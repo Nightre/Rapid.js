@@ -2,6 +2,12 @@ import { TextureWrapMode } from "../texture";
 
 export type WebGLContext = WebGL2RenderingContext;
 
+export const supportsWebGL = (canvas: HTMLCanvasElement): boolean => {
+    const options = { stencil: true }
+    const gl = canvas.getContext("webgl2", options) || canvas.getContext("webgl", options)
+    return !!gl
+}
+
 /**
  * get webgl2 rendering context
  * @param canvas
