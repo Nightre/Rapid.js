@@ -100,8 +100,8 @@ class TextureManager {
      * @param options - Optional configuration for the texture.
      * @returns The newly created TextTexture.
      */
-    createTextTexture(text: string, style?: ITextStyle, options?: ITextureOptions): TextTexture {
-        return new TextTexture(this.render, text, style, options);
+    createTextTexture(text: string, options?: ITextOptions): TextTexture {
+        return new TextTexture(this.render, text, options);
     }
 
     /**
@@ -159,7 +159,7 @@ class TextureManager {
  * The underlying GPU resource holder for a texture.
  * Implements simple reference counting.
  */
-class BaseTexture {
+export class BaseTexture {
     public glTexture: WebGLTexture | null = null;
     public width: number;
     public height: number;
@@ -598,6 +598,10 @@ const defaultTextStyle: ITextStyle = {
     baseline: "top",
 };
 
+export interface ITextOptions extends ITextStyle, ITextureOptions {
+
+}
+
 export const TEXT_SCALEFACTOR = 2
 /**
  * A texture that renders text using an internal HTML Canvas.
@@ -611,10 +615,10 @@ class TextTexture extends Texture {
     private _base: BaseTexture;
     flipY = true
 
-    constructor(render: Rapid, text: string, style?: ITextStyle, options?: ITextureOptions) {
+    constructor(render: Rapid, text: string, options?: ITextOptions) {
         super();
         this.render = render;
-        this._style = { ...defaultTextStyle, ...style };
+        this._style = { ...defaultTextStyle, ...options };
         this._text = text;
         this.scale = 1 / TEXT_SCALEFACTOR
 
@@ -665,9 +669,9 @@ class TextTexture extends Texture {
     public update(): void {
         const ctx = this.ctx;
         const yOffset = (isMobileOrTablet() && iOS()) ? -7 : 0;
-        const fontSize = this._style.fontSize ?? 24;
-        const fontWeight = this._style.fontWeight ?? "normal";
-        const fontFamily = this._style.fontFamily ?? "Arial";
+        const fontSize = this._style.fontSize;
+        const fontWeight = this._style.fontWeight;
+        const fontFamily = this._style.fontFamily;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
 
@@ -700,8 +704,8 @@ class TextTexture extends Texture {
 
         // Must set font again if canvas resized
         ctx.font = font;
-        ctx.textBaseline = this._style.baseline || "top";
-        ctx.textAlign = this._style.align || "left";
+        ctx.textBaseline = this._style.baseline;
+        ctx.textAlign = this._style.align;
 
         let y = padding / 2 + yOffset;
         for (const line of lines) {

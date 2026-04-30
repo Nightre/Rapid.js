@@ -1,3 +1,4 @@
+import { Color } from "./color";
 import { Vec2 } from "./math";
 import { Texture } from "./texture";
 
@@ -13,6 +14,7 @@ export interface ILineRenderOptions {
     roundCap?: boolean;
     textureMode?: LineTextureMode;
     texture?: Texture;
+    color?: Color;
 }
 
 const LINE_ROUND_SEGMENTS = 10;

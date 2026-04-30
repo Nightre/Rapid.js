@@ -568,12 +568,12 @@ export class MatrixStack {
     /**
      * Directly overwrites the current world matrix with the given 6-element 2D transform.
      */
-    setTransform(a: number, b: number, c: number, d: number, tx: number, ty: number): void {
+    setTransform(f: Float32Array): void {
         const o = this.curWorldM * NUM_ELEMENTS;
         const data = this.matrix.data;
-        data[o] = a; data[o + 1] = b;
-        data[o + 2] = c; data[o + 3] = d;
-        data[o + 4] = tx; data[o + 5] = ty;
+        data[o] = f[0]; data[o + 1] = f[1];
+        data[o + 2] = f[2]; data[o + 3] = f[3];
+        data[o + 4] = f[4]; data[o + 5] = f[5];
     }
 
     /**
