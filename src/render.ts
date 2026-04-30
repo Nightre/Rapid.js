@@ -188,6 +188,11 @@ export class Rapid {
         window.debug = this;
     }
 
+    private getColorUint32(color?: Color): number {
+        if (!color) return 0xFFFFFFFF;
+        return this.premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
+    }
+
     /**
      * Enters a specific rendering region, flushing the previous one if necessary.
      * @param region The rendering region to enter.
@@ -234,7 +239,7 @@ export class Rapid {
             v,
             w,
             h,
-            color?.uint32 ?? 0xFFFFFFFF,
+            this.getColorUint32(color),
         );
     }
 
@@ -257,7 +262,7 @@ export class Rapid {
         if (vertices.length === 0) return;
 
         this.startGraphic(this.gl.TRIANGLES, options.texture, customShader, customMatrix);
-        const unitColor = options.color?.uint32 ?? 0xFFFFFFFF;
+        const unitColor = this.getColorUint32(options.color);
         for (let i = 0; i < vertices.length; i++) {
             this.addGraphicVertex(vertices[i].x, vertices[i].y, uv[i].x, uv[i].y, unitColor);
         }
@@ -300,7 +305,7 @@ export class Rapid {
     ): void {
         this.startGraphic(this.gl.TRIANGLE_FAN, undefined, customShader, customMatrix);
         // Center vertex first for TRIANGLE_FAN
-        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        const unitColor = this.getColorUint32(color);
         this.addGraphicVertex(0, 0, 0.5, 0.5, unitColor);
         this.addCircleVertex(r, color, segments);
         // Close the fan by repeating the first edge vertex
@@ -324,7 +329,7 @@ export class Rapid {
     ): void {
         if (points.length < 3) return;
         this.startGraphic(this.gl.TRIANGLE_FAN, undefined, customShader, customMatrix);
-        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        const unitColor = this.getColorUint32(color);
         for (const p of points) {
             this.addGraphicVertex(p.x, p.y, 0, 0, unitColor);
         }
@@ -373,7 +378,7 @@ export class Rapid {
      * @param color An optional tint color.
      */
     addRectVertex(w: number, h: number, color?: Color): void {
-        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        const unitColor = this.getColorUint32(color);
         this.addGraphicVertex(0, 0, 0, 0, unitColor);
         this.addGraphicVertex(w, 0, 1, 0, unitColor);
         this.addGraphicVertex(w, h, 1, 1, unitColor);
@@ -388,7 +393,7 @@ export class Rapid {
      */
     addCircleVertex(r: number, color?: Color, segments: number = 32): void {
         const angleStep = (Math.PI * 2) / segments;
-        const unitColor = color?.uint32 ?? 0xFFFFFFFF;
+        const unitColor = this.getColorUint32(color);
         for (let i = 0; i < segments; i++) {
             const angle = angleStep * i;
             const x = Math.cos(angle) * r;
@@ -855,5 +860,12 @@ export class Rapid {
     endScissor(): void {
         this.flush();
         this.gl.disable(this.gl.SCISSOR_TEST);
+    }
+
+    renderCamera(transform: ITransformOptions) {
+        this.matrixStack.applyTransform(transform)
+
+        const m = this.matrixStack.curWorldM
+        this.matrix.invert(m)
     }
 }

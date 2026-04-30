@@ -669,9 +669,9 @@ class TextTexture extends Texture {
     public update(): void {
         const ctx = this.ctx;
         const yOffset = (isMobileOrTablet() && iOS()) ? -7 : 0;
-        const fontSize = this._style.fontSize;
-        const fontWeight = this._style.fontWeight;
-        const fontFamily = this._style.fontFamily;
+        const fontSize = this._style.fontSize!;
+        const fontWeight = this._style.fontWeight!;
+        const fontFamily = this._style.fontFamily!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
 
@@ -704,8 +704,8 @@ class TextTexture extends Texture {
 
         // Must set font again if canvas resized
         ctx.font = font;
-        ctx.textBaseline = this._style.baseline;
-        ctx.textAlign = this._style.align;
+        ctx.textBaseline = this._style.baseline!;
+        ctx.textAlign = this._style.align!;
 
         let y = padding / 2 + yOffset;
         for (const line of lines) {

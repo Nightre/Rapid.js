@@ -4,6 +4,7 @@ export class Color {
     private _b: number;
     private _a: number;
     uint32!: number;
+    premultipliedUint32!: number;
 
     private static clampByte(value: number): number {
         if (value <= 0) return 0;
@@ -96,14 +97,12 @@ export class Color {
      */
     private updateUint() {
         this.uint32 = ((this._a << 24) | (this._b << 16) | (this._g << 8) | this._r) >>> 0;
-    }
 
-    get premultipliedUint32() {
         const a = Color.clampByte(this._a);
         const r = Color.clampByte((this._r * a) / 255);
         const g = Color.clampByte((this._g * a) / 255);
         const b = Color.clampByte((this._b * a) / 255);
-        return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+        this.premultipliedUint32 = ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
     }
 
     reset(): void {
