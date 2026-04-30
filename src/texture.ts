@@ -517,6 +517,55 @@ class RenderTexture extends Texture {
     }
 
     /**
+     * Get raw pixels from the render texture.
+     * @param x - X coordinate in logical pixel space (top-left origin).
+     * @param y - Y coordinate in logical pixel space (top-left origin).
+     * @param width - Width of the region to read.
+     * @param height - Height of the region to read.
+     */
+    GetPixels(x: number = 0, y: number = 0, width: number = this.width, height: number = this.height): Uint8Array {
+        if (!this.framebuffer) return new Uint8Array(0);
+
+        const ix = Math.floor(x);
+        const iy = Math.floor(y);
+        const iw = Math.floor(width);
+        const ih = Math.floor(height);
+
+        if (iw <= 0 || ih <= 0) return new Uint8Array(0);
+        if (ix < 0 || iy < 0 || ix >= this.width || iy >= this.height) {
+            return new Uint8Array(0);
+        }
+
+        const readW = Math.min(iw, this.width - ix);
+        const readH = Math.min(ih, this.height - iy);
+
+        const readY = this.height - iy - readH;
+
+        const gl = this.gl;
+        const prevFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+
+        const pixels = new Uint8Array(readW * readH * 4);
+        gl.readPixels(ix, readY, readW, readH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, prevFramebuffer);
+
+        return pixels;
+    }
+
+    /**
+     * Get the color at a pixel in the render texture.
+     * @param x - X coordinate in logical pixel space (top-left origin).
+     * @param y - Y coordinate in logical pixel space (top-left origin).
+     */
+    GetColorAt(x: number, y: number): Color {
+        const pixels = this.GetPixels(x, y, 1, 1);
+        if (pixels.length < 4) return new Color(0, 0, 0, 0);
+        return new Color(pixels[0], pixels[1], pixels[2], pixels[3]);
+    }
+
+    /**
      * Destroys the framebuffer, renderbuffer, and base texture.
      */
     destroy(): void {
@@ -621,7 +670,7 @@ class TextTexture extends Texture {
         const fontFamily = this._style.fontFamily ?? "Arial";
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
-        
+
         const lines = this._text.split('\n');
         let maxWidth = 0;
         let totalHeight = 0;
