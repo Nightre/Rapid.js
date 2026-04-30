@@ -104,12 +104,14 @@ export class SpriteRegion extends Region {
         const width = texture.width;
         const height = texture.height;
 
-        const paddingX = texture.padding / texture.base!.width;
-        const paddingY = texture.padding / texture.base!.height;
+        // Padding comes from the shader (e.g. outline/glow shaders need extra room)
+        const p = this.currentShader.padding;
+        const paddingX = p / texture.base!.width;
+        const paddingY = p / texture.base!.height;
 
         const textureId = this.useTexture(texture.glTexture!, paddingX, paddingY);
-        // Read 2×3 affine matrix from MatrixStore and bake width/height into it.
-        // We scale columns by width/height so the unit quad maps to pixel size.
+        // Read 2×3 affine matrix from MatrixStore and bake (width + 2p) / (height + 2p) into it.
+        // Offset tx/ty by -p in local space (rotation-aware) so the quad expands symmetrically.
         const o = matrixIndex * 6;
         const md = this.matrixStore.data;
 
@@ -120,13 +122,15 @@ export class SpriteRegion extends Region {
         const f32 = buf.float32!;
         const u32 = buf.uint32!;
 
-        f32[index] = md[o] * width;
-        f32[index + 1] = md[o + 2] * height;
-        f32[index + 2] = md[o + 4] - texture.padding;
+        f32[index]     = md[o]     * (width  + 2 * p);
+        f32[index + 1] = md[o + 2] * (height + 2 * p);
 
-        f32[index + 3] = md[o + 1] * width;
-        f32[index + 4] = md[o + 3] * height;
-        f32[index + 5] = md[o + 5] - texture.padding;
+        // A naive `tx - p` would only work for axis-aligned sprites;
+        f32[index + 2] = md[o + 4] - md[o] * p - md[o + 2] * p;
+
+        f32[index + 3] = md[o + 1] * (width  + 2 * p);
+        f32[index + 4] = md[o + 3] * (height + 2 * p);
+        f32[index + 5] = md[o + 5] - md[o + 1] * p - md[o + 3] * p;
 
         f32[index + 6] = u0;
         f32[index + 7] = v0;

@@ -54,14 +54,9 @@ void fragment(inout vec4 color) {
 }`
     );
 
-    // Outline width in pixels — both textures will have the same screen-pixel outline
-    // u_width (UV space) = OUTLINE_PX / tex.width   (pixels → UV ratio)
-    // PADDING must be >= OUTLINE_PX to give the shader room to draw the outline
     const OUTLINE_PX = 3;
     const PADDING = OUTLINE_PX + 2;  // a bit of extra room
-
-    const padded1 = tex1.withPadding(PADDING);
-    const padded2 = tex2.withPadding(PADDING);
+    outlineShader.setPadding(PADDING);
 
     // Precomputed UV-space widths for each texture
     const w1 = OUTLINE_PX / tex1.width;   // e.g. 3/64  ≈ 0.047
@@ -80,8 +75,8 @@ void fragment(inout vec4 color) {
             for (let i = 0; i < 5; i++) {
                 ms.identity();
                 ms.translate(60 + i * 120, 140 + Math.sin(time + i) * 40);
-                ms.rotateWithOffset(time * 0.4 + i, padded1.width / 2, padded1.height / 2);
-                rapid.drawSprite(padded1, Color.White, false, false, outlineShader);
+                ms.rotateWithOffset(time * 0.4 + i, tex1.width / 2, tex1.height / 2);
+                rapid.drawSprite(tex1, Color.White, false, false, outlineShader);
             }
 
             // --- Blue outlined sprites (tex2) ---
@@ -91,7 +86,7 @@ void fragment(inout vec4 color) {
             for (let i = 0; i < 5; i++) {
                 ms.identity();
                 ms.translate(60 + i * 120, 320 + Math.cos(time + i) * 30);
-                rapid.drawSprite(padded2, Color.White, false, false, outlineShader);
+                rapid.drawSprite(tex2, Color.White, false, false, outlineShader);
             }
 
             rapid.flush();

@@ -39,12 +39,14 @@ type GlslType =
  * Wraps a WebGL shader program.
  * Parses attribute/uniform locations and types from GLSL source automatically.
  */
-class GLShader {
+export class GLShader {
     program: WebGLProgram;
     attributeLoc: Record<string, number> = {};
     uniformLoc: Record<string, WebGLUniformLocation> = {};
 
     isCustom = false;
+    /** Padding in pixels this shader needs beyond the sprite bounds (for outline/glow effects) */
+    padding: number = 0;
 
     /** GLSL type for each uniform, parsed from source */
     private uniformType: Record<string, GlslType> = {};
@@ -284,6 +286,8 @@ export class CustomGlShader {
     uniformTextures: Record<string, WebGLTexture> = {};
     /** Number of texture units reserved by this custom shader */
     usedTextureUnitNum: number = 0;
+    /** Padding in pixels this shader needs beyond the sprite bounds (for outline/glow effects) */
+    padding: number = 0;
     rapid: Rapid
 
     constructor(rapid: Rapid, vs: string, fs: string, usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
@@ -317,6 +321,19 @@ export class CustomGlShader {
         for (const key of this.glshader.keys()) {
             this.uniformDirty.add(key);
         }
+    }
+
+    /**
+     * Sets the padding (in pixels) for this shader and propagates to all compiled GLShaders.
+     * Must be called before the first draw call if set after construction.
+     * @param pixels - Number of pixels to expand the quad on each side.
+     */
+    setPadding(pixels: number): this {
+        this.padding = pixels;
+        for (const shader of this.glshader.values()) {
+            shader.padding = pixels;
+        }
+        return this;
     }
 
     /**
@@ -363,6 +380,7 @@ export class CustomGlShader {
 
         const shader = region.createShader(baseVS, baseFS);
         shader.isCustom = true;
+        shader.padding = this.padding;
         this.glshader.set(key, shader);
         this.uniformDirty.add(key);
 

@@ -14,9 +14,7 @@ out vec4 fragColor;
 in vec2 vPadding;
 
 bool clampUV(vec2 uv) {
-    vec2 start = vUVRect.xy + vPadding;
-    vec2 end = vUVRect.zw - vPadding;
-    return uv.x < start.x || uv.x > end.x || uv.y < start.y || uv.y > end.y;
+    return uv.x < vUVRect.x || uv.x > vUVRect.z || uv.y < vUVRect.y || uv.y > vUVRect.w;
 }
 
 vec4 sampleTexture(vec2 uv) {
@@ -35,11 +33,11 @@ vec4 sampleTextureLocal(vec2 uv){
 
 void main(void) {
     fragColor = sampleTexture(vRegion);
-    if (vPadding.x != 0.0) {
-        if (clampUV(vRegion)) {
-            fragColor = vec4(0.0, 0.0, 0.0, 0.0);
-        }
-    }
+    // if (vPadding.x != 0.0) {
+    //     if (clampUV(vRegion)) {
+    //         fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    //     }
+    // }
 
     // CUSTOM_CODE_CALL
 }

@@ -33,7 +33,7 @@ void main(void) {
     vPadding = uPadding[int(aTextureId)];
     vUV = aVertex.xy;
     vUVRect = aUVRect;
-    vRegion = mix(aUVRect.xy, aUVRect.zw, aVertex.xy);
+    vRegion = mix(aUVRect.xy - vPadding, aUVRect.zw + vPadding, aVertex.xy);
 
     vTextureId = int(aTextureId);
     vColor = aColor;

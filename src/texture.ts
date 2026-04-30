@@ -247,13 +247,11 @@ class Texture {
     public isRotated: boolean = false;
     public glTexture: WebGLTexture | null = null;
 
-    // Stored pixel-space region (before UV conversion), used by withPadding()
+    // Stored pixel-space region (before UV conversion), used by getSubTexture()
     protected _px: number = 0;
     protected _py: number = 0;
     protected _pw: number = 0;
     protected _ph: number = 0;
-
-    public padding: number = 0;
 
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
@@ -343,36 +341,13 @@ class Texture {
         t.width = this.width; t.height = this.height;
         t.flipY = this.flipY;
         t.isRotated = this.isRotated;
-        // Copy stored pixel region so withPadding() works on clones too
+        // Copy stored pixel region so getSubTexture() works on clones too
         t._px = this._px; t._py = this._py;
         t._pw = this._pw; t._ph = this._ph;
         return t;
     }
 
-    /**
-     * Returns a new Texture with the rendered quad expanded by `pixels` on all sides.
-     * The UV coordinates are adjusted outward so the padded border samples outside
-     * the original texture region (which is transparent when using CLAMP wrap mode).
-     *
-     * Use this with outline or glow shaders that need to draw beyond the texture edge.
-     * @param pixels - Number of pixels to expand on each side.
-     * @example
-     * const padded = catTex.withPadding(6);
-     * rapid.drawSprite(padded, Color.White, false, false, outlineShader);
-     */
-    withPadding(pixels: number): Texture {
-        if (!this.base) return new Texture();
-        const t = this.clone();
-        t.padding = pixels;
-        // Expand the pixel region outward — setRegion recomputes UV and dimensions
-        t.setRegion(
-            this._px - pixels,
-            this._py - pixels,
-            this._pw + pixels * 2,
-            this._ph + pixels * 2
-        );
-        return t;
-    }
+
 
     /**
      * Utility to split this texture into a grid of sprite textures.
