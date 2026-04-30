@@ -1,6 +1,7 @@
 import { Rapid } from "./render"
 import { createTexture } from "./webgl/utils"
 import { Color } from "./color"
+import { iOS, isMobileOrTablet } from "./utils"
 
 export type Images =
     | HTMLImageElement
@@ -637,6 +638,7 @@ class TextTexture extends Texture {
      */
     public update(): void {
         const ctx = this.ctx;
+        const yOffset = (isMobileOrTablet() && iOS()) ? -7 : 0;
         const font = `${this._style.fontWeight} ${this._style.fontSize}px ${this._style.fontFamily}`;
         ctx.font = font;
 
@@ -668,7 +670,7 @@ class TextTexture extends Texture {
         ctx.textBaseline = this._style.baseline || "top";
         ctx.textAlign = this._style.align || "left";
 
-        let y = padding / 2;
+        let y = padding / 2 + yOffset;
         for (const line of lines) {
             let x = padding / 2;
             if (this._style.align === "center") {

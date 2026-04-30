@@ -1,6 +1,14 @@
 import { Color } from "./color";
 import { Vec2 } from "./math";
 
+export function iOS(): boolean {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
+
+export function isMobileOrTablet(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
     if (value === null || typeof value !== "object") return false;
     if (Array.isArray(value)) return false;
