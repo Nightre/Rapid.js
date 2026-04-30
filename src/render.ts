@@ -2,7 +2,7 @@ import { getContext, WebGLContext } from "./webgl/utils";
 import GLShader, { CustomGlShader } from "./webgl/glshader";
 import { Region } from "./region/region";
 import { SpriteRegion } from "./region/spriteRegion";
-import { MatrixStack, MatrixStore } from "./matrix-engine";
+import { MatrixStack, MatrixStore, ITransformOptions } from "./matrix-engine";
 import { GraphicRegion } from "./region/graphicRegion";
 import { RenderTexture, Texture, TextureManager } from "./texture";
 import { Color } from "./color";
@@ -595,6 +595,120 @@ export class Rapid {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
         this.gl.viewport(0, 0, this.physicsWidth, this.physicsHeight);
         this.updateProjection(0, this.logicWidth, this.logicHeight, 0);
+    }
+
+    /**
+     * Convenience wrapper: enters a RenderTexture, optionally clears it, runs a callback, then leaves.
+     * @param rt    The RenderTexture to render into.
+     * @param cb    The callback containing draw calls to execute inside the RT.
+     * @param color Clear color before rendering. Pass `null` to skip clearing. Defaults to transparent black.
+     *
+     * @example
+     * rapid.drawToRenderTexture(myRT, () => {
+     *     rapid.drawSprite(mySprite);
+     * });
+     */
+    drawToRenderTexture(rt: RenderTexture, cb: () => void, color: Color | null = new Color(0, 0, 0, 0)): void {
+        this.enterRenderTexture(rt);
+        if (color !== null) {
+            this.clearRenderTexture(color);
+        }
+        cb();
+        this.leaveRenderTexture();
+    }
+
+    /**
+     * Convenience wrapper: writes a mask using the stencil buffer, then renders within it, then exits the mask.
+     * @param maskCb   Callback that defines the mask geometry (drawn to stencil, not visible).
+     * @param drawCb   Callback containing the actual draw calls masked by the stencil.
+     * @param type     Mask type: EQUAL (draw inside) or NOT_EQUAL (draw outside). Defaults to EQUAL.
+     * @param ref      Stencil reference value. Defaults to 1.
+     *
+     * @example
+     * rapid.withMask(
+     *     () => rapid.drawRect(200, 200),
+     *     () => rapid.drawSprite(myTexture),
+     * );
+     */
+    withMask(maskCb: () => void, drawCb: () => void, type: MaskType = MaskType.EQUAL, ref: number = 1): void {
+        this.clearMask();
+        this.startDrawMask(ref);
+        maskCb();
+        this.endDrawMask();
+        this.enterMask(type, ref);
+        drawCb();
+        this.exitMask();
+    }
+
+    /**
+     * Convenience wrapper: saves the matrix stack, applies an optional transform, runs a callback, then restores.
+     * When `transform` is provided, delegates to `matrixStack.applyTransform()` which handles
+     * position, rotation, scale, offset, and origin automatically.
+     * @param cb        The callback to execute within the saved transform context.
+     * @param transform Optional transform options to apply before running the callback.
+     * @param width     The logical width used to resolve `origin` anchoring. Defaults to 0.
+     * @param height    The logical height used to resolve `origin` anchoring. Defaults to 0.
+     *
+     * @example
+     * // Simple save/restore
+     * rapid.withTransform(() => {
+     *     rapid.matrixStack.translate(100, 100);
+     *     rapid.drawSprite(myTexture);
+     * });
+     *
+     * @example
+     * // With a transform applied
+     * rapid.withTransform(() => {
+     *     rapid.drawSprite(myTexture);
+     * }, { x: 100, y: 50, rotation: Math.PI / 4, origin: 0.5 }, myTexture.width, myTexture.height);
+     */
+    withTransform(cb: () => void, transform?: ITransformOptions, width: number = 0, height: number = 0): void {
+        if (transform) {
+            this.matrixStack.applyTransform(transform, width, height);
+            cb();
+            if (transform.saveTransform ?? true) {
+                this.matrixStack.restore();
+            }
+        } else {
+            this.matrixStack.save();
+            cb();
+            this.matrixStack.restore();
+        }
+    }
+
+    /**
+     * Convenience wrapper: enables scissor clipping for a region, runs a callback, then disables it.
+     * @param x      Left edge in logical pixels.
+     * @param y      Top edge in logical pixels.
+     * @param width  Width in logical pixels.
+     * @param height Height in logical pixels.
+     * @param cb     The callback to execute within the scissor region.
+     *
+     * @example
+     * rapid.withScissor(50, 50, 300, 200, () => {
+     *     rapid.drawSprite(myTexture);
+     * });
+     */
+    withScissor(x: number, y: number, width: number, height: number, cb: () => void): void {
+        this.startScissor(x, y, width, height);
+        cb();
+        this.endScissor();
+    }
+
+    /**
+     * Convenience wrapper: sets a blend mode, runs a callback, then restores NORMAL blend mode.
+     * @param mode The BlendMode to apply for the duration of the callback.
+     * @param cb   The callback to execute under the given blend mode.
+     *
+     * @example
+     * rapid.withBlendMode(BlendMode.ADD, () => {
+     *     rapid.drawSprite(glowTexture);
+     * });
+     */
+    withBlendMode(mode: BlendMode, cb: () => void): void {
+        this.setBlendMode(mode);
+        cb();
+        this.setBlendMode(BlendMode.NORMAL);
     }
 
     /**

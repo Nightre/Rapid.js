@@ -123,6 +123,18 @@ export class Vec2 {
         return new Vec2(this.x / mod || 0, this.y / mod || 0);
     }
 
+    fix(limit = 1e-13): void {
+        this.x = Math.abs(this.x) < limit ? 0 : this.x;
+        this.y = Math.abs(this.y) < limit ? 0 : this.y;
+    }
+
+    fixed(limit = 1e-13): Vec2 {
+        return new Vec2(
+            Math.abs(this.x) < limit ? 0 : this.x,
+            Math.abs(this.y) < limit ? 0 : this.y
+        );
+    }
+
     angle(): number {
         return Math.atan2(this.y, this.x);
     }
