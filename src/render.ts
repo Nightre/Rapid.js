@@ -83,7 +83,7 @@ export class Rapid {
     /** The current device pixel ratio. */
     dpr: number;
 
-    /** Background clear color [r, g, b, a], values range from 0 to 1. */
+    /** Background clear color [r, g, b, a], values range from 0 to 255. */
     backgroundColor: Color = Color.Black;
 
     /** Logical width in CSS pixels, used for coordinate system and projection matrix. */
@@ -467,7 +467,7 @@ export class Rapid {
     clear(): void {
         const gl = this.gl;
         const { r, g, b, a } = this.backgroundColor;
-        gl.clearColor(r, g, b, a);
+        gl.clearColor(r / 255, g / 255, b / 255, a / 255);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         this.drawcallCount = 0;
         this.matrixStack.reset()
