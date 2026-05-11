@@ -2,6 +2,7 @@ import { Rapid } from "../render";
 import { Region } from "./region";
 import GLShader from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
+import { Texture } from "../texture";
 
 import VsShaderSource from "../shader/graphic.vert?raw";
 import FsShaderSource from "../shader/graphic.frag?raw";
@@ -22,7 +23,7 @@ export class GraphicRegion extends Region {
     matrixIndex: number = -1
     drawMode: number = this.gl.TRIANGLES
 
-    texture?: WebGLTexture
+    texture?: Texture
 
     maskShader: GLShader
     KEY = "Graphic"
@@ -81,7 +82,7 @@ export class GraphicRegion extends Region {
     startGraphic(
         matrixIndex: number,
         drawMode: number = this.gl.TRIANGLES,
-        texture?: WebGLTexture,
+        texture?: Texture,
     ): void {
         this.vertexBuffer.clear();
         this.vertexCount = 0;
@@ -134,10 +135,14 @@ export class GraphicRegion extends Region {
 
         shader.setUniform("uMatrixRow0", [md[o], md[o + 2], md[o + 4]]);
         shader.setUniform("uMatrixRow1", [md[o + 1], md[o + 3], md[o + 5]]);
+        shader.setUniform("uUVRect", this.texture
+            ? [this.texture.uvX, this.texture.uvY, this.texture.uvW, this.texture.uvH]
+            : [0, 0, 1, 1]
+        );
 
-        if (this.texture) {
+        if (this.texture?.glTexture) {
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture.glTexture);
             shader.setUniform("uTexture", 0);
             shader.setUniform("uUseTexture", 1);
         } else {

@@ -1,7 +1,6 @@
-import { Rapid } from "./render"
-import { createTexture } from "./webgl/utils"
+import { Rapid, TextureFilterMode } from "./render"
+import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
-import { iOS, isMobileOrTablet } from "./utils"
 
 export type Images =
     | HTMLImageElement
@@ -20,8 +19,9 @@ export enum TextureWrapMode {
  * Options for configuring texture creation.
  */
 export interface ITextureOptions {
-    antialias?: boolean;
+    textureFilter?: TextureFilterMode;
     wrap?: TextureWrapMode;
+    premultipliedAlpha?: boolean;
     key?: string;
 }
 
@@ -89,19 +89,17 @@ class TextureManager {
      * @param options - Optional configuration for the texture.
      * @returns The newly created RenderTexture.
      */
-    createRenderTexture(width: number, height: number, options?: ITextureOptions): RenderTexture {
-        return new RenderTexture(this.render, width, height, options);
+    createRenderTexture(options?: IRenderTextureOptions): RenderTexture {
+        return new RenderTexture(this.render, options);
     }
 
     /**
      * Creates a TextTexture for rendering text.
-     * @param text - The text to display.
-     * @param style - Optional styling for the text.
      * @param options - Optional configuration for the texture.
      * @returns The newly created TextTexture.
      */
-    createTextTexture(text: string, options?: ITextOptions): TextTexture {
-        return new TextTexture(this.render, text, options);
+    createTextTexture(options?: ITextOptions): TextTexture {
+        return new TextTexture(this.render, options);
     }
 
     /**
@@ -166,6 +164,8 @@ export class BaseTexture {
     public uid?: string;
     public refCount: number = 0;
 
+    sourceUrl?: string
+
     constructor(texture: WebGLTexture, width: number, height: number) {
         this.glTexture = texture;
         this.width = width;
@@ -179,10 +179,8 @@ export class BaseTexture {
      * @param options - Optional configuration.
      * @returns The created BaseTexture.
      */
-    static fromSource(render: Rapid, source: Images, options?: ITextureOptions): BaseTexture {
-        const antialias = options?.antialias ?? false;
-        const wrap = options?.wrap ?? TextureWrapMode.CLAMP;
-        const glTexture = createTexture(render.gl, source, antialias, wrap, false, render.premultipliedAlpha);
+    static fromSource(render: Rapid, source: Images, options: ITextureOptions = {}): BaseTexture {
+        const glTexture = createTexture(render, source, options);
         return new BaseTexture(glTexture, source.width, source.height);
     }
 
@@ -192,13 +190,21 @@ export class BaseTexture {
      * @param gl - The WebGL rendering context.
      * @param source - The new image source.
      */
-    updateSource(gl: WebGL2RenderingContext, source: Images, premultipliedAlpha: boolean = true): void {
+    updateSource(gl: WebGL2RenderingContext, source: Images, options: ITextureOptions = {}): void {
         if (!this.glTexture) return;
         gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+
+        if (options.textureFilter !== undefined) {
+            setTextureFilterMode(gl, options.textureFilter);
+        }
+        if (options.wrap !== undefined) {
+            setTextureWrapMode(gl, options.wrap)
+        }
+
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        if (premultipliedAlpha) {
-            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        if (options.premultipliedAlpha !== undefined) {
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, options.premultipliedAlpha);
         }
 
         if (this.width === source.width && this.height === source.height) {
@@ -211,9 +217,29 @@ export class BaseTexture {
             this.height = source.height;
         }
 
-        if (premultipliedAlpha) {
+        if (options.premultipliedAlpha !== undefined) {
             gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         }
+    }
+
+    /**
+     * Dynamically updates the texture filtering mode.
+     */
+    setFilterMode(gl: WebGL2RenderingContext, filterMode: TextureFilterMode): void {
+        if (!this.glTexture) return;
+        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+        setTextureFilterMode(gl, filterMode);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+    /**
+     * Dynamically updates the texture wrap mode.
+     */
+    setWrapMode(gl: WebGL2RenderingContext, wrapMode: TextureWrapMode): void {
+        if (!this.glTexture) return;
+        gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+        setTextureWrapMode(gl, wrapMode);
+        gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
     /**
@@ -347,8 +373,6 @@ class Texture {
         return t;
     }
 
-
-
     /**
      * Utility to split this texture into a grid of sprite textures.
      * Sub-textures will respect the current UV offsets.
@@ -381,10 +405,8 @@ class Texture {
      * @param source - The image element, canvas, video, or bitmap.
      * @param options - Optional antialias and wrap mode settings.
      */
-    static fromImageSource(render: Rapid, source: Images, options?: ITextureOptions): Texture {
-        const antialias = options?.antialias ?? false;
-        const wrap = options?.wrap ?? TextureWrapMode.CLAMP;
-        const glTex = createTexture(render.gl, source, antialias, wrap, false, render.premultipliedAlpha);
+    static fromImageSource(render: Rapid, source: Images, options: ITextureOptions = {}): Texture {
+        const glTex = createTexture(render, source, options);
         return new Texture(new BaseTexture(glTex, source.width, source.height));
     }
 
@@ -400,6 +422,12 @@ class Texture {
     }
 }
 
+export interface IRenderTextureOptions extends ITextureOptions {
+    width?: number;
+    height?: number;
+    clearColor?: Color;
+}
+
 /**
  * A texture that can be rendered to (wraps a WebGL Framebuffer).
  */
@@ -409,19 +437,22 @@ class RenderTexture extends Texture {
     private gl: WebGL2RenderingContext;
     private _base: BaseTexture;
     public flipY: boolean = true;
+    public clearColor?: Color;
 
     /** Actual GPU-allocated dimensions — grow-only, never shrink */
     private _allocW: number = 0;
     private _allocH: number = 0;
 
-    constructor(render: Rapid, width: number, height: number, options?: ITextureOptions) {
+    constructor(render: Rapid, options: IRenderTextureOptions = {}) {
         super();
         this.gl = render.gl;
 
-        const antialias = options?.antialias ?? true;
-        const wrapMode = options?.wrap ?? TextureWrapMode.CLAMP;
+        this.clearColor = options.clearColor ?? Color.Black;
 
-        const glTex = createTexture(this.gl, { width, height }, antialias, wrapMode, true);
+        const width = Math.max(Math.round(options?.width ?? 1), 1);
+        const height = Math.max(Math.round(options?.height ?? 1), 1);
+        const source = { width, height }
+        const glTex = createTexture(render, source, { ...options, onlySize: true });
         this._base = new BaseTexture(glTex, width, height);
         this.setBase(this._base);
 
@@ -448,6 +479,10 @@ class RenderTexture extends Texture {
      * @param force  - Force full GPU reallocation regardless of current allocation size.
      */
     resize(width: number, height: number, force: boolean = false): void {
+
+        width = Math.max(Math.round(width), 1);
+        height = Math.max(Math.round(height), 1);
+
         const sameLogical = this.width === width && this.height === height;
         if (!force && sameLogical) return;
 
@@ -494,16 +529,24 @@ class RenderTexture extends Texture {
 
     /**
      * Activates this texture as the current render target.
-     * @param clearColor - Optional color to clear the buffer with.
+     * @param clear - Whether to clear the render target after activation.
      */
-    activate(clearColor?: Color): void {
+    activate(clear:boolean = false): void {
         if (!this.framebuffer) return;
         const gl = this.gl;
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         gl.viewport(0, 0, this.width, this.height);
 
-        if (clearColor) {
-            gl.clearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+        if (clear) this.clear()
+    }
+
+    clear(clearColor?: Color){
+        if (!this.framebuffer) return;
+        const gl = this.gl;
+
+        const c = clearColor ?? this.clearColor;
+        if (c) {
+            c.setClearColor(gl)
             gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         }
     }
@@ -592,14 +635,14 @@ const defaultTextStyle: ITextStyle = {
     fontFamily: "Arial",
     fontSize: 24,
     fontWeight: "normal",
-    fill: "#ffffff",
+    fill: "#000000",
     strokeThickness: 0,
     align: "left",
     baseline: "top",
 };
 
 export interface ITextOptions extends ITextStyle, ITextureOptions {
-
+    text?: string
 }
 
 export const TEXT_SCALEFACTOR = 2
@@ -613,13 +656,15 @@ class TextTexture extends Texture {
     private _text: string;
     private _style: ITextStyle;
     private _base: BaseTexture;
+    private options: ITextOptions
     flipY = true
 
-    constructor(render: Rapid, text: string, options?: ITextOptions) {
+    constructor(render: Rapid, options?: ITextOptions) {
         super();
         this.render = render;
         this._style = { ...defaultTextStyle, ...options };
-        this._text = text;
+        this._text = options?.text ?? "";
+        this.options = { premultipliedAlpha: render.premultipliedAlpha, ...options };
         this.scale = 1 / TEXT_SCALEFACTOR
 
         this.canvas = document.createElement("canvas");
@@ -629,8 +674,7 @@ class TextTexture extends Texture {
 
         this.canvas.width = 1;
         this.canvas.height = 1;
-
-        const glTexture = createTexture(render.gl, this.canvas, options?.antialias ?? true, options?.wrap ?? TextureWrapMode.CLAMP, false, render.premultipliedAlpha);
+        const glTexture = createTexture(render, this.canvas, this.options);
         this._base = new BaseTexture(glTexture, 1, 1);
         this.setBase(this._base);
 
@@ -668,10 +712,9 @@ class TextTexture extends Texture {
      */
     public update(): void {
         const ctx = this.ctx;
-        const yOffset = (isMobileOrTablet() && iOS()) ? -7 : 0;
         const fontSize = this._style.fontSize!;
-        const fontWeight = this._style.fontWeight!;
-        const fontFamily = this._style.fontFamily!;
+        const fontWeight = this._style.fontWeight;
+        const fontFamily = this._style.fontFamily;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
 
@@ -707,7 +750,7 @@ class TextTexture extends Texture {
         ctx.textBaseline = this._style.baseline!;
         ctx.textAlign = this._style.align!;
 
-        let y = padding / 2 + yOffset;
+        let y = padding / 2;
         for (const line of lines) {
             let x = padding / 2;
             if (this._style.align === "center") {
@@ -730,7 +773,7 @@ class TextTexture extends Texture {
             y += lineHeight;
         }
 
-        this._base.updateSource(this.render.gl, this.canvas, this.render.premultipliedAlpha);
+        this._base.updateSource(this.render.gl, this.canvas, this.options);
         this.setRegion(0, 0, this.canvas.width, this.canvas.height);
     }
 }

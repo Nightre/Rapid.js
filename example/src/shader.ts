@@ -20,7 +20,7 @@ export async function init() {
         logicHeight: 480,
         physicsWidth: 640,
         physicsHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1)
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12)
     });
 
     const [tex1, tex2, tex3, texStick, texTr] = await Promise.all([
@@ -60,8 +60,8 @@ color.a = 1.0;
 }`
     );
 
-    const renderTexture = rapid.texture.createRenderTexture(128, 64);
-    const label = rapid.texture.createTextTexture("Hello World");
+    const renderTexture = rapid.texture.createRenderTexture({ width: 128, height: 64 });
+    const label = rapid.texture.createTextTexture({ text: "Hello World" });
     let time = 0;
     customShader.setUniforms({
         "u_tex3": tex3.glTexture!
@@ -80,35 +80,35 @@ color.a = 1.0;
             label.text = "Hello World " + Math.round(time * 10);
             ms.identity();
             ms.translate(10, 200);
-            rapid.drawSprite(label);
+            rapid.drawSprite({ texture: label });
 
             // Custom Shader
             ms.identity();
             ms.translate(10, 50);
-            rapid.drawSprite(tex1, new Color(255, 255, 0, 255), false, false, customShader);
+            rapid.drawSprite({ texture: tex1, color: new Color(255, 255, 0, 255), shader: customShader });
 
             // FBO Render Texture
             rapid.enterRenderTexture(renderTexture);
             ms.identity();
-            rapid.drawSprite(tex1);
+            rapid.drawSprite({ texture: tex1 });
             rapid.leaveRenderTexture();
 
             ms.identity();
             ms.translate(0, 120);
-            rapid.drawSprite(renderTexture, new Color(255, 255, 255, 136), false, false, customShader2);
+            rapid.drawSprite({ texture: renderTexture, color: new Color(255, 255, 255, 136), shader: customShader2 });
 
             // Mask
             ms.identity();
             ms.translate(50, 300);
             rapid.startDrawMask(1, 0xFF);
-            rapid.drawMaskImage(tex2);
+            rapid.drawMaskImage({ texture: tex2 });
             rapid.endDrawMask();
 
             // Use Mask
             rapid.enterMask(time > Math.PI ? MaskType.EQUAL : MaskType.NOT_EQUAL, 1, 0xFF);
             ms.translate(Math.cos(time) * 30 - 32, -32);
             ms.scale(2, 2);
-            rapid.drawSprite(tex1);
+            rapid.drawSprite({ texture: tex1 });
             rapid.exitMask();
 
             // 延迟渲染和延迟更新（先建造MatrixStack然后微调再渲染）
@@ -124,26 +124,26 @@ color.a = 1.0;
 
             ms.updateMatrix(stick1)
 
-            rapid.drawSprite(texStick, Color.White, false, false, undefined, stick1.world);
-            rapid.drawSprite(texStick, Color.White, false, false, undefined, stick2.world);
+            rapid.drawSprite({ texture: texStick, color: Color.White, customMatrix: stick1.world });
+            rapid.drawSprite({ texture: texStick, color: Color.White, customMatrix: stick2.world });
 
             // MatrixStack 普通用法：层级变换（parent → child → grandchild）
             ms.identity();
             ms.save();
             ms.translate(300, 140);
             ms.rotateWithOffset(time, tex1.width / 2, tex1.height / 2);
-            rapid.drawSprite(tex1, Color.Red);
+            rapid.drawSprite({ texture: tex1, color: Color.Red });
             ms.translate(50, 50)
             ms.save();
             ms.scale(Math.sin(time) / 2 + 1, Math.sin(time) / 2 + 1)
-            rapid.drawSprite(tex1, Color.Cyan);
+            rapid.drawSprite({ texture: tex1, color: Color.Cyan });
             ms.translate(50, 50)
             ms.rotateWithOffset(time * 5, tex1.width / 2, tex1.height / 2);
-            rapid.drawSprite(tex1, Color.Brown);
+            rapid.drawSprite({ texture: tex1, color: Color.Brown });
             ms.restore()
 
             ms.translate(0, 50)
-            rapid.drawSprite(tex1, Color.Green);
+            rapid.drawSprite({ texture: tex1, color: Color.Green });
 
             ms.restore();
 

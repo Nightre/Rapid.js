@@ -1,6 +1,7 @@
-import { DynamicArrayBuffer, ArrayType } from "./buffer.ts";
-import { Rapid } from "./render.ts";
-import { Vec2 } from "./math.ts";
+import { DynamicArrayBuffer, ArrayType } from "./buffer";
+import { Vec2 } from "./math";
+import { Rapid } from "./render";
+
 
 export interface ITransformOptions {
     /** Whether to push a save before applying transforms. Default: true. */
@@ -11,7 +12,7 @@ export interface ITransformOptions {
     y?: number;
     position?: Vec2;
     rotation?: number;
-    scale?: Vec2;
+    scale?: Vec2 | number;
     offsetX?: number;
     offsetY?: number;
     offset?: Vec2;
@@ -592,8 +593,13 @@ export class MatrixStack {
 
         if (transform.position) this.translate(transform.position.x, transform.position.y);
         if (transform.rotation) this.rotate(transform.rotation);
-        if (transform.scale) this.scale(transform.scale.x, transform.scale.y);
-
+        const scale = transform.scale;
+        const isScaleNumber = typeof scale === "number";
+        if (scale) this.scale(
+            isScaleNumber ? scale : scale.x,
+            isScaleNumber ? scale : scale.y
+        );
+ 
         let offsetX = transform.offsetX ?? 0;
         let offsetY = transform.offsetY ?? 0;
 

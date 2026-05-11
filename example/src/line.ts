@@ -17,7 +17,7 @@ export async function init() {
         logicHeight: 480,
         physicsWidth: 640,
         physicsHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1)
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12)
     });
 
     const texStick = await rapid.texture.load(stickUrl, {
@@ -40,8 +40,9 @@ export async function init() {
                 ],
                 width: 10,
                 closed: true,
-                roundCap: true
-            }, Color.Cyan);
+                roundCap: true,
+                color: Color.Cyan,
+            });
 
             // 2. Draw a sine line
             const sinPoints: Vec2[] = [];
@@ -54,8 +55,9 @@ export async function init() {
                 points: sinPoints,
                 width: 5,
                 roundCap: true,
-                closed: false
-            }, Color.Yellow);
+                closed: false,
+                color: Color.Yellow,
+            });
 
             // 3. Draw a textured line
             const texturedPoints: Vec2[] = [];
@@ -70,8 +72,9 @@ export async function init() {
                 texture: texStick,
                 textureMode: LineTextureMode.REPEAT,
                 roundCap: true,
-                closed: false
-            }, Color.White); // White so original color shows
+                closed: false,
+                color: Color.White, // White so original color shows
+            });
 
             time += dt;
             rapid.flush();

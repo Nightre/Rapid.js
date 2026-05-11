@@ -27,6 +27,10 @@ export class Color {
         this.updateUint();
     }
 
+    setClearColor(gl: WebGL2RenderingContext) {
+        gl.clearColor(this.r / 255, this.g / 255, this.b / 255, this.a / 255)
+    }
+
     /**
      * Gets the red component.
      */
@@ -138,12 +142,12 @@ export class Color {
         const m = l - c / 2;
 
         let r = 0, g = 0, b = 0;
-        if (h < 60)       [r, g, b] = [c, x, 0];
+        if (h < 60) [r, g, b] = [c, x, 0];
         else if (h < 120) [r, g, b] = [x, c, 0];
         else if (h < 180) [r, g, b] = [0, c, x];
         else if (h < 240) [r, g, b] = [0, x, c];
         else if (h < 300) [r, g, b] = [x, 0, c];
-        else              [r, g, b] = [c, 0, x];
+        else[r, g, b] = [c, 0, x];
 
         this.setRGBA((r + m) * 255, (g + m) * 255, (b + m) * 255, 255);
         return this;

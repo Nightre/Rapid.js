@@ -8,15 +8,20 @@ in vec2 aUV;
 uniform mat4 u_projection;
 uniform vec3 uMatrixRow0; // [a, c, tx]
 uniform vec3 uMatrixRow1; // [b, d, ty]
+uniform vec4 uUVRect;
 
 out vec4 vColor;
 out vec2 vRegion;
+out vec2 vUV;
+out vec4 vUVRect;
 
 // CUSTOM_CODE
 
 void main(void) {
     vColor = aColor;
-    vRegion = aUV;
+    vUV = aUV;
+    vUVRect = uUVRect;
+    vRegion = mix(uUVRect.xy, uUVRect.zw, aUV);
     vec4 position = vec4(
         dot(uMatrixRow0.xyz, vec3(aPosition.xy, 1.0)), 
         dot(uMatrixRow1.xyz, vec3(aPosition.xy, 1.0)), 

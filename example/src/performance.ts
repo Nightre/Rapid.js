@@ -15,7 +15,7 @@ export async function init() {
         logicHeight: 480,
         physicsWidth: 640,
         physicsHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1)
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12)
     });
 
     const [tex1, tex2] = await Promise.all([
@@ -88,7 +88,7 @@ export async function init() {
 
                 ms.identity();
                 ms.translate(s.x, s.y);
-                rapid.drawSprite(s.tex);
+                rapid.drawSprite({ texture: s.tex });
             }
             rapid.flush();
         },

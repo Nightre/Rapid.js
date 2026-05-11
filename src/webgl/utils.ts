@@ -1,4 +1,5 @@
-import { TextureWrapMode } from "../texture";
+import { Rapid, TextureFilterMode } from "../render";
+import { ITextOptions, TextureWrapMode } from "../texture";
 
 export type WebGLContext = WebGL2RenderingContext;
 
@@ -72,21 +73,43 @@ export const createShaderProgram = (gl: WebGLContext, vsSource: string, fsSource
     return program;
 }
 
+export function setTextureWrapMode(gl: WebGLRenderingContext | WebGL2RenderingContext, wrapMode: TextureWrapMode) {
+    const wrapParam = {
+        [TextureWrapMode.CLAMP]: gl.CLAMP_TO_EDGE,
+        [TextureWrapMode.REPEAT]: gl.REPEAT,
+        [TextureWrapMode.MIRRORED_REPEAT]: gl.MIRRORED_REPEAT,
+    }[wrapMode] || gl.CLAMP_TO_EDGE;
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapParam);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapParam);
+}
+
+export function setTextureFilterMode(gl: WebGLRenderingContext | WebGL2RenderingContext, filterMode: TextureFilterMode) {
+    const filter = {
+        [TextureFilterMode.LINEAR]: gl.LINEAR,
+        [TextureFilterMode.NEAREST]: gl.NEAREST,
+    }[filterMode] ?? gl.NEAREST;
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+}
+
+export interface ICreateTextureOptions extends ITextOptions{
+    onlySize?: boolean
+}
 /**
  * Creates a WebGL texture either from an image source or as a blank texture
  * @param gl - The WebGL rendering context
  * @param source - The image source or dimensions for a blank texture
- * @param antialias - Whether to enable antialiasing
+ * @param filterMode - texture filter mode
  * @returns A WebGL texture
  */
 export function createTexture(
-    gl: WebGLRenderingContext | WebGL2RenderingContext,
+    render:Rapid,
     source: TexImageSource | { width: number; height: number },
-    antialias: boolean,
-    wrapMode: TextureWrapMode = TextureWrapMode.CLAMP,
-    onlySize: boolean = false,
-    premultipliedAlpha: boolean = true
+    options: ICreateTextureOptions,
 ): WebGLTexture {
+    const gl = render.gl
     const texture = gl.createTexture();
     if (!texture) {
         throw new Error("Unable to create WebGL texture");
@@ -97,24 +120,15 @@ export function createTexture(
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
-    const wrapParam = {
-        [TextureWrapMode.CLAMP]: gl.CLAMP_TO_EDGE,
-        [TextureWrapMode.REPEAT]: gl.REPEAT,
-        [TextureWrapMode.MIRRORED_REPEAT]: gl.MIRRORED_REPEAT,
-    }[wrapMode] || gl.CLAMP_TO_EDGE;
+    setTextureWrapMode(gl, options.wrap ?? TextureWrapMode.CLAMP);
+    setTextureFilterMode(gl, options.textureFilter ?? render.textureFilter);
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapParam);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapParam);
-
-    const filter = antialias ? gl.LINEAR : gl.NEAREST;
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-
-    if (onlySize) {
+    if (options.onlySize) {
         // RenderTexture: blank allocation, no source pixels to premultiply
         const s = source as { width: number; height: number };
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, s.width, s.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     } else {
+        const premultipliedAlpha = options.premultipliedAlpha ?? render.premultipliedAlpha
         if (premultipliedAlpha) {
             gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
         }

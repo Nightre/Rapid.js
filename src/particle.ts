@@ -81,6 +81,8 @@ export interface IParticleOptions {
     localSpace?: boolean;
     /** World-space position of the emitter (used when localSpace is false). */
     position?: Vec2;
+
+    origin?: Vec2;
 }
 
 const DEFAULT_EMIT_RATE = 10;
@@ -229,7 +231,14 @@ export class Particle {
         if (rot !== 0) ms.rotate(rot);
         if (scale !== 1) ms.scale(scale, scale);
 
-        this.rapid.drawSprite(this.texture, color);
+        const originX = this.options.origin ? this.options.origin.x : 0.5;
+        const originY = this.options.origin ? this.options.origin.y : 0.5;
+
+        if (originX !== 0 || originY !== 0) {
+            ms.translate(-originX * this.texture.width, -originY * this.texture.height);
+        }
+
+        this.rapid.drawSprite({ texture: this.texture, color });
 
         ms.restore();
     }
@@ -290,6 +299,8 @@ export class ParticleEmitter {
     position: Vec2 = Vec2.ZERO;
 
     private rapid: Rapid;
+
+    gameObject:any
 
     /**
      * Creates a new particle emitter.

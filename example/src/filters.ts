@@ -13,7 +13,7 @@ export async function init() {
         canvas,
         logicWidth: 640,
         logicHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1),
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12),
     });
 
     const tex = await rapid.texture.load(catUrl);
@@ -77,35 +77,35 @@ void fragment(inout vec4 color) {
             // Original texture — top left
             ms.identity();
             ms.translate(20, 100);
-            rapid.drawSprite(tex);
+            rapid.drawSprite({ texture: tex });
 
             // Single blur pass (horizontal only) — top right
             const blurredH = rapid.applyFilters(tex, [blurH]);
             ms.identity();
             ms.translate(200, 100);
-            rapid.drawSprite(blurredH);
+            rapid.drawSprite({ texture: blurredH });
 
             // Animated: only tint, no blur
             ms.identity();
             ms.translate(380, 100);
-            rapid.drawSprite(rapid.applyFilters(tex, [blurV]));
+            rapid.drawSprite({ texture: rapid.applyFilters(tex, [blurV]) });
 
             // Animated: only tint, no blur
             ms.identity();
             ms.translate(380 + 180, 100);
-            rapid.drawSprite(rapid.applyFilters(tex, [tint]));
+            rapid.drawSprite({ texture: rapid.applyFilters(tex, [tint]) });
 
             // Full Gaussian blur (H + V) — bottom left
             const blurred = rapid.applyFilters(tex, [blurH, blurV]);
             ms.identity();
             ms.translate(20, 180);
-            rapid.drawSprite(blurred);
+            rapid.drawSprite({ texture: blurred });
 
             // All three filters chained: blur H → blur V → color tint — bottom right
             const filtered = rapid.applyFilters(tex, [blurH, blurV, tint]);
             ms.identity();
             ms.translate(200, 180);
-            rapid.drawSprite(filtered);
+            rapid.drawSprite({ texture: filtered });
 
 
             rapid.flush();

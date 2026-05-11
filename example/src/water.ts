@@ -22,8 +22,8 @@ export async function init() {
 
     // RenderTexture for the scene (top half) and the reflection (bottom half)
     const HALF_H = 240;
-    const sceneRT = rapid.texture.createRenderTexture(640, HALF_H);
-    const reflectRT = rapid.texture.createRenderTexture(640, HALF_H);
+    const sceneRT = rapid.texture.createRenderTexture({ width: 640, height: HALF_H });
+    const reflectRT = rapid.texture.createRenderTexture({ width: 640, height: HALF_H });
 
     // Wave distortion shader applied to the flipped reflection
     const waveShader = new CustomGlShader(rapid,
@@ -90,7 +90,7 @@ void fragment(inout vec4 color) {
             // The ball (textured sprite)
             ms.identity();
             ms.translate(ballX - tex.width / 2, ballY - tex.height / 2);
-            rapid.drawSprite(tex);
+            rapid.drawSprite({ texture: tex });
 
             rapid.flush();
             rapid.leaveRenderTexture();
@@ -102,7 +102,7 @@ void fragment(inout vec4 color) {
             ms.identity();
             ms.translate(0, HALF_H);
             ms.scale(1, -1);
-            rapid.drawSprite(sceneRT);
+            rapid.drawSprite({ texture: sceneRT });
 
             rapid.flush();
             rapid.leaveRenderTexture();
@@ -111,7 +111,7 @@ void fragment(inout vec4 color) {
 
             // Top half: scene
             ms.identity();
-            rapid.drawSprite(sceneRT);
+            rapid.drawSprite({ texture: sceneRT });
 
             // Thin glowing water-surface divider
             ms.identity();
@@ -126,7 +126,7 @@ void fragment(inout vec4 color) {
             // Bottom half: wave-distorted reflection
             ms.identity();
             ms.translate(0, HALF_H);
-            rapid.drawSprite(reflectRT, undefined, false, false, waveShader);
+            rapid.drawSprite({ texture: reflectRT, shader: waveShader });
 
             // Subtle blue water overlay
             ms.identity();

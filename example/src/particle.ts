@@ -17,7 +17,7 @@ export async function init() {
         logicHeight: 480,
         physicsWidth: 640,
         physicsHeight: 480,
-        backgroundColor: new Color(0.04, 0.04, 0.10, 1),
+        backgroundColor: Color.fromNorm(0.04, 0.04, 0.10),
     });
 
     const tex = await rapid.texture.load(cat3Url);

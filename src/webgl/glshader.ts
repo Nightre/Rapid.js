@@ -254,7 +254,7 @@ function applyUniformFallback(
     if (typeof value === "number") {
         return gl.uniform1f(loc, value);
     }
-    const arr = value as number[] | Float32Array | Int32Array;
+    const arr = value as Float32Array;
     switch (arr.length) {
         case 2: return gl.uniform2fv(loc, arr);
         case 3: return gl.uniform3fv(loc, arr);

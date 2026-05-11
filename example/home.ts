@@ -19,7 +19,7 @@ async function main() {
         physicsWidth: W,
         physicsHeight: H,
     });
-    rapid.backgroundColor = new Color(0.04, 0.04, 0.10, 1);
+    rapid.backgroundColor = Color.fromNorm(0.04, 0.04, 0.10);
 
     const [tex1, tex2] = await Promise.all([
         rapid.texture.load('./cat.png'),
@@ -100,7 +100,7 @@ async function main() {
 
             ms.identity();
             ms.translate(s.x, s.y);
-            rapid.drawSprite(s.tex);
+            rapid.drawSprite({ texture: s.tex });
         }
         if ((rapid as any).currentRegion) (rapid as any).currentRegion.exit();
 

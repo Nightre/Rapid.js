@@ -13,7 +13,7 @@ export async function init() {
         canvas,
         logicWidth: 640,
         logicHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1)
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12)
     });
 
     const tex1 = await rapid.texture.load(catUrl);
@@ -35,11 +35,11 @@ export async function init() {
             ms.save();
             ms.translate(160, 240);
             ms.translate(-w1 / 2, -h1 / 2);
-            rapid.drawSprite(tex1);
+            rapid.drawSprite({ texture: tex1 });
 
             rapid.setBlendMode(BlendMode.NORMAL);
             ms.translate(Math.sin(time) * 40 - w2 / 2 + w1 / 2, -h2 / 2 + h1 / 2);
-            rapid.drawSprite(tex2);
+            rapid.drawSprite({ texture: tex2 });
             rapid.setBlendMode(BlendMode.NORMAL);
             ms.restore();
 
@@ -47,13 +47,13 @@ export async function init() {
             ms.save();
             ms.translate(320, 240);
             ms.translate(-w1 / 2, -h1 / 2);
-            rapid.drawSprite(tex1);
+            rapid.drawSprite({ texture: tex1 });
 
             rapid.setBlendMode(BlendMode.ADD);
             ms.translate(Math.sin(time) * 40 - w2 / 2 + w1 / 2, -h2 / 2 + h1 / 2);
             // Draw multiple times to highlight glowing
-            rapid.drawSprite(tex2);
-            rapid.drawSprite(tex2);
+            rapid.drawSprite({ texture: tex2 });
+            rapid.drawSprite({ texture: tex2 });
             rapid.setBlendMode(BlendMode.NORMAL);
             ms.restore();
 
@@ -62,11 +62,11 @@ export async function init() {
             ms.translate(480, 240);
 
             ms.translate(-w1 / 2, -h1 / 2);
-            rapid.drawSprite(tex1);
+            rapid.drawSprite({ texture: tex1 });
 
             rapid.setBlendMode(BlendMode.MULTIPLY);
             ms.translate(Math.sin(time) * 40 - w2 / 2 + w1 / 2, -h2 / 2 + h1 / 2);
-            rapid.drawSprite(tex2);
+            rapid.drawSprite({ texture: tex2 });
             rapid.setBlendMode(BlendMode.NORMAL);
             ms.restore();
 

@@ -15,7 +15,7 @@ export async function init() {
         canvas,
         logicWidth: 640,
         logicHeight: 480,
-        backgroundColor: new Color(0.05, 0.05, 0.12, 1),
+        backgroundColor: Color.fromNorm(0.05, 0.05, 0.12),
     });
 
     const [tex1, tex2] = await Promise.all([
@@ -76,7 +76,7 @@ void fragment(inout vec4 color) {
                 ms.identity();
                 ms.translate(60 + i * 120, 140 + Math.sin(time + i) * 40);
                 ms.rotateWithOffset(time * 0.4 + i, tex1.width / 2, tex1.height / 2);
-                rapid.drawSprite(tex1, Color.White, false, false, outlineShader);
+                rapid.drawSprite({ texture: tex1, color: Color.White, shader: outlineShader });
             }
 
             // --- Blue outlined sprites (tex2) ---
@@ -86,7 +86,7 @@ void fragment(inout vec4 color) {
             for (let i = 0; i < 5; i++) {
                 ms.identity();
                 ms.translate(60 + i * 120, 320 + Math.cos(time + i) * 30);
-                rapid.drawSprite(tex2, Color.White, false, false, outlineShader);
+                rapid.drawSprite({ texture: tex2, color: Color.White, shader: outlineShader });
             }
 
             rapid.flush();
