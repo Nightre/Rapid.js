@@ -1,6 +1,7 @@
 // @ts-ignore
 import catUrl from '../cat.png';
 import cat2Url from '../cat2.png';
+
 export async function init() {
     // noshow start
     const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -62,7 +63,6 @@ export async function init() {
             infoEl.textContent = `Sprites: ${count} | Click canvas to spawn!`;
 
             rapid.clear();
-            const ms = rapid.matrixStack;
 
             for (const s of sprites) {
                 s.vy += GRAVITY * scale;
@@ -72,23 +72,21 @@ export async function init() {
                 if (s.x < 0) {
                     s.x = 0;
                     s.vx *= -1;
-                } else if (s.x + SPRITE_W > rapid.logicWidth) {
-                    s.x = rapid.logicWidth - SPRITE_W;
+                } else if (s.x + SPRITE_W > rapid.width) {
+                    s.x = rapid.width - SPRITE_W;
                     s.vx *= -1;
                 }
 
                 if (s.y < 0) {
                     s.y = 0;
                     s.vy *= bounce;
-                } else if (s.y + SPRITE_H > rapid.logicHeight) {
-                    s.y = rapid.logicHeight - SPRITE_H;
+                } else if (s.y + SPRITE_H > rapid.height) {
+                    s.y = rapid.height - SPRITE_H;
                     s.vy *= bounce;
                     if (Math.random() > 0.5) s.vy -= Math.random() * 6;
                 }
 
-                ms.identity();
-                ms.translate(s.x, s.y);
-                rapid.drawSprite({ texture: s.tex });
+                rapid.drawSprite({ texture: s.tex, position:s });
             }
             rapid.flush();
         },

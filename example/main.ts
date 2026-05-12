@@ -1,6 +1,6 @@
 import { examples, type Example } from './src/index.ts';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css';
+import 'highlight.js/styles/github-dark.css';
 import Stats from 'stats.js';
 
 // DOM refs

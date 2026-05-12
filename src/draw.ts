@@ -90,7 +90,7 @@ const getColorUint32 = (rapid: Rapid, color?: Color): number => {
     return rapid.premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
 };
 
-const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
+export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
     const texture = options.texture;
     if (!texture?.base || rapid.inCreateMask) {
         return;

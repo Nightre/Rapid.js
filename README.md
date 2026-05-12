@@ -6,5 +6,5 @@ A stateless, data-driven, high-performance WebGL 2D game rendering engine.
 
 ## Links
 
-- 📖 [API Documentation](https://nightre.github.io/Rapid.js/api/)
+- 📖 [API Documentation](https://nightre.github.io/Rapid.js/api-reference/)
 - 🎮 [Examples](https://nightre.github.io/Rapid.js/example/)
