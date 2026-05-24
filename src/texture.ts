@@ -1,8 +1,6 @@
 import { Rapid, TextureFilterMode } from "./render"
 import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
-import { iOS, isMobileOrTablet } from "./utils"
-import { Interface } from "node:readline";
 
 export type Images =
     | HTMLImageElement
@@ -91,7 +89,7 @@ class TextureManager {
      * @param options - Optional configuration for the texture.
      * @returns The newly created RenderTexture.
      */
-    createRenderTexture(options?: IRenderTextureOptions): RenderTexture {
+    createRenderTexture(options: IRenderTextureOptions): RenderTexture {
         return new RenderTexture(this.render, options);
     }
 
@@ -285,11 +283,6 @@ class Texture {
     protected _pw: number = 0;
     protected _ph: number = 0;
 
-    texturePath: string
-    sourceSize: { w: number, h: number }
-    spriteSourceSize: { x: number, y: number, w: number, h: number }
-    frame: { x: number, y: number, w: number, h: number }
-
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
     }
@@ -419,7 +412,7 @@ class Texture {
      * @param source - The image element, canvas, video, or bitmap.
      * @param options - Optional antialias and wrap mode settings.
      */
-    static fromImageSource(render: Rapid, source: Images, options?: ITextureOptions): Texture {
+    static fromImageSource(render: Rapid, source: Images, options: ITextureOptions): Texture {
         const glTex = createTexture(render, source, options);
         return new Texture(new BaseTexture(glTex, source.width, source.height));
     }
@@ -457,7 +450,7 @@ class RenderTexture extends Texture {
     private _allocW: number = 0;
     private _allocH: number = 0;
 
-    constructor(render: Rapid, options?: IRenderTextureOptions) {
+    constructor(render: Rapid, options: IRenderTextureOptions) {
         super();
         this.gl = render.gl;
 
@@ -755,9 +748,9 @@ class TextTexture extends Texture {
      */
     public update(): void {
         const ctx = this.ctx;
-        const fontSize = this._style.fontSize;
-        const fontWeight = this._style.fontWeight;
-        const fontFamily = this._style.fontFamily;
+        const fontSize = this._style.fontSize!;
+        const fontWeight = this._style.fontWeight!;
+        const fontFamily = this._style.fontFamily!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         ctx.font = font;
 
@@ -816,7 +809,7 @@ class TextTexture extends Texture {
             y += lineHeight;
         }
         
-        this.base.updateSource(this.render.gl, this.canvas, this.options);
+        this.base?.updateSource(this.render.gl, this.canvas, this.options);
         this.setRegion(0, 0, this.canvas.width, this.canvas.height);
     }
 }
