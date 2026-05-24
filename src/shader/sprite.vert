@@ -24,14 +24,12 @@ out vec2 vRegion;
 flat out int vTextureId;
 out vec4 vColor;
 
-out vec2 vUV;
 out vec4 vUVRect;
 out vec2 vPadding;
 // CUSTOM_CODE
 
 void main(void) {
     vPadding = uPadding[int(aTextureId)];
-    vUV = aVertex.xy;
     vUVRect = aUVRect;
     vRegion = mix(aUVRect.xy - vPadding, aUVRect.zw + vPadding, aVertex.xy);
 

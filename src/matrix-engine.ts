@@ -449,7 +449,7 @@ export class MatrixStack {
      * @param scaleX - Scaling factor along the x-axis.
      * @param scaleY - Scaling factor along the y-axis.
      */
-    scale(scaleX: number, scaleY: number): void {
+    scale(scaleX: number, scaleY: number = scaleX): void {
         this.matrix.scale(this.curLocalM, scaleX, scaleY);
         this.matrix.scale(this.curWorldM, scaleX, scaleY);
     }

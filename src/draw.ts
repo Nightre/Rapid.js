@@ -19,6 +19,7 @@ export interface ISpriteOptions extends IDrawOptions {
     color?: Color;
     flipX?: boolean;
     flipY?: boolean;
+    padding?: number
 }
 
 export interface IGraphicOptions extends IDrawOptions {
@@ -90,13 +91,15 @@ const getColorUint32 = (rapid: Rapid, color?: Color): number => {
     return rapid.premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
 };
 
+const ATLAS_PADDING = 2
 export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
     const texture = options.texture;
     if (!texture?.base || rapid.inCreateMask) {
         return;
     }
 
-    rapid.enterRegion(rapid.spriteRegion, options.shader);
+    const region = texture.isAtlas ? rapid.atlasSpriteRegion : rapid.spriteRegion
+    rapid.enterRegion(region, options.shader);
 
     let u0 = texture.uvX;
     let v0 = texture.uvY;
@@ -110,7 +113,17 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
         [v0, v1] = [v1, v0];
     }
 
-    rapid.spriteRegion.drawSprite(
+    // pixel size
+    let p = (options.padding ?? region.currentShader.padding);
+    if (texture.isAtlas) {
+        p += ATLAS_PADDING
+    }
+
+    // pass pixel size not uv size
+    const paddingX = (u0 <= u1 ? p : -p);
+    const paddingY = (v0 <= v1 ? p : -p);
+
+    region.drawSprite(
         texture,
         options.customMatrix ?? rapid.matrixStack.curWorldM,
         u0,
@@ -118,6 +131,8 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
         u1,
         v1,
         getColorUint32(rapid, options.color),
+        paddingX,
+        paddingY,
     );
 };
 

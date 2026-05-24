@@ -1,6 +1,8 @@
 import { Rapid, TextureFilterMode } from "./render"
 import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
+import { iOS, isMobileOrTablet } from "./utils"
+import { Interface } from "node:readline";
 
 export type Images =
     | HTMLImageElement
@@ -164,8 +166,6 @@ export class BaseTexture {
     public uid?: string;
     public refCount: number = 0;
 
-    sourceUrl?: string
-
     constructor(texture: WebGLTexture, width: number, height: number) {
         this.glTexture = texture;
         this.width = width;
@@ -267,7 +267,13 @@ class Texture {
 
     public width: number = 0;
     public height: number = 0;
+
+    public offsetX: number = 0;
+    public offsetY: number = 0;
+
     public scale: number = 1;
+
+    public isAtlas: boolean = false;
 
     public flipY: boolean = false;
     public isRotated: boolean = false;
@@ -278,6 +284,11 @@ class Texture {
     protected _py: number = 0;
     protected _pw: number = 0;
     protected _ph: number = 0;
+
+    texturePath: string
+    sourceSize: { w: number, h: number }
+    spriteSourceSize: { x: number, y: number, w: number, h: number }
+    frame: { x: number, y: number, w: number, h: number }
 
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
@@ -316,6 +327,7 @@ class Texture {
 
         // Store pixel-space region for use by withPadding()
         this._px = x; this._py = y; this._pw = w; this._ph = h;
+        this.isAtlas = x !== 0 || y !== 0 || w !== this.base.width || h !== this.base.height;
 
         this.uvX = x / this.base.width;
         this.uvY = y / this.base.height;
@@ -365,8 +377,10 @@ class Texture {
         t.uvX = this.uvX; t.uvY = this.uvY;
         t.uvW = this.uvW; t.uvH = this.uvH;
         t.width = this.width; t.height = this.height;
+        t.offsetX = this.offsetX; t.offsetY = this.offsetY;
         t.flipY = this.flipY;
         t.isRotated = this.isRotated;
+        t.isAtlas = this.isAtlas;
         // Copy stored pixel region so getSubTexture() works on clones too
         t._px = this._px; t._py = this._py;
         t._pw = this._pw; t._ph = this._ph;
@@ -405,7 +419,7 @@ class Texture {
      * @param source - The image element, canvas, video, or bitmap.
      * @param options - Optional antialias and wrap mode settings.
      */
-    static fromImageSource(render: Rapid, source: Images, options: ITextureOptions = {}): Texture {
+    static fromImageSource(render: Rapid, source: Images, options?: ITextureOptions): Texture {
         const glTex = createTexture(render, source, options);
         return new Texture(new BaseTexture(glTex, source.width, source.height));
     }
@@ -423,8 +437,8 @@ class Texture {
 }
 
 export interface IRenderTextureOptions extends ITextureOptions {
-    width?: number;
-    height?: number;
+    width: number;
+    height: number;
     clearColor?: Color;
 }
 
@@ -443,14 +457,14 @@ class RenderTexture extends Texture {
     private _allocW: number = 0;
     private _allocH: number = 0;
 
-    constructor(render: Rapid, options: IRenderTextureOptions = {}) {
+    constructor(render: Rapid, options?: IRenderTextureOptions) {
         super();
         this.gl = render.gl;
 
         this.clearColor = options.clearColor ?? Color.Black;
 
-        const width = Math.max(Math.round(options?.width ?? 1), 1);
-        const height = Math.max(Math.round(options?.height ?? 1), 1);
+        const width = Math.max(Math.round(options.width), 1);
+        const height = Math.max(Math.round(options.height), 1);
         const source = { width, height }
         const glTex = createTexture(render, source, { ...options, onlySize: true });
         this._base = new BaseTexture(glTex, width, height);
@@ -636,7 +650,7 @@ const defaultTextStyle: ITextStyle = {
     fontSize: 24,
     fontWeight: "normal",
     fill: "#000000",
-    strokeThickness: 0,
+    strokeThickness: 1,
     align: "left",
     baseline: "top",
 };
@@ -655,7 +669,6 @@ class TextTexture extends Texture {
     private render: Rapid;
     private _text: string;
     private _style: ITextStyle;
-    private _base: BaseTexture;
     private options: ITextOptions
     flipY = true
 
@@ -675,8 +688,7 @@ class TextTexture extends Texture {
         this.canvas.width = 1;
         this.canvas.height = 1;
         const glTexture = createTexture(render, this.canvas, this.options);
-        this._base = new BaseTexture(glTexture, 1, 1);
-        this.setBase(this._base);
+        this.setBase(new BaseTexture(glTexture, 1, 1));
 
         this.update();
     }
@@ -707,12 +719,43 @@ class TextTexture extends Texture {
         this.update();
     }
 
+    private updateOffset(width: number, height: number): void {
+        switch (this._style.align) {
+            case "center":
+                this.offsetX = -width / 2;
+                break;
+            case "right":
+                this.offsetX = -width;
+                break;
+            case "left":
+            default:
+                this.offsetX = 0;
+                break;
+        }
+
+        switch (this._style.baseline) {
+            case "middle":
+                this.offsetY = -height / 2;
+                break;
+            case "bottom":
+                this.offsetY = -height;
+                break;
+            case "alphabetic":
+            case "hanging":
+            case "ideographic":
+            case "top":
+            default:
+                this.offsetY = 0;
+                break;
+        }
+    }
+
     /**
      * Updates the internal canvas and uploads it to WebGL
      */
     public update(): void {
         const ctx = this.ctx;
-        const fontSize = this._style.fontSize!;
+        const fontSize = this._style.fontSize;
         const fontWeight = this._style.fontWeight;
         const fontFamily = this._style.fontFamily;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
@@ -745,10 +788,10 @@ class TextTexture extends Texture {
         ctx.setTransform(TEXT_SCALEFACTOR, 0, 0, TEXT_SCALEFACTOR, 0, 0);
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
-        // Must set font again if canvas resized
         ctx.font = font;
-        ctx.textBaseline = this._style.baseline!;
-        ctx.textAlign = this._style.align!;
+        ctx.textBaseline = "top";
+        ctx.textAlign = "left";
+        this.updateOffset(logicalWidth, logicalHeight);
 
         let y = padding / 2;
         for (const line of lines) {
@@ -772,8 +815,8 @@ class TextTexture extends Texture {
 
             y += lineHeight;
         }
-
-        this._base.updateSource(this.render.gl, this.canvas, this.options);
+        
+        this.base.updateSource(this.render.gl, this.canvas, this.options);
         this.setRegion(0, 0, this.canvas.width, this.canvas.height);
     }
 }

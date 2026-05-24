@@ -1,26 +1,23 @@
 #version 300 es
 precision mediump float;
 
-in vec4 vColor;
+uniform sampler2D uTextures[%TEXTURE_NUM%];
+
 in vec2 vRegion;
+flat in int vTextureId;
+in vec4 vColor;
+
 in vec4 vUVRect;
 
-uniform sampler2D uTexture;
-uniform int uUseTexture;
-
 out vec4 fragColor;
+in vec2 vPadding;
 
 bool clampUV(vec2 uv) {
-    vec2 uvMin = min(vUVRect.xy, vUVRect.zw);
-    vec2 uvMax = max(vUVRect.xy, vUVRect.zw);
-    return uv.x < uvMin.x || uv.x > uvMax.x || uv.y < uvMin.y || uv.y > uvMax.y;
+    return uv.x < vUVRect.x || uv.x > vUVRect.z || uv.y < vUVRect.y || uv.y > vUVRect.w;
 }
 
 vec4 sampleTexture(vec2 uv) {
-    if (uUseTexture > 0) {
-        return texture(uTexture, uv) * vColor;
-    }
-    return vColor;
+    %GET_COLOR%
 }
 
 vec4 sampleClampTexture(vec2 uv) {
@@ -30,7 +27,7 @@ vec4 sampleClampTexture(vec2 uv) {
     return sampleTexture(uv);
 }
 
-vec4 sampleTextureLocal(vec2 uv) {
+vec4 sampleTextureLocal(vec2 uv){
     vec2 gUV = mix(vUVRect.xy, vUVRect.zw, uv);
     if (clampUV(gUV)) {
         return vec4(0.0, 0.0, 0.0, 0.0);
@@ -41,6 +38,12 @@ vec4 sampleTextureLocal(vec2 uv) {
 // CUSTOM_CODE
 
 void main(void) {
-    fragColor = sampleTexture(vRegion);
+    fragColor = sampleClampTexture(vRegion);
+    // if (vPadding.x != 0.0) {
+    //     if (clampUV(vRegion)) {
+    //         fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    //     }
+    // }
+
     // CUSTOM_CODE_CALL
 }

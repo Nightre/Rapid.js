@@ -1,11 +1,12 @@
 import { Rapid } from "../render";
 import { Region } from "./region";
-import { CustomGlShader } from "../webgl/glshader";
+import GLShader, { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
 import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
 
 import VsShaderSource from "../shader/sprite.vert?raw";
 import FsShaderSource from "../shader/sprite.frag?raw";
+
 import { Texture } from "../texture";
 
 // Per-instance buffer stride: 12 floats + 2 uint32 = 48 bytes
@@ -22,13 +23,19 @@ const INSTANCE_STRIDE = 48;
 const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
 
 export class SpriteRegion extends Region {
-    private instanceBuffer: WebglBufferArray;
-    private quadBuffer: WebglBufferArray;
+    private instanceBuffer!: WebglBufferArray;
+    private quadBuffer!: WebglBufferArray;
     private instanceCount: number = 0;
+
     KEY = "Sprite"
 
     constructor(rapid: Rapid) {
         super(rapid);
+        this.createBuffer()
+        this.createDefaultShader()
+    }
+
+    createBuffer(){
         const gl = this.gl;
 
         // Static quad geometry buffer
@@ -41,13 +48,19 @@ export class SpriteRegion extends Region {
         // Dynamic per-instance buffer — use Uint32 base type so we can
         // write both float32 and uint32 into the same ArrayBuffer
         this.instanceBuffer = new WebglBufferArray(gl, ArrayType.Uint32, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
-
-        const fs = generateShader(FsShaderSource, rapid.maxTextureUnits);
-        const vs = generateShader(VsShaderSource, rapid.maxTextureUnits);
-        this.createDefaultShader(vs, fs);
     }
 
-    createShader(vs: string, fs: string) {
+    override createDefaultShader() {
+        const rapid = this.rapid
+        const fs = generateShader(FsShaderSource, rapid.maxTextureUnits);
+        const vs = generateShader(VsShaderSource, rapid.maxTextureUnits);
+        this.vs = vs;
+        this.fs = fs;
+        this.defaultShader = this.createShader(vs, fs)
+        return this.defaultShader;
+    }
+
+    override createShader(vs: string, fs: string) {
         const shader = super.createShader(vs, fs);
 
         shader.use();
@@ -95,21 +108,21 @@ export class SpriteRegion extends Region {
         matrixIndex: number,
         u0: number = 0, v0: number = 0, u1: number = 1, v1: number = 1,
         color: number = 0xFFFFFFFF,
+        paddingX: number = 0,
+        paddingY: number = 0,
     ): void {
-        // No free texture units — flush first to reset, then register
-        if (this.freeTextureUnitNum === 0) {
+       if (this.freeTextureUnitNum === 0) {
             this.flush();
         }
 
+        const base = texture.base;
         const width = texture.width;
         const height = texture.height;
+        const offsetX = texture.offsetX;
+        const offsetY = texture.offsetY;
 
-        // Padding comes from the shader (e.g. outline/glow shaders need extra room)
-        const p = this.currentShader.padding;
-        const paddingX = p / texture.base!.width;
-        const paddingY = p / texture.base!.height;
-
-        const textureId = this.useTexture(texture.glTexture!, paddingX, paddingY);
+        // base.width is full texture size, texture.width is alts texture size
+        const textureId = this.useTexture(texture.glTexture!, paddingX / (base?.width || width) , paddingY / (base?.height || height));
         // Read 2×3 affine matrix from MatrixStore and bake (width + 2p) / (height + 2p) into it.
         // Offset tx/ty by -p in local space (rotation-aware) so the quad expands symmetrically.
         const o = matrixIndex * 6;
@@ -122,16 +135,17 @@ export class SpriteRegion extends Region {
         const f32 = buf.float32!;
         const u32 = buf.uint32!;
 
-        f32[index]     = md[o]     * (width  + 2 * p);
-        f32[index + 1] = md[o + 2] * (height + 2 * p);
+        f32[index]     = md[o]     * (width  + 2 * paddingX);
+        f32[index + 1] = md[o + 2] * (height + 2 * paddingY);
 
         // A naive `tx - p` would only work for axis-aligned sprites;
         // need md[o] * p - md[o + 2] * p to correctly offset based on scale and rotation
-        f32[index + 2] = md[o + 4] - md[o] * p - md[o + 2] * p;
+        let tx = md[o + 4] + md[o] * (offsetX - paddingX) + md[o + 2] * (offsetY - paddingY);
 
-        f32[index + 3] = md[o + 1] * (width  + 2 * p);
-        f32[index + 4] = md[o + 3] * (height + 2 * p);
-        f32[index + 5] = md[o + 5] - md[o + 1] * p - md[o + 3] * p;
+        f32[index + 3] = md[o + 1] * (width  + 2 * paddingX);
+        f32[index + 4] = md[o + 3] * (height + 2 * paddingY);
+
+        let ty = md[o + 5] + md[o + 1] * (offsetX - paddingX) + md[o + 3] * (offsetY - paddingY);
 
         f32[index + 6] = u0;
         f32[index + 7] = v0;
@@ -141,6 +155,14 @@ export class SpriteRegion extends Region {
 
         u32[index + 10] = color;
         u32[index + 11] = textureId;
+
+        if (this.rapid.roundPixels) {
+            tx = Math.round(tx);
+            ty = Math.round(ty);
+        }
+
+        f32[index + 2] = tx;
+        f32[index + 5] = ty;
 
         buf.usedElemNum += 12;
         buf.makeDirty();

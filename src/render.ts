@@ -21,6 +21,7 @@ import {
     drawSprite,
 } from "./draw";
 import { Vec2 } from "./math";
+import { AtlasSprtieRegion } from "./region/atlasSpriteRegion";
 
 /**
  * Options for initializing the Rapid application.
@@ -49,6 +50,10 @@ export interface IAppOptions {
 
     /** Whether textures are uploaded with premultiplied alpha. Default: true. */
     premultipliedAlpha?: boolean;
+
+    roundPixels?: boolean;
+
+    scaleMode?: CanvasScaleMode;
 }
 
 /**
@@ -84,6 +89,22 @@ export enum BlendMode {
 export enum TextureFilterMode {
     LINEAR,
     NEAREST
+}
+
+export enum CanvasScaleMode {
+  /**
+   * Scales the canvas by increasing the WebGL backbuffer size.
+   * The logical game size stays the same, but rendering happens at the final display resolution,
+   * so rotated sprites, lines, and geometry get more rasterized pixels and look smoother.
+   */
+  CanvasItem,
+  /**
+   * Scales only the final canvas element on the page.
+   * The WebGL backbuffer stays at the logical game size, then the browser stretches that bitmap
+   * to the CSS display size. This preserves low-resolution/pixel-art rendering and does not add
+   * more fragments while scaling up.
+   */
+  Viewport,
 }
 
 /**
@@ -133,6 +154,8 @@ export class Rapid {
     /** Region dedicated to arbitrary geometry and shapes rendering. */
     graphicRegion: GraphicRegion;
 
+    atlasSpriteRegion: AtlasSprtieRegion;
+
     /** Counts the number of WebGL draw calls made in the current frame. */
     drawcallCount: number = 0;
     /** Indicates whether we are currently writing to the stencil buffer to create a mask. */
@@ -146,8 +169,12 @@ export class Rapid {
     /** Default texture filtering preference and requested canvas MSAA setting. */
     antialias: boolean;
 
+    roundPixels: boolean;
+
     /** Default filtering mode used when sampling textures. */
     textureFilter: TextureFilterMode;
+
+    scaleMode?: CanvasScaleMode;
 
     /** Internal ping-pong RenderTextures for multi-filter chains. */
     private _filterRT: [RenderTexture | null, RenderTexture | null] = [null, null];
@@ -168,6 +195,8 @@ export class Rapid {
         this.antialias = options.antialias ?? false;
         this.textureFilter = options.textureFilter ?? TextureFilterMode.NEAREST;
         this.premultipliedAlpha = options.premultipliedAlpha ?? true;
+        this.roundPixels = options.roundPixels ?? false;
+        this.scaleMode = options.scaleMode ?? CanvasScaleMode.CanvasItem
 
         const gl = getContext(this.canvas, this.antialias, this.premultipliedAlpha);
         this.gl = gl;
@@ -177,6 +206,7 @@ export class Rapid {
 
         this.spriteRegion = new SpriteRegion(this);
         this.graphicRegion = new GraphicRegion(this);
+        this.atlasSpriteRegion = new AtlasSprtieRegion(this);
 
         const cssW = this.canvas.clientWidth || this.canvas.width;
         const cssH = this.canvas.clientHeight || this.canvas.height;
@@ -368,21 +398,31 @@ export class Rapid {
             this.canvas.style.height = cssH + 'px';
         }
 
-        this.physicsWidth = Math.round(cssW * this.dpr);
-        this.physicsHeight = Math.round(cssH * this.dpr);
-
-        this.canvas.width = this.physicsWidth;
-        this.canvas.height = this.physicsHeight;
-
+        this.physicsWidth = cssW * this.dpr;
+        this.physicsHeight = cssH * this.dpr;
 
         this.logicWidth = logicWidth;
         this.logicHeight = logicHeight;
 
-        this.gl.viewport(0, 0, this.physicsWidth, this.physicsHeight);
+        switch (this.scaleMode) {
+            case CanvasScaleMode.Viewport:
+                // no new pixel
+                this.canvas.width = logicWidth;
+                this.canvas.height = logicHeight;
+                this.canvas.style.imageRendering = "pixelated";
+                this.gl.viewport(0, 0, logicWidth, logicHeight);
+                break;
+            case CanvasScaleMode.CanvasItem:
+                this.canvas.width = this.physicsWidth;
+                this.canvas.height = this.physicsHeight;
+                this.canvas.style.imageRendering = "auto";
+                this.gl.viewport(0, 0, this.physicsWidth, this.physicsHeight);
+                break;
+            default:
+                throw new Error("scaleMode can only be CanvasScaleMode.Viewport or CanvasScaleMode.CanvasItem")
+        }
+        
         this.updateProjection(0, this.logicWidth, this.logicHeight, 0);
-
-        console.log(`[RESIZE] logic ：${this.logicWidth}, ${this.logicHeight}`)
-        console.log(`[RESIZE] physics ：${this.physicsWidth}, ${this.physicsHeight}`)
     }
 
     /**
@@ -467,7 +507,7 @@ export class Rapid {
         // reallocation unless size exceeds the previous maximum)
         for (let i = 0; i < 2; i++) {
             if (!this._filterRT[i]) {
-                this._filterRT[i] = this.texture.createRenderTexture({width, height});
+                this._filterRT[i] = this.texture.createRenderTexture({ width, height });
             } else {
                 this._filterRT[i]!.resize(width, height);
             }
@@ -825,25 +865,25 @@ export class Rapid {
         this.matrix.invert(m)
     }
 
-    logicToPhysics(p:Vec2) {
+    logicToPhysics(p: Vec2) {
         return p.multiply(new Vec2(
             this.physicsWidth / this.logicWidth,
             this.physicsHeight / this.logicHeight
         ))
     }
 
-    physicsToLogic(p:Vec2) {
+    physicsToLogic(p: Vec2) {
         return p.multiply(new Vec2(
             this.logicWidth / this.physicsWidth,
             this.logicHeight / this.physicsHeight
         ))
     }
 
-    cssToDevicePixel(p:Vec2){
+    cssToDevicePixel(p: Vec2) {
         return p.mul(this.dpr)
     }
 
-    devicePixelToCss(p:Vec2){
+    devicePixelToCss(p: Vec2) {
         return p.divide(this.dpr)
     }
 }

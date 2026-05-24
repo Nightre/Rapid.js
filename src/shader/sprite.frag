@@ -7,7 +7,6 @@ in vec2 vRegion;
 flat in int vTextureId;
 in vec4 vColor;
 
-in vec2 vUV;
 in vec4 vUVRect;
 
 out vec4 fragColor;
@@ -19,6 +18,13 @@ bool clampUV(vec2 uv) {
 
 vec4 sampleTexture(vec2 uv) {
     %GET_COLOR%
+}
+
+vec4 sampleClampTexture(vec2 uv) {
+    if (clampUV(uv)) {
+        return vec4(0.0, 0.0, 0.0, 0.0);
+    }
+    return sampleTexture(uv);
 }
 
 vec4 sampleTextureLocal(vec2 uv){

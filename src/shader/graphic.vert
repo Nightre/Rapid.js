@@ -12,14 +12,12 @@ uniform vec4 uUVRect;
 
 out vec4 vColor;
 out vec2 vRegion;
-out vec2 vUV;
 out vec4 vUVRect;
 
 // CUSTOM_CODE
 
 void main(void) {
     vColor = aColor;
-    vUV = aUV;
     vUVRect = uUVRect;
     vRegion = mix(uUVRect.xy, uUVRect.zw, aUV);
     vec4 position = vec4(
