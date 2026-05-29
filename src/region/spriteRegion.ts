@@ -26,11 +26,14 @@ export class SpriteRegion extends Region {
     private instanceBuffer!: WebglBufferArray;
     private quadBuffer!: WebglBufferArray;
     private instanceCount: number = 0;
+    private localSpriteMatrix = new Float32Array(6);
+    private worldSpriteMatrix = new Float32Array(6);
 
     KEY = "Sprite"
 
     constructor(rapid: Rapid) {
         super(rapid);
+
         this.createBuffer()
         this.createDefaultShader()
     }
@@ -50,7 +53,7 @@ export class SpriteRegion extends Region {
         this.instanceBuffer = new WebglBufferArray(gl, ArrayType.Uint32, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW);
     }
 
-    override createDefaultShader() {
+    createDefaultShader() {
         const rapid = this.rapid
         const fs = generateShader(FsShaderSource, rapid.maxTextureUnits);
         const vs = generateShader(VsShaderSource, rapid.maxTextureUnits);
@@ -60,7 +63,7 @@ export class SpriteRegion extends Region {
         return this.defaultShader;
     }
 
-    override createShader(vs: string, fs: string) {
+    createShader(vs: string, fs: string) {
         const shader = super.createShader(vs, fs);
 
         shader.use();
@@ -110,19 +113,29 @@ export class SpriteRegion extends Region {
         color: number = 0xFFFFFFFF,
         paddingX: number = 0,
         paddingY: number = 0,
+        flipX: boolean = false,
+        flipY: boolean = false,
+        isRotated: boolean = false,
     ): void {
        if (this.freeTextureUnitNum === 0) {
             this.flush();
         }
 
-        const base = texture.base;
-        const width = texture.width;
-        const height = texture.height;
+        const base = texture.base!;
+        const textureScale = texture.scale || 1;
+
+        const rawWidth = texture.rawWidth;
+        const rawHeight = texture.rawHeight;
+
         const offsetX = texture.offsetX;
         const offsetY = texture.offsetY;
 
         // base.width is full texture size, texture.width is alts texture size
-        const textureId = this.useTexture(texture.glTexture!, paddingX / (base?.width || width) , paddingY / (base?.height || height));
+        const textureId = this.useTexture(
+            texture.glTexture!,
+            (paddingX / textureScale) / base.width,
+            (paddingY / textureScale) / base.height
+        );
         // Read 2×3 affine matrix from MatrixStore and bake (width + 2p) / (height + 2p) into it.
         // Offset tx/ty by -p in local space (rotation-aware) so the quad expands symmetrically.
         const o = matrixIndex * 6;
@@ -135,17 +148,40 @@ export class SpriteRegion extends Region {
         const f32 = buf.float32!;
         const u32 = buf.uint32!;
 
-        f32[index]     = md[o]     * (width  + 2 * paddingX);
-        f32[index + 1] = md[o + 2] * (height + 2 * paddingY);
+        const width = (isRotated ? rawHeight : rawWidth) * textureScale;
+        const height = (isRotated ? rawWidth : rawHeight) * textureScale;
 
-        // A naive `tx - p` would only work for axis-aligned sprites;
-        // need md[o] * p - md[o + 2] * p to correctly offset based on scale and rotation
-        let tx = md[o + 4] + md[o] * (offsetX - paddingX) + md[o + 2] * (offsetY - paddingY);
+        const drawWidth = width + 2 * paddingX;
+        const drawHeight = height + 2 * paddingY;
+        
+        const originX = offsetX - paddingX;
+        const originY = offsetY - paddingY;
 
-        f32[index + 3] = md[o + 1] * (width  + 2 * paddingX);
-        f32[index + 4] = md[o + 3] * (height + 2 * paddingY);
+        const local = this.localSpriteMatrix;
 
-        let ty = md[o + 5] + md[o + 1] * (offsetX - paddingX) + md[o + 3] * (offsetY - paddingY);
+        if (isRotated) {
+            local[0] = 0;
+            local[1] = flipY ? drawHeight : -drawHeight;
+            local[2] = flipX ? -drawWidth : drawWidth;
+            local[3] = 0;
+            local[4] = originX + (flipX ? drawWidth : 0);
+            local[5] = originY + (flipY ? 0 : drawHeight);
+        } else {
+            local[0] = flipX ? -drawWidth : drawWidth;
+            local[1] = 0;
+            local[2] = 0;
+            local[3] = flipY ? -drawHeight : drawHeight;
+            local[4] = originX + (flipX ? drawWidth : 0);
+            local[5] = originY + (flipY ? drawHeight : 0);
+        }
+
+        const world = this.worldSpriteMatrix;
+        world[0] = md[o] * local[0] + md[o + 2] * local[1];
+        world[1] = md[o + 1] * local[0] + md[o + 3] * local[1];
+        world[2] = md[o] * local[2] + md[o + 2] * local[3];
+        world[3] = md[o + 1] * local[2] + md[o + 3] * local[3];
+        world[4] = md[o + 4] + md[o] * local[4] + md[o + 2] * local[5];
+        world[5] = md[o + 5] + md[o + 1] * local[4] + md[o + 3] * local[5];
 
         f32[index + 6] = u0;
         f32[index + 7] = v0;
@@ -157,12 +193,16 @@ export class SpriteRegion extends Region {
         u32[index + 11] = textureId;
 
         if (this.rapid.roundPixels) {
-            tx = Math.round(tx);
-            ty = Math.round(ty);
+            world[4] = Math.round(world[4]);
+            world[5] = Math.round(world[5]);
         }
 
-        f32[index + 2] = tx;
-        f32[index + 5] = ty;
+        f32[index] = world[0];
+        f32[index + 1] = world[2];
+        f32[index + 2] = world[4];
+        f32[index + 3] = world[1];
+        f32[index + 4] = world[3];
+        f32[index + 5] = world[5];
 
         buf.usedElemNum += 12;
         buf.makeDirty();

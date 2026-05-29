@@ -18,8 +18,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "docs:dev": "vite --config docs/vite.config.ts",
-    "docs:build": "vite build --config docs/vite.config.ts"
+    "example:dev": "vite --config example/vite.config.ts",
+    "example:build": "vite build --config example/vite.config.ts"
   },
   "devDependencies": {
     "typedoc": "^0.28.17",

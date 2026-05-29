@@ -633,7 +633,6 @@ export interface ITextStyle {
     strokeThickness?: number;
     align?: "left" | "center" | "right";
     baseline?: CanvasTextBaseline;
-    lineHeight?: number;
 }
 
 const defaultTextStyle: ITextStyle = {
@@ -755,7 +754,13 @@ class TextTexture extends Texture {
         const lines = this._text.split('\n');
         let maxWidth = 0;
         let totalHeight = 0;
-        const lineHeight = this._style.lineHeight ?? fontSize * 1.2;
+
+
+        const textMetrics = ctx.measureText(lines[0]);
+        const boxAscent = textMetrics.fontBoundingBoxAscent
+        const boxDescent = textMetrics.fontBoundingBoxDescent
+        
+        const lineHeight = boxAscent + boxDescent;
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);
@@ -766,6 +771,7 @@ class TextTexture extends Texture {
         const padding = (this._style.strokeThickness || 0) * 2;
         const logicalWidth = Math.ceil(maxWidth + padding) || 1;
         const logicalHeight = Math.ceil(totalHeight + padding) || 1;
+        const logicalAscentHeight = Math.ceil(boxAscent * lines.length + padding) || 1;
 
         const pixelWidth = logicalWidth * dpr;
         const pixelHeight = logicalHeight * dpr;
@@ -782,7 +788,7 @@ class TextTexture extends Texture {
         ctx.font = font;
         ctx.textBaseline = "top";
         ctx.textAlign = "left";
-        this.updateOffset(logicalWidth, logicalHeight);
+        this.updateOffset(logicalWidth, logicalAscentHeight);
 
         let y = padding / 2;
         for (const line of lines) {

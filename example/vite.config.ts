@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import path from 'path'
+import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
     base: '/Rapid.js/example/',
@@ -7,7 +7,6 @@ export default defineConfig({
     build: {
         outDir: path.resolve(__dirname, '../pages-dist/example'),
         emptyOutDir: true,
-        target: 'esnext',
-    },
-})
-
+        target: 'esnext'
+    }
+});
