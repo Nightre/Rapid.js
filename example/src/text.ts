@@ -5,10 +5,7 @@ import { TextureWrapMode, type ITextOptions, type TextTexture } from '../../src/
 
 const baselines: CanvasTextBaseline[] = [
     'top',
-    'hanging',
     'middle',
-    'alphabetic',
-    'ideographic',
     'bottom',
 ];
 
@@ -52,11 +49,9 @@ export async function init() {
 
     const dynamic = makeText({
         text: 'text setter',
-        fontSize: 28,
-        fontWeight: '800',
-        fill: '#0f766e',
-        stroke: '#ffffff',
-        strokeThickness: 4,
+        fontSize: 26,
+        fontWeight: '700',
+        strokeThickness: 3,
         align: 'center',
         baseline: 'middle',
     });
@@ -65,7 +60,7 @@ export async function init() {
         text: `baseline: ${baseline}`,
         fontSize: 26,
         fontWeight: '700',
-        fill: baseline === 'middle' || baseline === 'bottom' ? '#a33a10' : '#243447',
+        fill: baseline === 'middle' ? '#a33a10' : '#243447',
         stroke: '#ffffff',
         strokeThickness: 3,
         baseline,
@@ -180,14 +175,14 @@ export async function init() {
 
     const drawDynamicText = () => {
         const x = 700;
-        const y = 585;
+        const y = 600;
         const pulse = Math.sin(time * 3) * 0.5 + 0.5;
         const hue = Math.round(175 + pulse * 95);
         const updateBucket = Math.floor(time * 10);
 
         if (updateBucket !== dynamicUpdateTime) {
             dynamicUpdateTime = updateBucket;
-            dynamic.text = `text setter: ${time.toFixed(1)}s\nstyle setter: hsl(${hue}, 70%, 38%)\n111\n111\n111`;
+            dynamic.text = `text setter: ${time.toFixed(1)}s\nstyle setter: hsl(${hue}, 70%, 38%)${Math.round(time)%2==0?`Line\nLine`:``}`;
             dynamic.style = {
                 fill: `hsl(${hue}, 70%, 38%)`,
                 stroke: '#ffffff',

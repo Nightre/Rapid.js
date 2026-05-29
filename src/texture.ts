@@ -755,23 +755,23 @@ class TextTexture extends Texture {
         let maxWidth = 0;
         let totalHeight = 0;
 
-
+        ctx.textBaseline = "alphabetic";
         const textMetrics = ctx.measureText(lines[0]);
-        const boxAscent = textMetrics.fontBoundingBoxAscent
-        const boxDescent = textMetrics.fontBoundingBoxDescent
         
-        const lineHeight = boxAscent + boxDescent;
+        const lineHeight = textMetrics.fontBoundingBoxAscent
+        const lineGap = textMetrics.fontBoundingBoxDescent
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);
             if (metrics.width > maxWidth) maxWidth = metrics.width;
-            totalHeight += lineHeight;
+            totalHeight += lineHeight + lineGap;
         }
+
+        totalHeight -= lineGap;
 
         const padding = (this._style.strokeThickness || 0) * 2;
         const logicalWidth = Math.ceil(maxWidth + padding) || 1;
         const logicalHeight = Math.ceil(totalHeight + padding) || 1;
-        const logicalAscentHeight = Math.ceil(boxAscent * lines.length + padding) || 1;
 
         const pixelWidth = logicalWidth * dpr;
         const pixelHeight = logicalHeight * dpr;
@@ -788,16 +788,11 @@ class TextTexture extends Texture {
         ctx.font = font;
         ctx.textBaseline = "top";
         ctx.textAlign = "left";
-        this.updateOffset(logicalWidth, logicalAscentHeight);
+        this.updateOffset(logicalWidth, logicalHeight);
 
         let y = padding / 2;
         for (const line of lines) {
             let x = padding / 2;
-            if (this._style.align === "center") {
-                x = logicalWidth / 2;
-            } else if (this._style.align === "right") {
-                x = logicalWidth - padding / 2;
-            }
 
             if (this._style.stroke && this._style.strokeThickness! > 0) {
                 ctx.lineWidth = this._style.strokeThickness!;
@@ -810,7 +805,7 @@ class TextTexture extends Texture {
                 ctx.fillText(line, x, y);
             }
 
-            y += lineHeight;
+            y += lineHeight + lineGap;
         }
 
         this.base?.updateSource(this.render.gl, this.canvas, this.options);
