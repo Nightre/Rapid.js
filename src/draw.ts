@@ -106,12 +106,8 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
     let u1 = texture.uvW;
     let v1 = texture.uvH;
 
-    if (options.flipX) {
-        [u0, u1] = [u1, u0];
-    }
-    if (options.flipY) {
-        [v0, v1] = [v1, v0];
-    }
+    const flipX = !!options.flipX;
+    const flipY = !!options.flipY !== !!texture.flipY; // XOR
 
     // pixel size
     let p = (options.padding ?? region.currentShader.padding);
@@ -133,11 +129,14 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
         getColorUint32(rapid, options.color),
         paddingX,
         paddingY,
+        flipX,
+        flipY,
+        texture.isRotated,
     );
 };
 
 export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
-    withOptionsTransform(rapid, options, options.texture.width, options.texture.height, () => {
+    withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
         drawSpriteRaw(rapid, options);
     });
 };
@@ -186,13 +185,13 @@ export const drawLine = (rapid: Rapid, options: ILineOptions): void => {
 };
 
 export const drawMaskImage = (rapid: Rapid, options: IMaskImageOptions): void => {
-    withOptionsTransform(rapid, options, options.texture.width, options.texture.height, () => {
+    withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
         rapid.startMaskGraphic(
             rapid.gl.TRIANGLE_FAN,
             options.texture,
             options.customMatrix,
         );
-        rapid.addRectVertex(options.texture.width, options.texture.height);
+        rapid.addRectVertex(options.texture.rawWidth, options.texture.rawHeight);
         rapid.endGraphic();
     });
 };

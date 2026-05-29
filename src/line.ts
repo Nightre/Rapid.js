@@ -130,7 +130,7 @@ export const getLineGeometry = (options: ILineRenderOptions) => {
     const roundCap = options.roundCap || false
     const textureMode = options.textureMode || LineTextureMode.STRETCH;
     let currentLength = 0;
-    const textureWidth = options.texture?.width || 1;
+    const textureWidth = options.texture?.rawWidth || 1;
 
     const segmentCount = options.closed ? points.length : points.length - 1;
 

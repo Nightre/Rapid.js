@@ -1,6 +1,6 @@
 import { Rapid } from "../render";
 import { Region } from "./region";
-import GLShader, { CustomGlShader } from "../webgl/glshader";
+import { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
 import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
 

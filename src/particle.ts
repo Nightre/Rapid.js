@@ -141,7 +141,9 @@ export class Particle {
         if (isPlainObject(attribute)) {
             const attr = attribute as ParticleAttribute<T>;
             const start = Random.scalarOrRange(attr.start, defaultData) as T;
-            const end   = Random.scalarOrRange(attr.end ?? attr.start, defaultData) as T;
+            const end   = attr.end === undefined
+                ? start
+                : Random.scalarOrRange(attr.end, defaultData) as T;
             return {
                 delta:   attr.delta ?? this.getDelta(start, end, this.maxLife),
                 value:   start,
@@ -236,7 +238,7 @@ export class Particle {
         const originY = this.options.origin ? this.options.origin.y : 0.5;
 
         if (originX !== 0 || originY !== 0) {
-            ms.translate(-originX * this.texture.width, -originY * this.texture.height);
+            ms.translate(-originX * this.texture.rawWidth, -originY * this.texture.rawHeight);
         }
 
         //this.rapid.drawSprite({ texture: this.texture, color });

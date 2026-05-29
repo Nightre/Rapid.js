@@ -263,8 +263,8 @@ class Texture {
     public uvW: number = 1;
     public uvH: number = 1;
 
-    public width: number = 0;
-    public height: number = 0;
+    public rawWidth: number = 0;
+    public rawHeight: number = 0;
 
     public offsetX: number = 0;
     public offsetY: number = 0;
@@ -276,6 +276,14 @@ class Texture {
     public flipY: boolean = false;
     public isRotated: boolean = false;
     public glTexture: WebGLTexture | null = null;
+
+    get width(): number {
+        return (this.isRotated ? this.rawHeight : this.rawWidth) * this.scale;
+    }
+
+    get height(): number {
+        return (this.isRotated ? this.rawWidth : this.rawHeight) * this.scale;
+    }
 
     // Stored pixel-space region (before UV conversion), used by getSubTexture()
     protected _px: number = 0;
@@ -327,14 +335,8 @@ class Texture {
         this.uvW = this.uvX + (w / this.base.width);
         this.uvH = this.uvY + (h / this.base.height);
 
-        if (this.flipY) {
-            const v = this.uvY;
-            this.uvY = this.uvH;
-            this.uvH = v;
-        }
-
-        this.width = (this.isRotated ? h : w) * this.scale;
-        this.height = (this.isRotated ? w : h) * this.scale;
+        this.rawWidth = w;
+        this.rawHeight = h;
 
         return this;
     }
@@ -364,12 +366,15 @@ class Texture {
      * Creates a shallow copy of this Texture, sharing the same BaseTexture.
      * @returns A new Texture instance.
      */
-    clone(): Texture {
-        const t = new Texture(this.base);
+    clone(target?: Texture): Texture {
+        const t = target ?? new Texture(this.base);
+        if (target && this.base) {
+            target.setBase(this.base)
+        }
         t.scale = this.scale;
         t.uvX = this.uvX; t.uvY = this.uvY;
         t.uvW = this.uvW; t.uvH = this.uvH;
-        t.width = this.width; t.height = this.height;
+        t.rawWidth = this.rawWidth; t.rawHeight = this.rawHeight;
         t.offsetX = this.offsetX; t.offsetY = this.offsetY;
         t.flipY = this.flipY;
         t.isRotated = this.isRotated;
@@ -393,8 +398,8 @@ class Texture {
         if (!this.base) return [];
         const res: Texture[] = [];
 
-        const baseW = this.width / this.scale;
-        const baseH = this.height / this.scale;
+        const baseW = this.rawWidth;
+        const baseH = this.rawHeight;
 
         const c = cols ?? Math.floor(baseW / cellWidth);
         const r = rows ?? Math.floor(baseH / cellHeight);
@@ -412,7 +417,7 @@ class Texture {
      * @param source - The image element, canvas, video, or bitmap.
      * @param options - Optional antialias and wrap mode settings.
      */
-    static fromImageSource(render: Rapid, source: Images, options: ITextureOptions): Texture {
+    static fromImageSource(render: Rapid, source: Images, options: ITextureOptions = {}): Texture {
         const glTex = createTexture(render, source, options);
         return new Texture(new BaseTexture(glTex, source.width, source.height));
     }
@@ -442,7 +447,6 @@ class RenderTexture extends Texture {
     private framebuffer: WebGLFramebuffer | null;
     private renderbuffer: WebGLRenderbuffer | null;
     private gl: WebGL2RenderingContext;
-    private _base: BaseTexture;
     public flipY: boolean = true;
     public clearColor?: Color;
 
@@ -460,8 +464,7 @@ class RenderTexture extends Texture {
         const height = Math.max(Math.round(options.height), 1);
         const source = { width, height }
         const glTex = createTexture(render, source, { ...options, onlySize: true });
-        this._base = new BaseTexture(glTex, width, height);
-        this.setBase(this._base);
+        this.setBase(new BaseTexture(glTex, width, height));
 
         this.framebuffer = this.gl.createFramebuffer();
         this.renderbuffer = this.gl.createRenderbuffer();
@@ -490,26 +493,26 @@ class RenderTexture extends Texture {
         width = Math.max(Math.round(width), 1);
         height = Math.max(Math.round(height), 1);
 
-        const sameLogical = this.width === width && this.height === height;
+        const sameLogical = this.rawWidth === width && this.rawWidth === height;
         if (!force && sameLogical) return;
 
         const gl = this.gl;
         const needsGpuAlloc = force || width > this._allocW || height > this._allocH;
 
-        if (needsGpuAlloc) {
+        if (needsGpuAlloc && this.base) {
             this._allocW = Math.max(this._allocW, width);
             this._allocH = Math.max(this._allocH, height);
-            this._base.width = this._allocW;
-            this._base.height = this._allocH;
+            this.base.width = this._allocW;
+            this.base.height = this._allocH;
 
-            gl.bindTexture(gl.TEXTURE_2D, this._base.glTexture);
+            gl.bindTexture(gl.TEXTURE_2D, this.base.glTexture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this._allocW, this._allocH, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
             gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderbuffer);
             gl.renderbufferStorage(gl.RENDERBUFFER, gl.STENCIL_INDEX8, this._allocW, this._allocH);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._base.glTexture, 0);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.base.glTexture, 0);
             gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.renderbuffer);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -518,36 +521,31 @@ class RenderTexture extends Texture {
         }
 
         // Update logical dimensions
-        this.width = width;
-        this.height = height;
+        this.rawWidth = width;
+        this.rawHeight = height;
 
         // UV maps the logical portion within the (possibly larger) GPU allocation.
-        // flipY=true swaps uvY/uvH so FBO output renders right-side-up.
+        // RenderTexture orientation is handled by flipY at draw time, so UV stays canonical.
         this.uvX = 0;
         this.uvW = width / this._allocW;
-        if (this.flipY) {
-            this.uvY = height / this._allocH;
-            this.uvH = 0;
-        } else {
-            this.uvY = 0;
-            this.uvH = height / this._allocH;
-        }
+        this.uvY = 0;
+        this.uvH = height / this._allocH;
     }
 
     /**
      * Activates this texture as the current render target.
      * @param clear - Whether to clear the render target after activation.
      */
-    activate(clear:boolean = false): void {
+    activate(clear: boolean = false): void {
         if (!this.framebuffer) return;
         const gl = this.gl;
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        gl.viewport(0, 0, this.width, this.height);
+        gl.viewport(0, 0, this.rawWidth, this.rawHeight);
 
         if (clear) this.clear()
     }
 
-    clear(clearColor?: Color){
+    clear(clearColor?: Color) {
         if (!this.framebuffer) return;
         const gl = this.gl;
 
@@ -573,7 +571,7 @@ class RenderTexture extends Texture {
      * @param width - Width of the region to read.
      * @param height - Height of the region to read.
      */
-    GetPixels(x: number = 0, y: number = 0, width: number = this.width, height: number = this.height): Uint8Array {
+    GetPixels(x: number = 0, y: number = 0, width: number = this.rawWidth, height: number = this.rawHeight): Uint8Array {
         if (!this.framebuffer) return new Uint8Array(0);
 
         const ix = Math.floor(x);
@@ -582,14 +580,14 @@ class RenderTexture extends Texture {
         const ih = Math.floor(height);
 
         if (iw <= 0 || ih <= 0) return new Uint8Array(0);
-        if (ix < 0 || iy < 0 || ix >= this.width || iy >= this.height) {
+        if (ix < 0 || iy < 0 || ix >= this.rawWidth || iy >= this.rawHeight) {
             return new Uint8Array(0);
         }
 
-        const readW = Math.min(iw, this.width - ix);
-        const readH = Math.min(ih, this.height - iy);
+        const readW = Math.min(iw, this.rawWidth - ix);
+        const readH = Math.min(ih, this.rawHeight - iy);
 
-        const readY = this.height - iy - readH;
+        const readY = this.rawHeight - iy - readH;
 
         const gl = this.gl;
         const prevFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
@@ -622,7 +620,7 @@ class RenderTexture extends Texture {
         super.destroy(); // Dec ref
         if (this.framebuffer) this.gl.deleteFramebuffer(this.framebuffer);
         if (this.renderbuffer) this.gl.deleteRenderbuffer(this.renderbuffer);
-        this._base.destroy(this.gl);
+        this.base?.destroy(this.gl);
     }
 }
 
@@ -652,7 +650,6 @@ export interface ITextOptions extends ITextStyle, ITextureOptions {
     text?: string
 }
 
-export const TEXT_SCALEFACTOR = 2
 /**
  * A texture that renders text using an internal HTML Canvas.
  */
@@ -671,7 +668,7 @@ class TextTexture extends Texture {
         this._style = { ...defaultTextStyle, ...options };
         this._text = options?.text ?? "";
         this.options = { premultipliedAlpha: render.premultipliedAlpha, ...options };
-        this.scale = 1 / TEXT_SCALEFACTOR
+        this.scale = 1 / render.dpr
 
         this.canvas = document.createElement("canvas");
         const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
@@ -752,6 +749,7 @@ class TextTexture extends Texture {
         const fontWeight = this._style.fontWeight!;
         const fontFamily = this._style.fontFamily!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        const dpr = this.render.dpr
         ctx.font = font;
 
         const lines = this._text.split('\n');
@@ -769,8 +767,8 @@ class TextTexture extends Texture {
         const logicalWidth = Math.ceil(maxWidth + padding) || 1;
         const logicalHeight = Math.ceil(totalHeight + padding) || 1;
 
-        const pixelWidth = logicalWidth * TEXT_SCALEFACTOR;
-        const pixelHeight = logicalHeight * TEXT_SCALEFACTOR;
+        const pixelWidth = logicalWidth * dpr;
+        const pixelHeight = logicalHeight * dpr;
 
         // Only resize if actually changed, because resizing clears canvas
         if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
@@ -778,7 +776,7 @@ class TextTexture extends Texture {
             this.canvas.height = pixelHeight;
         }
 
-        ctx.setTransform(TEXT_SCALEFACTOR, 0, 0, TEXT_SCALEFACTOR, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
         ctx.font = font;
@@ -808,7 +806,7 @@ class TextTexture extends Texture {
 
             y += lineHeight;
         }
-        
+
         this.base?.updateSource(this.render.gl, this.canvas, this.options);
         this.setRegion(0, 0, this.canvas.width, this.canvas.height);
     }
