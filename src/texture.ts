@@ -493,7 +493,7 @@ class RenderTexture extends Texture {
         width = Math.max(Math.round(width), 1);
         height = Math.max(Math.round(height), 1);
 
-        const sameLogical = this.rawWidth === width && this.rawWidth === height;
+        const sameLogical = this.rawWidth === width && this.rawHeight === height;
         if (!force && sameLogical) return;
 
         const gl = this.gl;

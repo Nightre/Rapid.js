@@ -539,8 +539,8 @@ export class Rapid {
             this.drawSprite({ 
                 texture: inputTex,
                 shader: shaders[i],
-                offsetX: paddingOffset, // padding back
-                offsetY: paddingOffset,
+                offsetX: i == 0 ? paddingOffset : 0, // padding back
+                offsetY: i == 0 ? paddingOffset : 0,
                 padding: maxPadding,
             });
 
