@@ -35,6 +35,15 @@ export interface ParticleAttributeData<T extends ParticleAttributeTypes> {
     damping?: number;
 }
 
+interface ParticleRuntimeData {
+    speed: ParticleAttributeData<number>;
+    rotation: ParticleAttributeData<number>;
+    scale: ParticleAttributeData<number>;
+    color: ParticleAttributeData<Color>;
+    velocity: ParticleAttributeData<Vec2>;
+    acceleration: ParticleAttributeData<Vec2>;
+}
+
 export enum ParticleShape {
     POINT = "point",
     CIRCLE = "circle",
@@ -97,7 +106,7 @@ export class Particle {
     private texture!: Texture;
     private options: IParticleOptions;
     private position: Vec2;
-    private datas: Record<string, ParticleAttributeData<any>> = {};
+    private datas: ParticleRuntimeData;
 
     private rapid: Rapid;
 
@@ -116,15 +125,15 @@ export class Particle {
             this.texture = Random.pick(options.texture as Texture[]);
         }
 
-        this.maxLife = Random.scalarOrRange(options.life as any, 1) as number;
+        this.maxLife = Random.scalarOrRange(options.life, 1);
 
         this.datas = {
-            speed:        this.processAttribute(options.animation.speed,        0)!,
-            rotation:     this.processAttribute(options.animation.rotation,     0)!,
-            scale:        this.processAttribute(options.animation.scale,        1)!,
-            color:        this.processAttribute(options.animation.color,        Color.White.clone())!,
-            velocity:     this.processAttribute(options.animation.velocity,     Vec2.ZERO)!,
-            acceleration: this.processAttribute(options.animation.acceleration, Vec2.ZERO)!,
+            speed:        this.processAttribute(options.animation.speed,        0),
+            rotation:     this.processAttribute(options.animation.rotation,     0),
+            scale:        this.processAttribute(options.animation.scale,        1),
+            color:        this.processAttribute(options.animation.color,        Color.White.clone()),
+            velocity:     this.processAttribute(options.animation.velocity,     Vec2.ZERO),
+            acceleration: this.processAttribute(options.animation.acceleration, Vec2.ZERO),
         };
 
         this.position = Vec2.ZERO;
@@ -154,45 +163,53 @@ export class Particle {
         }
     }
 
-    private updateDamping(deltaTime: number) {
-        for (const att of Object.values(this.datas)) {
-            if (att.damping !== undefined) {
-                const timeBasedDamping = Math.pow(att.damping, deltaTime);
-                if (typeof att.value === "number") {
-                    att.value *= timeBasedDamping;
-                } else {
-                    att.value = (att.value as Vec2 | Color).multiply(timeBasedDamping);
-                }
-            }
+    private updateNumberAttribute(data: ParticleAttributeData<number>, deltaTime: number) {
+        if (data.damping !== undefined) {
+            data.value *= Math.pow(data.damping, deltaTime);
+        }
+        if (data.delta !== undefined) {
+            data.value += data.delta * deltaTime;
         }
     }
 
-    private updateDelta(deltaTime: number) {
+    private updateVec2Attribute(data: ParticleAttributeData<Vec2>, deltaTime: number) {
+        if (data.damping !== undefined) {
+            data.value = data.value.multiply(Math.pow(data.damping, deltaTime));
+        }
+        if (data.delta !== undefined) {
+            data.value = data.value.add(data.delta.multiply(deltaTime));
+        }
+    }
+
+    private updateColorAttribute(data: ParticleAttributeData<Color>, deltaTime: number) {
+        if (data.damping !== undefined) {
+            data.value = data.value.multiply(Math.pow(data.damping, deltaTime));
+        }
+        if (data.delta !== undefined) {
+            data.value = data.value.add(data.delta.multiply(deltaTime));
+        }
+        data.value.clamp();
+    }
+
+    private updateAttributes(deltaTime: number) {
         const datas = this.datas;
 
-        for (const att of Object.values(datas)) {
-            if (att.delta !== undefined) {
-                if (typeof att.value === "number") {
-                    att.value += deltaTime * (att.delta as number);
-                } else {
-                    att.value = (att.value as Vec2 | Color).add(
-                        (att.delta as Vec2 | Color).multiply(deltaTime) as any,
-                    );
-                }
-            }
-        }
-
-        (datas.color.value as Color).clamp();
+        this.updateNumberAttribute(datas.speed, deltaTime);
+        this.updateNumberAttribute(datas.rotation, deltaTime);
+        this.updateNumberAttribute(datas.scale, deltaTime);
+        this.updateColorAttribute(datas.color, deltaTime);
+        this.updateVec2Attribute(datas.velocity, deltaTime);
+        this.updateVec2Attribute(datas.acceleration, deltaTime);
 
         // acceleration → velocity → position
-        datas.velocity.value = (datas.velocity.value as Vec2).add(
-            (datas.acceleration.value as Vec2).multiply(deltaTime) as any
+        datas.velocity.value = datas.velocity.value.add(
+            datas.acceleration.value.multiply(deltaTime)
         );
-        const direction   = Vec2.fromAngle(datas.rotation.value as number);
-        const speedOffset = direction.multiply((datas.speed.value as number) * deltaTime);
+        const direction   = Vec2.fromAngle(datas.rotation.value);
+        const speedOffset = direction.multiply(datas.speed.value * deltaTime);
         this.position = this.position
             .add(speedOffset)
-            .add((datas.velocity.value as Vec2).multiply(deltaTime));
+            .add(datas.velocity.value.multiply(deltaTime));
     }
 
     private getDelta<T extends ParticleAttributeTypes>(start: T, end: T, lifeTime: number): T {
@@ -214,8 +231,7 @@ export class Particle {
     update(deltaTime: number): boolean {
         this.life += deltaTime;
         if (this.life >= this.maxLife) return false;
-        this.updateDamping(deltaTime);
-        this.updateDelta(deltaTime);
+        this.updateAttributes(deltaTime);
         return true;
     }
 
@@ -225,9 +241,9 @@ export class Particle {
      */
     render() {
         const ms    = this.rapid.matrixStack;
-        const scale = this.datas.scale.value as number;
-        const rot   = this.datas.rotation.value as number;
-        const color = this.datas.color.value as Color;
+        const scale = this.datas.scale.value;
+        const rot   = this.datas.rotation.value;
+        const color = this.datas.color.value;
 
         ms.save();
         ms.translate(this.position.x, this.position.y);
@@ -303,7 +319,7 @@ export class ParticleEmitter {
 
     private rapid: Rapid;
 
-    gameObject:any
+    gameObject?: unknown;
 
     /**
      * Creates a new particle emitter.

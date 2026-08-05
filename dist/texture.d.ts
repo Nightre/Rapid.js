@@ -1,4 +1,4 @@
-import { Rapid } from './render';
+import { Rapid, TextureFilterMode } from './render';
 import { Color } from './color';
 export type Images = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas;
 export declare enum TextureWrapMode {
@@ -10,8 +10,9 @@ export declare enum TextureWrapMode {
  * Options for configuring texture creation.
  */
 export interface ITextureOptions {
-    antialias?: boolean;
+    textureFilter?: TextureFilterMode;
     wrap?: TextureWrapMode;
+    premultipliedAlpha?: boolean;
     key?: string;
 }
 /**
@@ -42,15 +43,13 @@ declare class TextureManager {
      * @param options - Optional configuration for the texture.
      * @returns The newly created RenderTexture.
      */
-    createRenderTexture(width: number, height: number, options?: ITextureOptions): RenderTexture;
+    createRenderTexture(options: IRenderTextureOptions): RenderTexture;
     /**
      * Creates a TextTexture for rendering text.
-     * @param text - The text to display.
-     * @param style - Optional styling for the text.
      * @param options - Optional configuration for the texture.
      * @returns The newly created TextTexture.
      */
-    createTextTexture(text: string, style?: ITextStyle, options?: ITextureOptions): TextTexture;
+    createTextTexture(options?: ITextOptions): TextTexture;
     /**
      * Destroys a texture and potentially removes its BaseTexture from the cache.
      * If a Texture instance is provided, it decrements the reference count of the BaseTexture.
@@ -69,7 +68,7 @@ declare class TextureManager {
  * The underlying GPU resource holder for a texture.
  * Implements simple reference counting.
  */
-declare class BaseTexture {
+export declare class BaseTexture {
     glTexture: WebGLTexture | null;
     width: number;
     height: number;
@@ -90,7 +89,15 @@ declare class BaseTexture {
      * @param gl - The WebGL rendering context.
      * @param source - The new image source.
      */
-    updateSource(gl: WebGL2RenderingContext, source: Images): void;
+    updateSource(gl: WebGL2RenderingContext, source: Images, options?: ITextureOptions): void;
+    /**
+     * Dynamically updates the texture filtering mode.
+     */
+    setFilterMode(gl: WebGL2RenderingContext, filterMode: TextureFilterMode): void;
+    /**
+     * Dynamically updates the texture wrap mode.
+     */
+    setWrapMode(gl: WebGL2RenderingContext, wrapMode: TextureWrapMode): void;
     /**
      * Destroys the WebGL texture resource.
      * @param gl - The WebGL rendering context.
@@ -106,11 +113,21 @@ declare class Texture {
     uvY: number;
     uvW: number;
     uvH: number;
-    width: number;
-    height: number;
+    rawWidth: number;
+    rawHeight: number;
+    offsetX: number;
+    offsetY: number;
     scale: number;
+    isAtlas: boolean;
     flipY: boolean;
+    isRotated: boolean;
     glTexture: WebGLTexture | null;
+    get width(): number;
+    get height(): number;
+    protected _px: number;
+    protected _py: number;
+    protected _pw: number;
+    protected _ph: number;
     constructor(base?: BaseTexture);
     /**
      * Sets the base texture and increments its reference count.
@@ -140,7 +157,7 @@ declare class Texture {
      * Creates a shallow copy of this Texture, sharing the same BaseTexture.
      * @returns A new Texture instance.
      */
-    clone(): Texture;
+    clone(target?: Texture): Texture;
     /**
      * Utility to split this texture into a grid of sprite textures.
      * Sub-textures will respect the current UV offsets.
@@ -152,9 +169,20 @@ declare class Texture {
      */
     splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number): Texture[];
     /**
+     * Creates a Texture directly from an image source, bypassing the TextureManager.
+     * @param source - The image element, canvas, video, or bitmap.
+     * @param options - Optional antialias and wrap mode settings.
+     */
+    static fromImageSource(render: Rapid, source: Images, options?: ITextureOptions): Texture;
+    /**
      * Marks this Texture as destroyed, decrementing the BaseTexture reference count.
      */
     destroy(): void;
+}
+export interface IRenderTextureOptions extends ITextureOptions {
+    width: number;
+    height: number;
+    clearColor?: Color;
 }
 /**
  * A texture that can be rendered to (wraps a WebGL Framebuffer).
@@ -163,25 +191,49 @@ declare class RenderTexture extends Texture {
     private framebuffer;
     private renderbuffer;
     private gl;
-    private _base;
     flipY: boolean;
-    constructor(render: Rapid, width: number, height: number, options?: ITextureOptions);
+    clearColor?: Color;
+    /** Actual GPU-allocated dimensions — grow-only, never shrink */
+    private _allocW;
+    private _allocH;
+    constructor(render: Rapid, options: IRenderTextureOptions);
     /**
-     * Resizes the render texture buffers.
-     * @param width - The new width.
-     * @param height - The new height.
-     * @param force - Force regeneration even if the size is the same.
+     * Resizes the render texture using a grow-only GPU allocation strategy.
+     *
+     * - GPU memory is only reallocated when the new size **exceeds** the current allocation.
+     * - Shrinking only updates the logical dimensions and UV sub-region — no GPU work.
+     *
+     * This makes it safe to call every frame with varying sizes (e.g. inside applyFilters).
+     *
+     * @param width  - New logical width.
+     * @param height - New logical height.
+     * @param force  - Force full GPU reallocation regardless of current allocation size.
      */
     resize(width: number, height: number, force?: boolean): void;
     /**
      * Activates this texture as the current render target.
-     * @param clearColor - Optional color to clear the buffer with.
+     * @param clear - Whether to clear the render target after activation.
      */
-    activate(clearColor?: Color): void;
+    activate(clear?: boolean): void;
+    clear(clearColor?: Color): void;
     /**
      * Deactivates this texture, returning rendering to the default frame buffer.
      */
     deactivate(): void;
+    /**
+     * Get raw pixels from the render texture.
+     * @param x - X coordinate in logical pixel space (top-left origin).
+     * @param y - Y coordinate in logical pixel space (top-left origin).
+     * @param width - Width of the region to read.
+     * @param height - Height of the region to read.
+     */
+    GetPixels(x?: number, y?: number, width?: number, height?: number): Uint8Array;
+    /**
+     * Get the color at a pixel in the render texture.
+     * @param x - X coordinate in logical pixel space (top-left origin).
+     * @param y - Y coordinate in logical pixel space (top-left origin).
+     */
+    GetColorAt(x: number, y: number): Color;
     /**
      * Destroys the framebuffer, renderbuffer, and base texture.
      */
@@ -196,7 +248,9 @@ export interface ITextStyle {
     strokeThickness?: number;
     align?: "left" | "center" | "right";
     baseline?: CanvasTextBaseline;
-    lineHeight?: number;
+}
+export interface ITextOptions extends ITextStyle, ITextureOptions {
+    text?: string;
 }
 /**
  * A texture that renders text using an internal HTML Canvas.
@@ -207,9 +261,9 @@ declare class TextTexture extends Texture {
     private render;
     private _text;
     private _style;
-    private _base;
+    private options;
     flipY: boolean;
-    constructor(render: Rapid, text: string, style?: ITextStyle, options?: ITextureOptions);
+    constructor(render: Rapid, options?: ITextOptions);
     get text(): string;
     /**
      * Set new text and update the texture
@@ -220,6 +274,7 @@ declare class TextTexture extends Texture {
      * Set new style partially and update the texture
      */
     set style(value: Partial<ITextStyle>);
+    private updateOffset;
     /**
      * Updates the internal canvas and uploads it to WebGL
      */
