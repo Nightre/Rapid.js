@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Rapid is a small WebGL 2D rendering engine for playful browser games.">
+    <title>Rapid</title>
+    <link rel="icon" href="./image/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+      <div class="container">
+        <a class="navbar-brand" href="./index.html">
+          <img src="./image/logo_title.png" class="brand-title-logo pixel-art" alt="Rapid">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <li class="nav-item"><a class="nav-link nav-icon-link" href="./docs.html"><img src="./image/docs.png" class="pixel-art" alt="">Docs</a></li>
+            <li class="nav-item"><a class="nav-link nav-icon-link" href="./api/"><img src="./image/api.png" class="pixel-art" alt="">API</a></li>
+            <li class="nav-item"><a class="nav-link nav-icon-link" href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer"><img src="./image/github.png" class="pixel-art" alt="">GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div class="container">
+          <div class="row align-items-stretch g-5">
+            <div class="col-lg-6">
+              <div class="hero-copy-column">
+                <h1 class="hero-logo-title">
+                  <img src="./image/logo_title.png" class="pixel-art" alt="Rapid">
+                </h1>
+                <p class="lead">
+                  A
+                  <span class="lead-word lead-word-flex">Flexible</span>
+                  <span class="lead-word lead-word-tiny">Fast</span>
+                  yet
+                  <span class="lead-word lead-word-power">Powerful</span>
+                  stateless renderer built for games. Rapid adapts cleanly to any game architecture you design.
+                </p>
+                <div class="hero-actions">
+                  <div class="install-strip" aria-label="Install Rapid Render">
+                    <code id="install-command">npm install rapid-render</code>
+                    <button class="copy-button" type="button" data-copy-target="#install-command"><img src="./image/copy.png" class="pixel-art" alt="">Copy</button>
+                  </div>
+                  <a class="btn btn-outline-rapid btn-lg btn-icon" href="./docs.html"><img src="./image/docs.png" class="pixel-art" alt="">Read Docs</a>
+                </div>
+
+                <div class="features-heading">
+                  <img src="./image/demo.png" class="features-heading-icon pixel-art" alt="">
+                  <h2>Main Features.</h2>
+                </div>
+
+                <div class="hero-features" id="features">
+                  <article class="feature-card">
+                    <img src="./image/batch.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                    <div class="feature-copy">
+                      <h2>Automatic Batching</h2>
+                      <p>Rapid detects compatible draw work and batches it for you, with no need for Pixi-style ParticleContainer setup or manual render grouping.</p>
+                    </div>
+                  </article>
+                  <article class="feature-card">
+                    <img src="./image/shader.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                    <div class="feature-copy">
+                      <h2>Custom Shaders</h2>
+                      <p>Build powerful sprite and geometry effects with a shader pipeline that stays close to Rapid's renderer.</p>
+                    </div>
+                  </article>
+                  <article class="feature-card">
+                    <img src="./image/transformation.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                    <div class="feature-copy">
+                      <h2>Flexible Transforms</h2>
+                      <p>Compose motion, hierarchy, and camera behavior with multiple transform styles backed by a fast matrix engine.</p>
+                    </div>
+                  </article>
+                  <article class="feature-card">
+                    <img src="./image/draw.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                    <div class="feature-copy">
+                      <h2>Full 2D Toolkit</h2>
+                      <p>Draw lines, masks, particles, render textures, sprites, and custom geometry from one focused WebGL renderer.</p>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="hero-demo-stack mx-auto">
+                <div class="demo-topline">
+                  <select class="form-select demo-select home-demo-select" id="home-demo-select" aria-label="Choose homepage demo"></select>
+                </div>
+                <canvas id="home-demo-canvas" class="rapid-canvas" width="480" height="300" aria-label="Selected Rapid demo"></canvas>
+                <div class="code-card hero-code-card">
+                  <pre><code id="home-demo-code" class="language-javascript"></code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="users-section" id="start">
+        <div class="container">
+          <div class="users-heading">
+            <div class="users-title">
+              <img src="./image/use.png" class="users-title-icon pixel-art" alt="">
+              <h2>Who is using Rapid.js?</h2>
+            </div>
+            <p>If you built something with Rapidjs and want it to appear here, please tell <a href="mailto:nightscratch1145@gmail.com">nightscratch1145@gmail.com</a></p>
+          </div>
+          <div class="users-list">
+            <article class="user-item">
+              <img src="./image/toycar.png" class="pixel-art" alt="Toy Car demo">
+              <div>
+                <h3><a href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer">Toy Car Demo</a></h3>
+                <p>lalalalalalalalalalalala</p>
+                <span>NightScratch</span>
+              </div>
+            </article>
+            <article class="user-item">
+              <img src="./image/tree.png" class="pixel-art" alt="Forest Sketch">
+              <div>
+                <h3><a href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer">Forest Sketch</a></h3>
+                <p>lalalalalalalalalalalala</p>
+                <span>NightScratch</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer py-4">
+      <div class="container d-flex flex-column flex-sm-row justify-content-between gap-2">
+        <span>By <a href="https://github.com/Nightre" target="_blank" rel="noreferrer">NightScratch</a></span>
+        <span>Made with <span class="footer-heart" aria-label="love">❤</span></span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script type="module" src="./home.js"></script>
+  </body>
+</html>

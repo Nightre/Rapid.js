@@ -1,7 +1,9 @@
 {
-    "$schema": "https://typedoc.org/schema.json",
-    "entryPoints": [
-        "./src/index.ts",
-    ],
-    "out": "api-reference"
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "./src/index.ts"
+  ],
+  "out": "docs/api",
+  "name": "Rapid Render API",
+  "readme": "README.md"
 }

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Rapid documentation rendered from Markdown.">
+    <title>Rapid Docs</title>
+    <link rel="icon" href="./image/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+      <div class="container">
+        <a class="navbar-brand" href="./index.html">
+          <img src="./image/logo_title.png" class="brand-title-logo pixel-art" alt="Rapid">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <li class="nav-item"><a class="nav-link nav-icon-link active" aria-current="page" href="./docs.html"><img src="./image/docs.png" class="pixel-art" alt="">Docs</a></li>
+            <li class="nav-item"><a class="nav-link nav-icon-link" href="./api/"><img src="./image/api.png" class="pixel-art" alt="">API</a></li>
+            <li class="nav-item"><a class="nav-link nav-icon-link" href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer"><img src="./image/github.png" class="pixel-art" alt="">GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="docs-main">
+      <div class="container">
+        <div class="docs-layout">
+          <aside class="docs-sidebar" id="docs-sidebar" aria-label="Documentation chapters"></aside>
+          <article class="markdown-doc" id="markdown-doc">Loading docs...</article>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer py-4">
+      <div class="container d-flex flex-column flex-sm-row justify-content-between gap-2">
+        <span>By <a href="https://github.com/Nightre" target="_blank" rel="noreferrer">NightScratch</a></span>
+        <span>Made with <span class="footer-heart" aria-label="love">❤</span></span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script type="module" src="./docs.js"></script>
+  </body>
+</html>
