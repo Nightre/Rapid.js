@@ -18,9 +18,7 @@
 
 ## What is Rapid?
 
-Rapid is a focused WebGL 2D rendering engine for games and visual tools. It gives you fast sprites, custom geometry, masks, particles, render textures, lines, text, transforms, and shader hooks while leaving scenes, entities, input, physics, and game state to your own architecture.
-
-It is designed to stay close to your game loop instead of becoming the game engine around it.
+Rapid is a focused WebGL 2D rendering engine for games and visual tools. It handles the rendering layer while leaving your game architecture, update loop, and state management fully in your hands.
 
 > The documentation and demos are still being written.
 
