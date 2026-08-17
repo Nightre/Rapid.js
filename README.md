@@ -22,7 +22,7 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. It give
 
 It is designed to stay close to your game loop instead of becoming the game engine around it.
 
-> The documentation and demos are still being written. The API reference and website will keep improving as the project grows.
+> The documentation and demos are still being written.
 
 ## Highlights
 
