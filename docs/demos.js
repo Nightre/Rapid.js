@@ -1,109 +1,115 @@
+import { Rapid, Color } from "rapid-render";
 import { highlightCodeBlock } from "./highlight.js";
-import { Rapid, Color, CustomGlShader, TextureWrapMode } from "../src/index.ts";
 
-export const demoOrder = ["toycar", "pulse-shader", "outline-shader", "noise-shader"];
+/**
+ * Demo registry.
+ *
+ * Each demo lives in `./demos/<id>.js` as a real ES module, so it can be
+ * edited, type-checked and jumped through like any other source file. The
+ * same file serves two purposes: it is imported and executed to drive the
+ * canvas, and its raw text is what the reader sees in the code panel. There
+ * is no second copy to keep in sync.
+ *
+ * A demo module default-exports:
+ *
+ *     export default function (rapid, ctx) { ... }
+ *
+ * `rapid` is the single shared Rapid instance (see below). `ctx` carries the
+ * canvas and `ctx.loop()`. The function may be async, and may return a
+ * cleanup function that runs when the reader switches away.
+ */
 
-const demoConfig = {
-  toycar: {
-    id: "toycar",
-    title: "Toy Car",
-    file: "./demos/toycar.txt",
-  },
-  "pulse-shader": {
-    id: "pulse-shader",
-    title: "Pulse Shader",
-    file: "./demos/pulse-shader.txt",
-  },
-  "outline-shader": {
-    id: "outline-shader",
-    title: "Outline Shader",
-    file: "./demos/outline-shader.txt",
-  },
-  "noise-shader": {
-    id: "noise-shader",
-    title: "Extra Texture Shader",
-    file: "./demos/noise-shader.txt",
-  },
+/** Order of the demo picker. Each entry must have a `./demos/<id>.js`. */
+export const demoOrder = [
+  "minimal",
+  "image",
+  "sprite",
+  "image-animation",
+  "sprite-sheet",
+  "transformations",
+  "update-matrix",
+  "custom-matrix",
+  "screen-coordinates",
+  "geometry",
+  "lines",
+  "text",
+  "custom-shaders",
+  "pulse-shader",
+  "outline-shader",
+  "noise-shader",
+  "render-texture",
+  "ping-pong-filter",
+  "masks",
+  "particles",
+  "stress-test",
+];
+
+/** Label shown in the picker. */
+const demoTitles = {
+  minimal: "Minimal",
+  image: "Image",
+  sprite: "Sprite",
+  "image-animation": "Image Animation",
+  "sprite-sheet": "Sprite Sheet",
+  transformations: "Transformations",
+  "update-matrix": "Update Matrix",
+  "custom-matrix": "Custom Matrix",
+  "screen-coordinates": "Screen Coordinates",
+  geometry: "Geometry",
+  lines: "Lines",
+  text: "Text",
+  "custom-shaders": "Custom Shaders",
+  "pulse-shader": "Pulse Shader",
+  "outline-shader": "Outline Shader",
+  "noise-shader": "Extra Texture Shader",
+  "render-texture": "Render Textures",
+  "ping-pong-filter": "Ping-Pong Filter",
+  masks: "Masks & Clipping",
+  particles: "Particles",
+  "stress-test": "Stress Test",
 };
 
-const sourceCache = {};
+// Vite resolves both of these at build time: the first to lazy module
+// loaders, the second to the files' literal text.
+const demoModules = import.meta.glob("./demos/*.js");
+const demoSources = import.meta.glob("./demos/*.js", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
-const loadDemoSource = async (demoId) => {
-  if (sourceCache[demoId]) return sourceCache[demoId];
+const modulePath = (id) => `./demos/${id}.js`;
 
-  const config = demoConfig[demoId];
-  if (!config) throw new Error(`Demo ${demoId} not found`);
+export const demos = Object.fromEntries(
+  demoOrder.map((id) => [id, { id, title: demoTitles[id] ?? id }]),
+);
 
-  try {
-    const demoUrl = new URL(config.file, import.meta.url).href;
-    const response = await fetch(demoUrl);
-    if (!response.ok) throw new Error(`Failed to load ${config.file}`);
-    const source = await response.text();
-    sourceCache[demoId] = source;
-    return source;
-  } catch (error) {
-    console.error(`Failed to load demo source for ${demoId}:`, error);
-    throw error;
-  }
-};
+/** Raw text of a demo, for the code panel. */
+export const getDemoSource = (id) => demoSources[modulePath(id)] ?? "";
 
-export const demos = {
-  get toycar() {
-    return { ...demoConfig.toycar };
-  },
-  get "pulse-shader"() {
-    return { ...demoConfig["pulse-shader"] };
-  },
-  get "outline-shader"() {
-    return { ...demoConfig["outline-shader"] };
-  },
-  get "noise-shader"() {
-    return { ...demoConfig["noise-shader"] };
-  },
-};
-
-export const getDemoSource = loadDemoSource;
-
-export const renderDemoCode = async (target, demoId) => {
+/** Renders a demo's source into a `<code>` element. */
+export const renderDemoCode = (target, id) => {
   if (!target) return;
-  try {
-    const source = await loadDemoSource(demoId);
-    // highlight.js tags an element with data-highlighted="yes" and refuses to
-    // re-highlight it, so clear that flag before re-rendering a different demo.
-    delete target.dataset.highlighted;
-    target.textContent = source;
-    target.className = "language-typescript";
-    highlightCodeBlock(target);
-  } catch (error) {
-    target.textContent = `Failed to load demo source: ${error.message}`;
-  }
+  // highlight.js marks an element with data-highlighted and then refuses to
+  // touch it again, so that flag has to go before re-rendering.
+  delete target.dataset.highlighted;
+  target.textContent = getDemoSource(id);
+  target.className = "language-javascript";
+  highlightCodeBlock(target);
 };
 
-const createNoiseTexture = (rapid) => {
-  const noiseCanvas = document.createElement("canvas");
-  noiseCanvas.width = 64;
-  noiseCanvas.height = 64;
+/**
+ * The one and only Rapid instance.
+ *
+ * It is built once, against the canvas exactly as authored in index.html, and
+ * is never rebuilt or resized afterwards. Switching demos hands this same
+ * object to the next module. Fixed logic and physics sizes keep the drawing
+ * coordinates identical for every demo: the canvas is a 480x300 board.
+ */
+let rapid = null;
 
-  const ctx = noiseCanvas.getContext("2d");
-  const imageData = ctx.createImageData(64, 64);
-
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    const value = Math.floor(Math.random() * 256);
-    imageData.data[i + 0] = value;
-    imageData.data[i + 1] = value;
-    imageData.data[i + 2] = value;
-    imageData.data[i + 3] = 255;
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-
-  return rapid.texture.create(noiseCanvas, {
-    wrap: TextureWrapMode.REPEAT,
-  });
-};
-
-const createRuntime = (canvas) => {
-  const rapid = new Rapid({
+const getRapid = (canvas) => {
+  rapid ??= new Rapid({
     canvas,
     logicWidth: 480,
     logicHeight: 300,
@@ -113,157 +119,72 @@ const createRuntime = (canvas) => {
     antialias: false,
     roundPixels: true,
   });
+  return rapid;
+};
 
-  let disposed = false;
+/**
+ * Runs a demo. Returns a function that stops it.
+ *
+ * Stopping matters: a demo's render loop would otherwise keep drawing onto
+ * the shared canvas forever and fight whatever runs next.
+ */
+export const mountDemo = (id) => {
+  const canvas = document.querySelector("#game");
+  if (!canvas) return () => {};
 
-  const fit = () => {
-    if (disposed) return;
-    const width = canvas.parentElement?.clientWidth || 480;
-    const height = Math.round((width * 300) / 480);
-    rapid.resize(width, height, width, height);
-  };
+  const rapid = getRapid(canvas);
 
-  fit();
-  window.addEventListener("resize", fit);
+  let stopped = false;
+  let frameId = 0;
+  let cleanup = null;
 
-  return {
-    rapid,
-    isDisposed: () => disposed,
-    dispose: () => {
-      disposed = true;
-      window.removeEventListener("resize", fit);
-      rapid.texture.destroyAll();
+  const ctx = {
+    canvas,
+    /**
+     * Runs `callback(time, delta)` every frame until the demo is swapped out.
+     * Both arguments are in seconds, `time` counted from when the demo started.
+     */
+    loop(callback) {
+      const start = performance.now();
+      let previous = start;
+
+      const step = (now) => {
+        if (stopped) return;
+        // Clamped so a backgrounded tab does not resume with a huge delta.
+        const delta = Math.min((now - previous) / 1000, 0.05);
+        previous = now;
+        callback((now - start) / 1000, delta);
+        frameId = requestAnimationFrame(step);
+      };
+
+      frameId = requestAnimationFrame(step);
     },
   };
-};
 
-const drawToycar = (rapid, texture, shader) => {
-  rapid.clear();
-  rapid.drawSprite({
-    texture,
-    shader,
-    x: 160,
-    y: 100,
-  });
+  // Stencil masks and half-built batches outlive a demo because the instance
+  // does; clear them so the next module starts from a known state.
   rapid.flush();
-};
+  rapid.clearMask();
+  rapid.clear();
 
-const mountToycarDemo = async (runtime) => {
-  const toycar = await runtime.rapid.texture.load("./image/toycar.png");
-  if (runtime.isDisposed()) return;
-  drawToycar(runtime.rapid, toycar);
-};
-
-const mountPulseShaderDemo = async (runtime) => {
-  const rapid = runtime.rapid;
-  const toycar = await rapid.texture.load("./image/toycar.png");
-  if (runtime.isDisposed()) return;
-
-  const shader = new CustomGlShader(rapid, `
-void vertex(inout vec4 position, vec2 uv) {
-}
-`, `
-uniform float uTime;
-
-void fragment(inout vec4 color) {
-  float pulse = 0.72 + 0.28 * sin(uTime * 4.0);
-  color.rgb *= vec3(1.0, pulse, pulse);
-}
-`, 0, {
-    uTime: 0,
-  });
-
-  const frame = (time) => {
-    if (runtime.isDisposed()) return;
-    shader.setUniforms({ uTime: time / 1000 });
-    drawToycar(rapid, toycar, shader);
-    requestAnimationFrame(frame);
-  };
-
-  requestAnimationFrame(frame);
-};
-
-const mountOutlineShaderDemo = async (runtime) => {
-  const rapid = runtime.rapid;
-  const toycar = await rapid.texture.load("./image/toycar.png");
-  if (runtime.isDisposed()) return;
-
-  const shader = new CustomGlShader(rapid, `
-void vertex(inout vec4 position, vec2 uv) {
-}
-`, `
-uniform vec2 uTexel;
-uniform vec4 uOutlineColor;
-
-void fragment(inout vec4 color) {
-  float around = 0.0;
-  around = max(around, sampleClampTexture(vRegion + vec2( uTexel.x, 0.0)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(-uTexel.x, 0.0)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(0.0,  uTexel.y)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(0.0, -uTexel.y)).a);
-
-  if (color.a == 0.0 && around > 0.0) {
-    color = uOutlineColor;
+  const load = demoModules[modulePath(id)];
+  if (!load) {
+    console.error(`[demo] no module for "${id}"`);
+    return () => {};
   }
-}
-`, 0, {
-    uTexel: [1 / toycar.base.width, 1 / toycar.base.height],
-    uOutlineColor: [1, 0.88, 0.08, 1],
-  }).setPadding(2);
 
-  drawToycar(rapid, toycar, shader);
-};
+  load()
+    .then((module) => (stopped ? null : module.default(rapid, ctx)))
+    .then((fn) => {
+      if (typeof fn !== "function") return;
+      if (stopped) fn();
+      else cleanup = fn;
+    })
+    .catch((error) => console.error(`[demo] "${id}" failed:`, error));
 
-const mountNoiseShaderDemo = async (runtime) => {
-  const rapid = runtime.rapid;
-  const toycar = await rapid.texture.load("./image/toycar.png");
-  const noise = createNoiseTexture(rapid);
-  if (runtime.isDisposed()) return;
-
-  const shader = new CustomGlShader(rapid, `
-void vertex(inout vec4 position, vec2 uv) {
-}
-`, `
-uniform sampler2D uNoise;
-uniform float uTime;
-
-void fragment(inout vec4 color) {
-  vec2 localUV = (vRegion - vUVRect.xy) / (vUVRect.zw - vUVRect.xy);
-  vec2 noiseUV = localUV * 8.0 + vec2(uTime * 0.08, 0.0);
-  float n = texture(uNoise, noiseUV).r;
-
-  color.rgb *= 0.7 + n * 0.6;
-}
-`, 1, {
-    uTime: 0,
-  });
-
-  shader.setUniforms({
-    uNoise: noise.glTexture,
-  });
-
-  const frame = (time) => {
-    if (runtime.isDisposed()) return;
-    shader.setUniforms({ uTime: time / 1000 });
-    drawToycar(rapid, toycar, shader);
-    requestAnimationFrame(frame);
+  return () => {
+    stopped = true;
+    cancelAnimationFrame(frameId);
+    cleanup?.();
   };
-
-  requestAnimationFrame(frame);
-};
-
-const mountDemoById = {
-  toycar: mountToycarDemo,
-  "pulse-shader": mountPulseShaderDemo,
-  "outline-shader": mountOutlineShaderDemo,
-  "noise-shader": mountNoiseShaderDemo,
-};
-
-export const mountDemo = (canvas, demoId = "toycar") => {
-  const runtime = createRuntime(canvas);
-  const mount = mountDemoById[demoId] ?? mountToycarDemo;
-  mount(runtime).catch((error) => {
-    console.error(`[Demo] Failed to mount ${demoId}`, error);
-  });
-  return runtime.dispose;
 };

@@ -10,3 +10,6 @@ export * from "./region/spriteRegion"
 export * from "./region/graphicRegion"
 export * from "./math"
 export * from "./particle"
+// drawLine accepts `texture` + `textureMode`, but the mode enum was not
+// reachable from the package, which made the feature unusable from outside.
+export { LineTextureMode, type ILineRenderOptions } from "./line"

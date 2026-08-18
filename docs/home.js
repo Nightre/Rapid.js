@@ -1,16 +1,18 @@
 import { demoOrder, demos, mountDemo, renderDemoCode } from "./demos.js";
 
 const select = document.querySelector("#home-demo-select");
-const canvas = document.querySelector("#home-demo-canvas");
 const code = document.querySelector("#home-demo-code");
 const copyButton = document.querySelector("[data-copy-target]");
 const features = document.querySelector("#features");
 const demoStack = document.querySelector(".hero-demo-stack");
 
-let cleanupDemo = () => {};
+/** Stops whatever demo is currently running. */
+let stopDemo = () => {};
 
-const syncHomeCodeHeight = () => {
+/** Matches the code panel's height to the feature list beside it. */
+const syncCodeHeight = () => {
   if (!features || !demoStack) return;
+
   if (!window.matchMedia("(min-width: 992px)").matches) {
     demoStack.style.removeProperty("--home-code-card-height");
     return;
@@ -22,38 +24,39 @@ const syncHomeCodeHeight = () => {
   }
 };
 
-const chooseDemo = (id) => {
-  const demo = demos[id] ?? demos.toycar;
-  cleanupDemo();
-  cleanupDemo = mountDemo(canvas, demo.id);
+const showDemo = (id) => {
+  const demo = demos[id] ?? demos[demoOrder[0]];
+  stopDemo();
+  stopDemo = mountDemo(demo.id);
   renderDemoCode(code, demo.id);
-  requestAnimationFrame(syncHomeCodeHeight);
+  requestAnimationFrame(syncCodeHeight);
 };
 
-if (select && canvas && code) {
-  select.replaceChildren();
+if (select && code) {
+  select.replaceChildren(
+    ...demoOrder.map((id) => {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = demos[id].title;
+      return option;
+    }),
+  );
 
-  for (const id of demoOrder) {
-    const demo = demos[id];
-    const option = document.createElement("option");
-    option.value = demo.id;
-    option.textContent = demo.title;
-    select.append(option);
-  }
+  select.value = demoOrder[0];
+  select.addEventListener("change", () => showDemo(select.value));
+  showDemo(select.value);
 
-  select.value = "toycar";
-  select.disabled = demoOrder.length <= 1;
-  chooseDemo(select.value);
-  select.addEventListener("change", () => chooseDemo(select.value));
-  window.addEventListener("beforeunload", () => cleanupDemo(), { once: true });
+  window.addEventListener("beforeunload", () => stopDemo(), { once: true });
 }
 
-window.addEventListener("resize", syncHomeCodeHeight);
+window.addEventListener("resize", syncCodeHeight);
 
 if (features && "ResizeObserver" in window) {
-  const observer = new ResizeObserver(syncHomeCodeHeight);
+  const observer = new ResizeObserver(syncCodeHeight);
   observer.observe(features);
-  window.addEventListener("beforeunload", () => observer.disconnect(), { once: true });
+  window.addEventListener("beforeunload", () => observer.disconnect(), {
+    once: true,
+  });
 }
 
 if (copyButton) {
