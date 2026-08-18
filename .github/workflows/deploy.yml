@@ -35,8 +35,11 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Build docs
+        run: npm run build:docs
+
       - name: Generate API docs
-        run: npx typedoc --entryPoints ./src/index.ts --out docs/api --name "Rapid Render API" --readme README.md
+        run: npx typedoc --entryPoints ./src/index.ts --out docs/dist/api --name "Rapid Render API" --readme README.md
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -44,7 +47,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: docs
+          path: docs/dist
           include-hidden-files: true
 
   deploy:

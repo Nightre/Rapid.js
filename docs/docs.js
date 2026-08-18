@@ -1,4 +1,6 @@
 import { highlightCodeBlocks } from "./highlight.js";
+import markdownEn from "./markdown/index.js";
+import markdownCn from "./markdown_cn/index.js";
 
 const chapters = [
   { id: "overview", title: "Overview", file: "guide.md", icon: "./image/docs.png" },
@@ -19,17 +21,18 @@ const chapters = [
   { id: "advanced", title: "Advanced Render", file: "advanced.md", icon: "./image/advanced.png" },
 ];
 
-const MARKDOWN_DIRS = { en: "./markdown", cn: "./markdown_cn" };
+const MARKDOWN_CONTENT = { en: markdownEn, cn: markdownCn };
 const DEFAULT_LANG = "en";
 const LANG_STORAGE_KEY = "rapid-docs-lang";
 
 const readStoredLang = () => {
   const stored = localStorage.getItem(LANG_STORAGE_KEY);
-  return stored in MARKDOWN_DIRS ? stored : DEFAULT_LANG;
+  return stored in MARKDOWN_CONTENT ? stored : DEFAULT_LANG;
 };
 
 let currentLang = readStoredLang();
 let activeChapter = null;
+const chapterCache = { en: {}, cn: {} };
 
 const nav = document.querySelector("#docs-nav");
 const target = document.querySelector("#markdown-doc");
@@ -73,9 +76,12 @@ if (backToTop) {
 if (langSelect) {
   langSelect.value = currentLang;
   langSelect.addEventListener("change", () => {
-    currentLang = langSelect.value in MARKDOWN_DIRS ? langSelect.value : DEFAULT_LANG;
-    localStorage.setItem(LANG_STORAGE_KEY, currentLang);
-    if (activeChapter) loadChapter(activeChapter);
+    const newLang = langSelect.value in MARKDOWN_CONTENT ? langSelect.value : DEFAULT_LANG;
+    if (newLang !== currentLang) {
+      currentLang = newLang;
+      localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+      if (activeChapter) loadChapter(activeChapter);
+    }
   });
 }
 
@@ -176,34 +182,48 @@ const setActiveChapter = (id) => {
   }
 };
 
-const loadChapter = async (chapter) => {
+const loadChapter = (chapter) => {
   activeChapter = chapter;
-  target.textContent = "Loading docs...";
   setActiveChapter(chapter.id);
 
-  try {
-    const response = await fetch(`${MARKDOWN_DIRS[currentLang]}/${chapter.file}`);
-    if (!response.ok) throw new Error("Unable to load Markdown");
-    target.innerHTML = renderMarkdown(await response.text());
+  const cached = chapterCache[currentLang][chapter.id];
+  if (cached) {
+    target.innerHTML = cached.html;
     highlightCodeBlocks(target);
-
-    const heading = target.querySelector("h1");
-    if (heading) {
-      const header = document.createElement("header");
-      header.className = "doc-chapter-header";
-
-      const icon = document.createElement("img");
-      icon.src = chapter.icon;
-      icon.alt = `${chapter.title} icon`;
-      icon.className = "doc-chapter-icon pixel-art";
-
-      heading.before(header);
-      header.append(icon, heading);
-    }
-
     history.replaceState(null, "", `#${chapter.id}`);
-  } catch {
-    target.textContent = "Unable to load docs.";
+    window.scrollTo(0, 0);
+  }
+};
+
+const preloadAllChapters = () => {
+  for (const lang in MARKDOWN_CONTENT) {
+    for (const chapter of chapters) {
+      try {
+        const markdown = MARKDOWN_CONTENT[lang][chapter.file];
+        if (!markdown) throw new Error("Markdown not found");
+
+        const heading = document.createElement("div");
+        heading.innerHTML = renderMarkdown(markdown);
+
+        const h1 = heading.querySelector("h1");
+        if (h1) {
+          const header = document.createElement("header");
+          header.className = "doc-chapter-header";
+
+          const icon = document.createElement("img");
+          icon.src = chapter.icon;
+          icon.alt = `${chapter.title} icon`;
+          icon.className = "doc-chapter-icon pixel-art";
+
+          h1.before(header);
+          header.append(icon, h1);
+        }
+
+        chapterCache[lang][chapter.id] = { html: heading.innerHTML };
+      } catch (e) {
+        console.error(`Failed to load ${lang}/${chapter.file}:`, e);
+      }
+    }
   }
 };
 
@@ -216,10 +236,11 @@ for (const chapter of chapters) {
   nav.append(button);
 }
 
+preloadAllChapters();
 const initial = chapters.find((chapter) => chapter.id === location.hash.slice(1)) ?? chapters[0];
 loadChapter(initial);
 
 window.addEventListener("hashchange", () => {
   const chapter = chapters.find((item) => item.id === location.hash.slice(1));
-  if (chapter) loadChapter(chapter);
+  if (chapter && chapterCache[currentLang][chapter.id]) loadChapter(chapter);
 });
