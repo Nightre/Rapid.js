@@ -392,21 +392,25 @@ class Texture {
      * @param cellHeight - The height of each cell in pixels.
      * @param cols - Optional number of columns. Truncates based on texture width if omitted.
      * @param rows - Optional number of rows. Truncates based on texture height if omitted.
+     * @param gap - Optional pixel gap between cells.
      * @returns An array of split Textures.
      */
-    splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number): Texture[] {
+    splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number, gap: number = 0): Texture[] {
         if (!this.base) return [];
         const res: Texture[] = [];
 
         const baseW = this.rawWidth;
         const baseH = this.rawHeight;
+        const cellGap = Math.max(0, gap);
+        const stepX = cellWidth + cellGap;
+        const stepY = cellHeight + cellGap;
 
-        const c = cols ?? Math.floor(baseW / cellWidth);
-        const r = rows ?? Math.floor(baseH / cellHeight);
+        const c = cols ?? Math.floor((baseW + cellGap) / stepX);
+        const r = rows ?? Math.floor((baseH + cellGap) / stepY);
 
         for (let y = 0; y < r; y++) {
             for (let x = 0; x < c; x++) {
-                res.push(this.getSubTexture(x * cellWidth, y * cellHeight, cellWidth, cellHeight));
+                res.push(this.getSubTexture(x * stepX, y * stepY, cellWidth, cellHeight));
             }
         }
         return res;

@@ -25,7 +25,7 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. It hand
 ## Highlights
 
 - **Automatic batching**  
-  Rapid detects compatible draw work and batches it for you, with no need for Pixi-style `ParticleContainer` setup or manual render grouping.
+  Rapid automatically batches compatible draw work. Multi-texture batching binds different textures into a single draw call, eliminating manual grouping.
 
 - **Powerful custom shaders**  
   Add sprite and geometry effects through shader hooks while still using Rapid's normal renderer, transforms, textures, and draw APIs.
@@ -68,17 +68,3 @@ function frame() {
 
 frame();
 ```
-
-## Development
-
-```bash
-npm install
-npm run build
-npm run docs
-```
-
-## Links
-
-- Website: <https://nightre.github.io/Rapid.js/>
-- Documentation: <https://nightre.github.io/Rapid.js/docs.html>
-- API reference: <https://nightre.github.io/Rapid.js/api/>

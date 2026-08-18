@@ -1,19 +1,21 @@
+import { highlightCodeBlocks } from "./highlight.js";
+
 const chapters = [
-  { id: "overview", title: "Overview", file: "./guide.md", icon: "./image/docs.png" },
-  { id: "installation", title: "Installation", file: "./install.md", icon: "./image/install.png" },
-  { id: "quick-start", title: "Quick Start", file: "./quick-start.md", icon: "./image/quick-start.png" },
-  { id: "architecture", title: "Architecture", file: "./architecture.md", icon: "./image/tree.png" },
-  { id: "textures", title: "Textures", file: "./textures.md", icon: "./image/texture.png" },
-  { id: "drawing", title: "Drawing", file: "./drawing.md", icon: "./image/draw.png" },
-  { id: "transformations", title: "Transformations", file: "./transformations.md", icon: "./image/transformation.png" },
-  { id: "custom-geometry", title: "Custom Geometry", file: "./custom-geometry.md", icon: "./image/polygon.png" },
-  { id: "lines", title: "Lines", file: "./line.md", icon: "./image/line.png" },
-  { id: "text", title: "Text", file: "./text.md", icon: "./image/text.png" },
-  { id: "render-textures", title: "Render Textures", file: "./render-textures.md", icon: "./image/render-texture.png" },
-  { id: "masks", title: "Masks & Clipping", file: "./masks.md", icon: "./image/mask.png" },
-  { id: "particles", title: "Particles", file: "./particles.md", icon: "./image/particle.png" },
-  { id: "shaders", title: "Custom Shaders", file: "./shaders.md", icon: "./image/shader.png" },
-  { id: "advanced", title: "Advanced", file: "./advanced.md", icon: "./image/advanced.png" },
+  { id: "overview", title: "Overview", file: "./markdown/guide.md", icon: "./image/docs.png" },
+  { id: "installation", title: "Installation", file: "./markdown/install.md", icon: "./image/install.png" },
+  { id: "quick-start", title: "Quick Start", file: "./markdown/quick-start.md", icon: "./image/quick-start.png" },
+  { id: "textures", title: "Textures", file: "./markdown/textures.md", icon: "./image/texture.png" },
+  { id: "sprite", title: "Sprite", file: "./markdown/sprite.md", icon: "./image/sprite.png" },
+  { id: "transformations", title: "Transformations", file: "./markdown/transformations.md", icon: "./image/transformation.png" },
+  { id: "screen-position", title: "Screen Position", file: "./markdown/screen-position.md", icon: "./image/screen-position.png" },
+  { id: "custom-geometry", title: "Custom Geometry", file: "./markdown/custom-geometry.md", icon: "./image/polygon.png" },
+  { id: "lines", title: "Lines", file: "./markdown/line.md", icon: "./image/line.png" },
+  { id: "text", title: "Text", file: "./markdown/text.md", icon: "./image/text.png" },
+  { id: "render-textures", title: "Render Textures", file: "./markdown/render-textures.md", icon: "./image/render-texture.png" },
+  { id: "masks", title: "Masks & Clipping", file: "./markdown/masks.md", icon: "./image/mask.png" },
+  { id: "particles", title: "Particles", file: "./markdown/particles.md", icon: "./image/particle.png" },
+  { id: "shaders", title: "Custom Shaders", file: "./markdown/shaders.md", icon: "./image/shader.png" },
+  { id: "advanced", title: "Advanced Render", file: "./markdown/advanced.md", icon: "./image/advanced.png" },
 ];
 
 const sidebar = document.querySelector("#docs-sidebar");
@@ -24,6 +26,11 @@ const escapeHtml = (value) => value
   .replaceAll("<", "&lt;")
   .replaceAll(">", "&gt;");
 
+const normalizeCodeLanguage = (value) => {
+  const language = value.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  return /^[a-z0-9_-]+$/.test(language) ? language : "";
+};
+
 const inlineMarkdown = (value) => escapeHtml(value)
   .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
   .replace(/`([^`]+)`/g, "<code>$1</code>")
@@ -33,6 +40,7 @@ const renderMarkdown = (markdown) => {
   const lines = markdown.split(/\r?\n/);
   const html = [];
   let inCode = false;
+  let codeLanguage = "";
   let codeLines = [];
   let listType = null;
 
@@ -53,11 +61,14 @@ const renderMarkdown = (markdown) => {
   for (const line of lines) {
     if (line.startsWith("```")) {
       if (inCode) {
-        html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+        const languageClass = codeLanguage ? ` class="language-${codeLanguage}"` : "";
+        html.push(`<pre><code${languageClass}>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
         codeLines = [];
+        codeLanguage = "";
         inCode = false;
       } else {
         closeList();
+        codeLanguage = normalizeCodeLanguage(line.slice(3));
         inCode = true;
       }
       continue;
@@ -115,6 +126,7 @@ const loadChapter = async (chapter) => {
     const response = await fetch(chapter.file);
     if (!response.ok) throw new Error("Unable to load Markdown");
     target.innerHTML = renderMarkdown(await response.text());
+    highlightCodeBlocks(target);
 
     const heading = target.querySelector("h1");
     if (heading) {
