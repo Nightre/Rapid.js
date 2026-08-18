@@ -1,5 +1,4 @@
 :root {
-  overflow-x: hidden;
   --rapid-ink: #243142;
   --rapid-blue: #54b8ea;
   --rapid-mint: #b9f2c7;
@@ -13,7 +12,6 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  overflow-x: hidden;
   color: var(--rapid-ink);
   background:
     linear-gradient(180deg, #f7fff7 0%, #f3fbff 46%, #fff9ed 100%);
@@ -458,20 +456,53 @@ h1 {
 }
 
 .docs-layout {
-  display: grid;
-  grid-template-columns: 13.25rem minmax(0, 1fr);
-  gap: 2.5rem;
-  align-items: start;
+  position: relative;
 }
 
 .docs-sidebar {
-  position: sticky;
-  top: 5.5rem;
-  align-self: start;
+  position: fixed;
+  left: var(--sidebar-left, 1.5rem);
+  top: calc(var(--nav-h, 5rem) + 0.6rem);
+  width: var(--sidebar-width, 13.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - var(--nav-h, 5rem) - 1.6rem);
+}
+
+.docs-lang {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.7rem 0.75rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--rapid-line);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 #cde9d5;
+}
+
+.docs-lang-label {
+  color: var(--rapid-leaf);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.docs-lang-select {
+  border-color: #9bdcb0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.docs-nav {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   gap: 0.32rem;
-  max-height: calc(100vh - 7rem);
-  padding: 0 0.4rem 0.2rem 0;
+  padding-right: 0.35rem;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
@@ -479,7 +510,7 @@ h1 {
   scrollbar-color: #9bdcb0 transparent;
 }
 
-.docs-sidebar button {
+.docs-nav button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -494,22 +525,23 @@ h1 {
   font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.15;
+  transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.docs-sidebar button img {
+.docs-nav button img {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
   object-fit: contain;
 }
 
-.docs-sidebar button span {
+.docs-nav button span {
   min-width: 0;
 }
 
-.docs-sidebar button:hover,
-.docs-sidebar button:focus,
-.docs-sidebar button.active {
+.docs-nav button:hover,
+.docs-nav button:focus,
+.docs-nav button.active {
   color: #123247;
   background: var(--rapid-blue);
   border-color: #2f9dd1;
@@ -518,6 +550,38 @@ h1 {
 
 .markdown-doc {
   max-width: 54rem;
+  margin-left: calc(var(--sidebar-width, 13.25rem) + 2.5rem);
+}
+
+.back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 1030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  color: #123247;
+  background: var(--rapid-blue);
+  border: 1px solid #2f9dd1;
+  border-radius: 50%;
+  box-shadow: 0 4px 0 #267fa9;
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.back-to-top[hidden] {
+  display: none;
+}
+
+.back-to-top:hover,
+.back-to-top:focus {
+  background: #70caef;
+  transform: translateY(-2px);
 }
 
 .doc-chapter-header {
@@ -743,20 +807,22 @@ footer {
 }
 
 @media (max-width: 991.98px) {
-  .docs-layout {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+  .docs-sidebar {
+    position: static;
+    left: auto;
+    top: auto;
+    width: auto;
+    max-height: none;
+    margin-bottom: 1.5rem;
   }
 
-  .docs-sidebar {
-    position: sticky;
-    top: 4.25rem;
-    z-index: 5;
+  .markdown-doc {
+    margin-left: 0;
+  }
+
+  .docs-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: 38vh;
-    padding: 0.35rem 0.3rem 0.4rem 0;
-    background: rgba(247, 255, 250, 0.94);
-    backdrop-filter: blur(8px);
-    overflow-y: auto;
+    padding-right: 0;
+    overflow: visible;
   }
 }

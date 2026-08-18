@@ -165,9 +165,10 @@ declare class Texture {
      * @param cellHeight - The height of each cell in pixels.
      * @param cols - Optional number of columns. Truncates based on texture width if omitted.
      * @param rows - Optional number of rows. Truncates based on texture height if omitted.
+     * @param gap - Optional pixel gap between cells.
      * @returns An array of split Textures.
      */
-    splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number): Texture[];
+    splitGrid(cellWidth: number, cellHeight: number, cols?: number, rows?: number, gap?: number): Texture[];
     /**
      * Creates a Texture directly from an image source, bypassing the TextureManager.
      * @param source - The image element, canvas, video, or bitmap.

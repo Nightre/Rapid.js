@@ -1,26 +1,83 @@
 import { highlightCodeBlocks } from "./highlight.js";
 
 const chapters = [
-  { id: "overview", title: "Overview", file: "./markdown/guide.md", icon: "./image/docs.png" },
-  { id: "installation", title: "Installation", file: "./markdown/install.md", icon: "./image/install.png" },
-  { id: "quick-start", title: "Quick Start", file: "./markdown/quick-start.md", icon: "./image/quick-start.png" },
-  { id: "textures", title: "Textures", file: "./markdown/textures.md", icon: "./image/texture.png" },
-  { id: "sprite", title: "Sprite", file: "./markdown/sprite.md", icon: "./image/sprite.png" },
-  { id: "transformations", title: "Transformations", file: "./markdown/transformations.md", icon: "./image/transformation.png" },
-  { id: "screen-position", title: "Screen Position", file: "./markdown/screen-position.md", icon: "./image/screen-position.png" },
-  { id: "shaders", title: "Custom Shaders", file: "./markdown/shaders.md", icon: "./image/shader.png" },
+  { id: "overview", title: "Overview", file: "guide.md", icon: "./image/docs.png" },
+  { id: "installation", title: "Installation", file: "install.md", icon: "./image/install.png" },
+  { id: "quick-start", title: "Quick Start", file: "quick-start.md", icon: "./image/quick-start.png" },
+  { id: "textures", title: "Textures", file: "textures.md", icon: "./image/texture.png" },
+  { id: "sprite", title: "Sprite", file: "sprite.md", icon: "./image/sprite.png" },
+  { id: "transformations", title: "Transformations", file: "transformations.md", icon: "./image/transformation.png" },
+  { id: "screen-position", title: "Screen Position", file: "screen-position.md", icon: "./image/screen-position.png" },
+  { id: "shaders", title: "Custom Shaders", file: "shaders.md", icon: "./image/shader.png" },
 
-  { id: "custom-geometry", title: "Custom Geometry", file: "./markdown/custom-geometry.md", icon: "./image/polygon.png" },
-  { id: "lines", title: "Lines", file: "./markdown/line.md", icon: "./image/line.png" },
-  { id: "text", title: "Text", file: "./markdown/text.md", icon: "./image/text.png" },
-  { id: "render-textures", title: "Render Textures", file: "./markdown/render-textures.md", icon: "./image/render-texture.png" },
-  { id: "masks", title: "Masks & Clipping", file: "./markdown/masks.md", icon: "./image/mask.png" },
-  { id: "particles", title: "Particles", file: "./markdown/particles.md", icon: "./image/particle.png" },
-  { id: "advanced", title: "Advanced Render", file: "./markdown/advanced.md", icon: "./image/advanced.png" },
+  { id: "custom-geometry", title: "Custom Geometry", file: "custom-geometry.md", icon: "./image/polygon.png" },
+  { id: "lines", title: "Lines", file: "line.md", icon: "./image/line.png" },
+  { id: "text", title: "Text", file: "text.md", icon: "./image/text.png" },
+  { id: "render-textures", title: "Render Textures", file: "render-textures.md", icon: "./image/render-texture.png" },
+  { id: "masks", title: "Masks & Clipping", file: "masks.md", icon: "./image/mask.png" },
+  { id: "particles", title: "Particles", file: "particles.md", icon: "./image/particle.png" },
+  { id: "advanced", title: "Advanced Render", file: "advanced.md", icon: "./image/advanced.png" },
 ];
 
-const sidebar = document.querySelector("#docs-sidebar");
+const MARKDOWN_DIRS = { en: "./markdown", cn: "./markdown_cn" };
+const DEFAULT_LANG = "en";
+const LANG_STORAGE_KEY = "rapid-docs-lang";
+
+const readStoredLang = () => {
+  const stored = localStorage.getItem(LANG_STORAGE_KEY);
+  return stored in MARKDOWN_DIRS ? stored : DEFAULT_LANG;
+};
+
+let currentLang = readStoredLang();
+let activeChapter = null;
+
+const nav = document.querySelector("#docs-nav");
 const target = document.querySelector("#markdown-doc");
+const langSelect = document.querySelector("#docs-lang-select");
+
+// The sidebar is position: fixed so it never moves with the page scroll. Two
+// things must be measured live and fed to CSS vars so it lines up with the
+// layout: the navbar height (varies with logo load / viewport / menu wrap) so
+// it parks just below the navbar, and the layout's left edge so the fixed
+// sidebar sits exactly over its reserved column.
+const navbar = document.querySelector(".navbar");
+const layout = document.querySelector(".docs-layout");
+
+const syncLayoutVars = () => {
+  const root = document.documentElement.style;
+  if (navbar) root.setProperty("--nav-h", `${navbar.offsetHeight}px`);
+  if (layout) root.setProperty("--sidebar-left", `${Math.max(layout.getBoundingClientRect().left, 0)}px`);
+};
+
+syncLayoutVars();
+window.addEventListener("resize", syncLayoutVars);
+window.addEventListener("load", syncLayoutVars);
+if ("ResizeObserver" in window) {
+  const observer = new ResizeObserver(syncLayoutVars);
+  if (navbar) observer.observe(navbar);
+  if (layout) observer.observe(layout);
+}
+
+const backToTop = document.querySelector("#back-to-top");
+if (backToTop) {
+  const syncBackToTop = () => {
+    backToTop.hidden = window.scrollY < 320;
+  };
+  syncBackToTop();
+  window.addEventListener("scroll", syncBackToTop, { passive: true });
+  backToTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
+if (langSelect) {
+  langSelect.value = currentLang;
+  langSelect.addEventListener("change", () => {
+    currentLang = langSelect.value in MARKDOWN_DIRS ? langSelect.value : DEFAULT_LANG;
+    localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+    if (activeChapter) loadChapter(activeChapter);
+  });
+}
 
 const escapeHtml = (value) => value
   .replaceAll("&", "&amp;")
@@ -114,17 +171,18 @@ const renderMarkdown = (markdown) => {
 };
 
 const setActiveChapter = (id) => {
-  for (const button of sidebar.querySelectorAll("button")) {
+  for (const button of nav.querySelectorAll("button")) {
     button.classList.toggle("active", button.dataset.chapter === id);
   }
 };
 
 const loadChapter = async (chapter) => {
+  activeChapter = chapter;
   target.textContent = "Loading docs...";
   setActiveChapter(chapter.id);
 
   try {
-    const response = await fetch(chapter.file);
+    const response = await fetch(`${MARKDOWN_DIRS[currentLang]}/${chapter.file}`);
     if (!response.ok) throw new Error("Unable to load Markdown");
     target.innerHTML = renderMarkdown(await response.text());
     highlightCodeBlocks(target);
@@ -155,7 +213,7 @@ for (const chapter of chapters) {
   button.dataset.chapter = chapter.id;
   button.innerHTML = `<img src="${chapter.icon}" class="pixel-art" alt=""><span>${chapter.title}</span>`;
   button.addEventListener("click", () => loadChapter(chapter));
-  sidebar.append(button);
+  nav.append(button);
 }
 
 const initial = chapters.find((chapter) => chapter.id === location.hash.slice(1)) ?? chapters[0];

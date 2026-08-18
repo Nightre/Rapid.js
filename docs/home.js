@@ -25,7 +25,7 @@ const syncHomeCodeHeight = () => {
 const chooseDemo = (id) => {
   const demo = demos[id] ?? demos.toycar;
   cleanupDemo();
-  cleanupDemo = mountDemo(canvas);
+  cleanupDemo = mountDemo(canvas, demo.id);
   renderDemoCode(code, demo.source);
   requestAnimationFrame(syncHomeCodeHeight);
 };
