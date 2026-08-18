@@ -1,0 +1,66 @@
+import { Rapid, Color, CustomGlShader, TextureWrapMode } from "rapid-render";
+
+const canvas = document.querySelector("#game");
+const rapid = new Rapid({ canvas });
+const toycar = await rapid.texture.load("./image/toycar.png");
+
+const noiseCanvas = document.createElement("canvas");
+noiseCanvas.width = 64;
+noiseCanvas.height = 64;
+const ctx = noiseCanvas.getContext("2d");
+const imageData = ctx.createImageData(64, 64);
+for (let i = 0; i < imageData.data.length; i += 4) {
+  const v = Math.random() * 255;
+  imageData.data[i + 0] = v;
+  imageData.data[i + 1] = v;
+  imageData.data[i + 2] = v;
+  imageData.data[i + 3] = 255;
+}
+ctx.putImageData(imageData, 0, 0);
+
+const noise = rapid.texture.create(noiseCanvas, {
+  wrap: TextureWrapMode.REPEAT,
+});
+
+const vs = `
+void vertex(inout vec4 position, vec2 uv) {
+}
+`;
+
+const fs = `
+uniform sampler2D uNoise;
+uniform float uTime;
+
+void fragment(inout vec4 color) {
+  vec2 localUV = (vRegion - vUVRect.xy) / (vUVRect.zw - vUVRect.xy);
+  vec2 noiseUV = localUV * 8.0 + vec2(uTime * 0.08, 0.0);
+  float n = texture(uNoise, noiseUV).r;
+
+  color.rgb *= 0.7 + n * 0.6;
+}
+`;
+
+const shader = new CustomGlShader(rapid, vs, fs, 1, {
+  uTime: 0,
+});
+
+shader.setUniforms({
+  uNoise: noise.glTexture,
+});
+
+function frame(time) {
+  shader.setUniforms({ uTime: time / 1000 });
+
+  rapid.clear();
+  rapid.drawSprite({
+    texture: toycar,
+    shader,
+    x: 160,
+    y: 100,
+  });
+  rapid.flush();
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);

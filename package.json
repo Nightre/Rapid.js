@@ -1,7 +1,7 @@
 {
   "name": "rapid-render",
-  "private": true,
-  "version": "0.1.4",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
   "files": [
     "dist",

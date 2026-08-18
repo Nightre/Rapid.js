@@ -1,0 +1,14 @@
+import { Rapid, Color } from "rapid-render";
+
+const canvas = document.querySelector("#game");
+const rapid = new Rapid({ canvas });
+
+const toycar = await rapid.texture.load("./image/toycar.png");
+
+rapid.clear();
+rapid.drawSprite({
+  texture: toycar,
+  x: 160,
+  y: 100,
+});
+rapid.flush();

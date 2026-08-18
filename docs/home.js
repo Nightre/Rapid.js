@@ -26,7 +26,7 @@ const chooseDemo = (id) => {
   const demo = demos[id] ?? demos.toycar;
   cleanupDemo();
   cleanupDemo = mountDemo(canvas, demo.id);
-  renderDemoCode(code, demo.source);
+  renderDemoCode(code, demo.id);
   requestAnimationFrame(syncHomeCodeHeight);
 };
 

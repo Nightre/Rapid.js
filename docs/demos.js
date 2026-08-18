@@ -1,204 +1,82 @@
 import { highlightCodeBlock } from "./highlight.js";
 import { Rapid, Color, CustomGlShader, TextureWrapMode } from "../src/index.ts";
 
-const toycarSource = `import { Rapid, Color } from "rapid-render";
-
-const canvas = document.querySelector("#game");
-const rapid = new Rapid({ canvas });
-
-const toycar = await rapid.texture.load("./image/toycar.png");
-
-rapid.clear();
-rapid.drawSprite({
-  texture: toycar,
-  x: 160,
-  y: 100,
-});
-rapid.flush();`;
-
-const pulseShaderSource = `import { Rapid, Color, CustomGlShader } from "rapid-render";
-
-const canvas = document.querySelector("#game");
-const rapid = new Rapid({ canvas });
-const toycar = await rapid.texture.load("./image/toycar.png");
-
-const vs = \`
-void vertex(inout vec4 position, vec2 uv) {
-}
-\`;
-
-const fs = \`
-uniform float uTime;
-
-void fragment(inout vec4 color) {
-  float pulse = 0.72 + 0.28 * sin(uTime * 4.0);
-  color.rgb *= vec3(1.0, pulse, pulse);
-}
-\`;
-
-const shader = new CustomGlShader(rapid, vs, fs, 0, {
-  uTime: 0,
-});
-
-function frame(time) {
-  shader.setUniforms({ uTime: time / 1000 });
-
-  rapid.clear();
-  rapid.drawSprite({
-    texture: toycar,
-    shader,
-    x: 160,
-    y: 100,
-  });
-  rapid.flush();
-
-  requestAnimationFrame(frame);
-}
-
-requestAnimationFrame(frame);`;
-
-const outlineShaderSource = `import { Rapid, Color, CustomGlShader } from "rapid-render";
-
-const canvas = document.querySelector("#game");
-const rapid = new Rapid({ canvas });
-const toycar = await rapid.texture.load("./image/toycar.png");
-
-const vs = \`
-void vertex(inout vec4 position, vec2 uv) {
-}
-\`;
-
-const fs = \`
-uniform vec2 uTexel;
-uniform vec4 uOutlineColor;
-
-void fragment(inout vec4 color) {
-  float around = 0.0;
-  around = max(around, sampleClampTexture(vRegion + vec2( uTexel.x, 0.0)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(-uTexel.x, 0.0)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(0.0,  uTexel.y)).a);
-  around = max(around, sampleClampTexture(vRegion + vec2(0.0, -uTexel.y)).a);
-
-  if (color.a == 0.0 && around > 0.0) {
-    color = uOutlineColor;
-  }
-}
-\`;
-
-const shader = new CustomGlShader(rapid, vs, fs, 0, {
-  uTexel: [1 / toycar.base.width, 1 / toycar.base.height],
-  uOutlineColor: [1, 0.88, 0.08, 1],
-}).setPadding(2);
-
-rapid.clear();
-rapid.drawSprite({
-  texture: toycar,
-  shader,
-  x: 160,
-  y: 100,
-});
-rapid.flush();`;
-
-const noiseShaderSource = `import { Rapid, Color, CustomGlShader, TextureWrapMode } from "rapid-render";
-
-const canvas = document.querySelector("#game");
-const rapid = new Rapid({ canvas });
-const toycar = await rapid.texture.load("./image/toycar.png");
-
-const noiseCanvas = document.createElement("canvas");
-noiseCanvas.width = 64;
-noiseCanvas.height = 64;
-const ctx = noiseCanvas.getContext("2d");
-const imageData = ctx.createImageData(64, 64);
-for (let i = 0; i < imageData.data.length; i += 4) {
-  const v = Math.random() * 255;
-  imageData.data[i + 0] = v;
-  imageData.data[i + 1] = v;
-  imageData.data[i + 2] = v;
-  imageData.data[i + 3] = 255;
-}
-ctx.putImageData(imageData, 0, 0);
-
-const noise = rapid.texture.create(noiseCanvas, {
-  wrap: TextureWrapMode.REPEAT,
-});
-
-const vs = \`
-void vertex(inout vec4 position, vec2 uv) {
-}
-\`;
-
-const fs = \`
-uniform sampler2D uNoise;
-uniform float uTime;
-
-void fragment(inout vec4 color) {
-  vec2 localUV = (vRegion - vUVRect.xy) / (vUVRect.zw - vUVRect.xy);
-  vec2 noiseUV = localUV * 8.0 + vec2(uTime * 0.08, 0.0);
-  float n = texture(uNoise, noiseUV).r;
-
-  color.rgb *= 0.7 + n * 0.6;
-}
-\`;
-
-const shader = new CustomGlShader(rapid, vs, fs, 1, {
-  uTime: 0,
-});
-
-shader.setUniforms({
-  uNoise: noise.glTexture,
-});
-
-function frame(time) {
-  shader.setUniforms({ uTime: time / 1000 });
-
-  rapid.clear();
-  rapid.drawSprite({
-    texture: toycar,
-    shader,
-    x: 160,
-    y: 100,
-  });
-  rapid.flush();
-
-  requestAnimationFrame(frame);
-}
-
-requestAnimationFrame(frame);`;
-
 export const demoOrder = ["toycar", "pulse-shader", "outline-shader", "noise-shader"];
 
-export const demos = {
+const demoConfig = {
   toycar: {
     id: "toycar",
     title: "Toy Car",
-    source: toycarSource,
+    file: "./demos/toycar.txt",
   },
   "pulse-shader": {
     id: "pulse-shader",
     title: "Pulse Shader",
-    source: pulseShaderSource,
+    file: "./demos/pulse-shader.txt",
   },
   "outline-shader": {
     id: "outline-shader",
     title: "Outline Shader",
-    source: outlineShaderSource,
+    file: "./demos/outline-shader.txt",
   },
   "noise-shader": {
     id: "noise-shader",
     title: "Extra Texture Shader",
-    source: noiseShaderSource,
+    file: "./demos/noise-shader.txt",
   },
 };
 
-export const renderDemoCode = (target, source) => {
+const sourceCache = {};
+
+const loadDemoSource = async (demoId) => {
+  if (sourceCache[demoId]) return sourceCache[demoId];
+
+  const config = demoConfig[demoId];
+  if (!config) throw new Error(`Demo ${demoId} not found`);
+
+  try {
+    const demoUrl = new URL(config.file, import.meta.url).href;
+    const response = await fetch(demoUrl);
+    if (!response.ok) throw new Error(`Failed to load ${config.file}`);
+    const source = await response.text();
+    sourceCache[demoId] = source;
+    return source;
+  } catch (error) {
+    console.error(`Failed to load demo source for ${demoId}:`, error);
+    throw error;
+  }
+};
+
+export const demos = {
+  get toycar() {
+    return { ...demoConfig.toycar };
+  },
+  get "pulse-shader"() {
+    return { ...demoConfig["pulse-shader"] };
+  },
+  get "outline-shader"() {
+    return { ...demoConfig["outline-shader"] };
+  },
+  get "noise-shader"() {
+    return { ...demoConfig["noise-shader"] };
+  },
+};
+
+export const getDemoSource = loadDemoSource;
+
+export const renderDemoCode = async (target, demoId) => {
   if (!target) return;
-  // highlight.js tags an element with data-highlighted="yes" and refuses to
-  // re-highlight it, so clear that flag before re-rendering a different demo.
-  delete target.dataset.highlighted;
-  target.textContent = source;
-  target.className = "language-typescript";
-  highlightCodeBlock(target);
+  try {
+    const source = await loadDemoSource(demoId);
+    // highlight.js tags an element with data-highlighted="yes" and refuses to
+    // re-highlight it, so clear that flag before re-rendering a different demo.
+    delete target.dataset.highlighted;
+    target.textContent = source;
+    target.className = "language-typescript";
+    highlightCodeBlock(target);
+  } catch (error) {
+    target.textContent = `Failed to load demo source: ${error.message}`;
+  }
 };
 
 const createNoiseTexture = (rapid) => {

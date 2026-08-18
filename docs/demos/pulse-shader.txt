@@ -1,0 +1,40 @@
+import { Rapid, Color, CustomGlShader } from "rapid-render";
+
+const canvas = document.querySelector("#game");
+const rapid = new Rapid({ canvas });
+const toycar = await rapid.texture.load("./image/toycar.png");
+
+const vs = `
+void vertex(inout vec4 position, vec2 uv) {
+}
+`;
+
+const fs = `
+uniform float uTime;
+
+void fragment(inout vec4 color) {
+  float pulse = 0.72 + 0.28 * sin(uTime * 4.0);
+  color.rgb *= vec3(1.0, pulse, pulse);
+}
+`;
+
+const shader = new CustomGlShader(rapid, vs, fs, 0, {
+  uTime: 0,
+});
+
+function frame(time) {
+  shader.setUniforms({ uTime: time / 1000 });
+
+  rapid.clear();
+  rapid.drawSprite({
+    texture: toycar,
+    shader,
+    x: 160,
+    y: 100,
+  });
+  rapid.flush();
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
