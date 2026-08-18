@@ -48,23 +48,15 @@ npm install rapid-render
 import { Rapid, Color } from "rapid-render";
 
 const canvas = document.querySelector("canvas")!;
-const rapid = new Rapid({
-  canvas,
-  backgroundColor: new Color(247, 253, 255),
+const rapid = new Rapid({canvas});
+
+rapid.clear();
+rapid.drawRect({
+   x: 40,
+   y: 40,
+   width: 160,
+   height: 96,
+   color: new Color(84, 184, 234),
 });
-
-function frame() {
-  rapid.clear();
-  rapid.drawRect({
-    x: 40,
-    y: 40,
-    width: 160,
-    height: 96,
-    color: new Color(84, 184, 234),
-  });
-  rapid.flush();
-  requestAnimationFrame(frame);
-}
-
-frame();
+rapid.flush();
 ```
