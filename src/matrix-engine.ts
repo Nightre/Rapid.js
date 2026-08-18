@@ -309,12 +309,55 @@ export class MatrixStore {
     /**
      * Converts the matrix at the given index to a CSS matrix string.
      * @param index - The index of the matrix.
+     * @param scaleX - Extra scale applied to the a/c/tx components (e.g. to convert logic pixels to CSS pixels).
+     * @param scaleY - Extra scale applied to the b/d/ty components.
      * @returns A CSS matrix string.
      */
-    toCSSMatrix(index: number): string {
+    toCSSMatrix(index: number, scaleX: number = 1, scaleY: number = 1): string {
         const o = index * NUM_ELEMENTS;
         const d = this.data;
-        return `matrix(${d[o]}, ${d[o + 1]}, ${d[o + 2]}, ${d[o + 3]}, ${d[o + 4]}, ${d[o + 5]})`;
+        return `matrix(${d[o] * scaleX}, ${d[o + 1] * scaleY}, ${d[o + 2] * scaleX}, ${d[o + 3] * scaleY}, ${d[o + 4] * scaleX}, ${d[o + 5] * scaleY})`;
+    }
+
+    /**
+     * Retrieves a copy of the 6 elements [a, b, c, d, tx, ty] for the matrix at the specified index.
+     * Note: This uses `slice` to return a new Float32Array instance, ensuring the original data remains safely isolated.
+     * 
+     * @param index - The index of the matrix.
+     * @returns A new Float32Array containing the 6 elements of the matrix.
+     */
+    getMatrix(index: number): Float32Array {
+        const o = index * NUM_ELEMENTS;
+        return this.data.slice(o, o + NUM_ELEMENTS);
+    }
+
+    /**
+     * Retrieves a direct reference (view) to the 6 elements [a, b, c, d, tx, ty] for the matrix at the specified index.
+     * Note: This uses `subarray`. Any modifications made to the returned array will directly affect the underlying MatrixStore data.
+     * 
+     * @param index - The index of the matrix.
+     * @returns A Float32Array view pointing directly to the matrix's data in memory.
+     */
+    getMatrixRef(index: number): Float32Array {
+        const o = index * NUM_ELEMENTS;
+        return this.data.subarray(o, o + NUM_ELEMENTS);
+    }
+
+    /**
+     * Overwrites the matrix at the specified index with the provided 6 elements [a, b, c, d, tx, ty].
+     * 
+     * @param index - The index of the matrix to modify.
+     * @param f - An array (Float32Array or standard number array) containing the 6 new elements.
+     */
+    setMatrix(index: number, f: Float32Array | number[]): void {
+        const o = index * NUM_ELEMENTS;
+        const d = this.data;
+        d[o] = f[0];
+        d[o + 1] = f[1];
+        d[o + 2] = f[2];
+        d[o + 3] = f[3];
+        d[o + 4] = f[4];
+        d[o + 5] = f[5];
     }
 }
 
@@ -577,6 +620,10 @@ export class MatrixStack {
         data[o + 4] = f[4]; data[o + 5] = f[5];
     }
 
+    transformPoint(x: number, y: number) {
+        return this.matrix.transformPoint(this.curLocalM, x, y);
+    }
+
     /**
      * Applies a transform options object to the current matrix state.
      * Optionally saves the matrix first (saveTransform defaults to true).
@@ -599,7 +646,7 @@ export class MatrixStack {
             isScaleNumber ? scale : scale.x,
             isScaleNumber ? scale : scale.y
         );
- 
+
         let offsetX = transform.offsetX ?? 0;
         let offsetY = transform.offsetY ?? 0;
 

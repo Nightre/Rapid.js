@@ -8,13 +8,14 @@ const chapters = [
   { id: "sprite", title: "Sprite", file: "./markdown/sprite.md", icon: "./image/sprite.png" },
   { id: "transformations", title: "Transformations", file: "./markdown/transformations.md", icon: "./image/transformation.png" },
   { id: "screen-position", title: "Screen Position", file: "./markdown/screen-position.md", icon: "./image/screen-position.png" },
+  { id: "shaders", title: "Custom Shaders", file: "./markdown/shaders.md", icon: "./image/shader.png" },
+
   { id: "custom-geometry", title: "Custom Geometry", file: "./markdown/custom-geometry.md", icon: "./image/polygon.png" },
   { id: "lines", title: "Lines", file: "./markdown/line.md", icon: "./image/line.png" },
   { id: "text", title: "Text", file: "./markdown/text.md", icon: "./image/text.png" },
   { id: "render-textures", title: "Render Textures", file: "./markdown/render-textures.md", icon: "./image/render-texture.png" },
   { id: "masks", title: "Masks & Clipping", file: "./markdown/masks.md", icon: "./image/mask.png" },
   { id: "particles", title: "Particles", file: "./markdown/particles.md", icon: "./image/particle.png" },
-  { id: "shaders", title: "Custom Shaders", file: "./markdown/shaders.md", icon: "./image/shader.png" },
   { id: "advanced", title: "Advanced Render", file: "./markdown/advanced.md", icon: "./image/advanced.png" },
 ];
 

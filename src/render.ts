@@ -903,7 +903,27 @@ export class Rapid {
         return p.mul(this.dpr)
     }
 
+    cssToLogic(p: Vec2){
+        const devicePixel = this.cssToDevicePixel(p);
+        const logicPoint = this.physicsToLogic(devicePixel);
+        return logicPoint
+    }
+
     devicePixelToCss(p: Vec2) {
         return p.divide(this.dpr)
+    }
+
+    /**
+     * Exports a world matrix as a CSS `matrix(...)` string, ready to assign
+     * directly to a DOM element's `style.transform`.
+     * Unlike `matrixStack.toCSSMatrix()`, this bakes in the logic-pixel → CSS-pixel
+     * scale (accounting for dpr and a custom `logicWidth`/`logicHeight`), so the
+     * result lines up with the canvas without any extra `scale(...)` on your end.
+     * @param index - Matrix index to export. Defaults to the current world matrix.
+     */
+    toCSSMatrix(index?: number): string {
+        const scaleX = (this.physicsWidth / this.dpr) / this.logicWidth;
+        const scaleY = (this.physicsHeight / this.dpr) / this.logicHeight;
+        return this.matrix.toCSSMatrix(index ?? this.matrixStack.curWorldM, scaleX, scaleY);
     }
 }
