@@ -1,6 +1,6 @@
-# Sprite
+# 精灵
 
-Sprite 就是把一个 Texture 画到画布上。接口是 `rapid.drawSprite(options)`。
+精灵就是把一个 Texture 画到画布上。接口是 `rapid.drawSprite(options)`。
 
 ## 基础例子
 

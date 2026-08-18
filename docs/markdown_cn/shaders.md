@@ -1,4 +1,4 @@
-# Custom Shaders
+# 自定义 Shaders
 
 Rapid.js 的自定义 shader 不是整段替换内置 shader，而是把你的代码插进 Sprite、AtlasSprite、Graphic 这些 Region 的基础 shader 里。
 

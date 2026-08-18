@@ -23,6 +23,12 @@ export default defineConfig({
     outDir: './dist',
     emptyOutDir: true,
     target: 'esnext',
+    rollupOptions: {
+      input: {
+        main: fromRoot('./docs/index.html'),
+        docs: fromRoot('./docs/docs.html'),
+      },
+    },
   },
   plugins: [
     {

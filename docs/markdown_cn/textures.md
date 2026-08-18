@@ -1,4 +1,4 @@
-# Textures
+# 纹理
 
 Texture 是 Rapid.js 里最常用的资源类型。图片、Canvas、Video、ImageBitmap、离屏 Canvas 都可以变成 Texture，然后交给 Rapid.js 绘制使用。
 

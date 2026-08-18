@@ -1,4 +1,4 @@
-# Text
+# 文本绘制
 
 Rapid.js 通过 `TextTexture` 渲染文字。它在内部用一张 HTML Canvas 把文字画出来，再上传成纹理，所以你可以像画普通精灵一样用 `drawSprite` 把文字画到画面上。
 

@@ -1,4 +1,4 @@
-# Transformations
+# 变换
 
 Rapid.js 的 2D 变换由 `MatrixStack` 驱动。平移、旋转、缩放、锚点和偏移都可以直接写在绘制 options 里；需要更细控制时，也可以直接操作 `matrixStack` 或底层 `MatrixStore`。
 

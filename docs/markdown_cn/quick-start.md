@@ -1,6 +1,4 @@
-# Quick Start
-
-快速开始
+# 快速开始
 
 这个示例只做一件事：加载 `toycar.png`，然后把它渲染到 canvas 上。
 

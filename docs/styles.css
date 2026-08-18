@@ -325,7 +325,7 @@ h1 {
 }
 
 .hero-demo-stack {
-  max-width: 32rem;
+  max-width: 480px;
 }
 
 .demo-topline {
@@ -358,14 +358,35 @@ h1 {
 .hero-code-card {
   margin-top: 1rem;
   padding: 1rem;
-  max-height: var(--home-code-card-height, 24rem);
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero-code-card pre {
   width: 100%;
-  max-height: calc(var(--home-code-card-height, 24rem) - 2rem);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
+  font-size: 0.7rem;
+}
+
+@media (min-width: 992px) {
+  .hero-code-card {
+    position: relative;
+    padding: 0;
+  }
+
+  .hero-code-card pre {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    flex: none;
+  }
 }
 
 .users-section {

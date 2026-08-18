@@ -1,4 +1,4 @@
-# Render Textures
+# 渲染纹理
 
 RenderTexture 是一张可以被绘制到的纹理（底层是 WebGL 的 FramebufferObject）。你可以先把一批内容画进 RenderTexture，再把它当成普通纹理画到屏幕上。常用于离屏合成、缓存复杂画面、做后期特效等。
 
