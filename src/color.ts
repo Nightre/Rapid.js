@@ -273,10 +273,10 @@ export class Color {
      */
     subtract(color: Color) {
         return new Color(
-            Math.max(0, this.r - color.r), // Clamp to 0
-            Math.max(0, this.g - color.g), // Clamp to 0
-            Math.max(0, this.b - color.b), // Clamp to 0
-            Math.max(0, this.a - color.a)  // Clamp to 0
+            this.r - color.r,
+            this.g - color.g,
+            this.b - color.b,
+            this.a - color.a
         );
     }
     divide(color: Color | number) {

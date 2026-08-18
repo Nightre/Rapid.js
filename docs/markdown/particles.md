@@ -72,13 +72,11 @@ Animatable properties:
 - `rotation`: Rotation angle in radians, which also dictates `speed` direction.
 - `scale`: Uniform scale.
 - `color`: Color tinting (`Color`, 0~255 components).
-- `velocity`: Additional velocity vector (pixels/sec).
-- `acceleration`: Acceleration vector accumulated onto `velocity` every second (pixels/sec²).
+- `velocity`: Additional velocity vector (pixels/sec). Use `velocity.delta` to simulate constant acceleration (e.g. gravity).
 
 ```ts
 animation: {
-  velocity: { start: new Vec2(0, -60) },
-  acceleration: new Vec2(0, 200),   // Gravity
+  velocity: { start: new Vec2(0, -60), delta: new Vec2(0, 200) },   // Initial upward velocity with gravity
   color: {
     start: new Color(255, 255, 255),
     end: new Color(255, 255, 255, 0), // Fade out

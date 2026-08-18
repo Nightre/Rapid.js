@@ -41,7 +41,6 @@ interface ParticleRuntimeData {
     scale: ParticleAttributeData<number>;
     color: ParticleAttributeData<Color>;
     velocity: ParticleAttributeData<Vec2>;
-    acceleration: ParticleAttributeData<Vec2>;
 }
 
 export enum ParticleShape {
@@ -59,10 +58,8 @@ export interface IParticleAnimation {
     scale?: ParticleAttribute<number> | number;
     /** Tint color (0-255 components, uses engine Color class). */
     color?: ParticleAttribute<Color> | Color;
-    /** Additive velocity vector (pixels/sec). */
+    /** Additive velocity vector (pixels/sec). Use `velocity.delta` to simulate constant acceleration (e.g. gravity). */
     velocity?: ParticleAttribute<Vec2> | Vec2;
-    /** Acceleration vector added to velocity each second (pixels/sec²). */
-    acceleration?: ParticleAttribute<Vec2> | Vec2;
 }
 
 export interface IParticleOptions {
@@ -128,12 +125,11 @@ export class Particle {
         this.maxLife = Random.scalarOrRange(options.life, 1);
 
         this.datas = {
-            speed:        this.processAttribute(options.animation.speed,        0),
-            rotation:     this.processAttribute(options.animation.rotation,     0),
-            scale:        this.processAttribute(options.animation.scale,        1),
-            color:        this.processAttribute(options.animation.color,        Color.White.clone()),
-            velocity:     this.processAttribute(options.animation.velocity,     Vec2.ZERO),
-            acceleration: this.processAttribute(options.animation.acceleration, Vec2.ZERO),
+            speed: this.processAttribute(options.animation.speed, 0),
+            rotation: this.processAttribute(options.animation.rotation, 0),
+            scale: this.processAttribute(options.animation.scale, 1),
+            color: this.processAttribute(options.animation.color, Color.White.clone()),
+            velocity: this.processAttribute(options.animation.velocity, Vec2.ZERO),
         };
 
         this.position = Vec2.ZERO;
@@ -150,12 +146,12 @@ export class Particle {
         if (isPlainObject(attribute)) {
             const attr = attribute as ParticleAttribute<T>;
             const start = Random.scalarOrRange(attr.start, defaultData) as T;
-            const end   = attr.end === undefined
+            const end = attr.end === undefined
                 ? start
                 : Random.scalarOrRange(attr.end, defaultData) as T;
             return {
-                delta:   attr.delta ?? this.getDelta(start, end, this.maxLife),
-                value:   start,
+                delta: attr.delta ?? this.getDelta(start, end, this.maxLife),
+                value: start,
                 damping: attr.damping,
             };
         } else {
@@ -199,13 +195,8 @@ export class Particle {
         this.updateNumberAttribute(datas.scale, deltaTime);
         this.updateColorAttribute(datas.color, deltaTime);
         this.updateVec2Attribute(datas.velocity, deltaTime);
-        this.updateVec2Attribute(datas.acceleration, deltaTime);
 
-        // acceleration → velocity → position
-        datas.velocity.value = datas.velocity.value.add(
-            datas.acceleration.value.multiply(deltaTime)
-        );
-        const direction   = Vec2.fromAngle(datas.rotation.value);
+        const direction = Vec2.fromAngle(datas.rotation.value);
         const speedOffset = direction.multiply(datas.speed.value * deltaTime);
         this.position = this.position
             .add(speedOffset)
@@ -240,9 +231,9 @@ export class Particle {
      * The emitter is responsible for calling save/restore around a batch of particles.
      */
     render() {
-        const ms    = this.rapid.matrixStack;
+        const ms = this.rapid.matrixStack;
         const scale = this.datas.scale.value;
-        const rot   = this.datas.rotation.value;
+        const rot = this.datas.rotation.value;
         const color = this.datas.color.value;
 
         ms.save();
@@ -265,14 +256,14 @@ export class Particle {
     private initializePosition() {
         switch (this.options.emitShape) {
             case ParticleShape.CIRCLE: {
-                const angle  = Math.random() * Math.PI * 2;
+                const angle = Math.random() * Math.PI * 2;
                 const radius = (this.options.emitRadius ?? 0) * Math.sqrt(Math.random());
                 this.position = new Vec2(Math.cos(angle) * radius, Math.sin(angle) * radius);
                 break;
             }
             case ParticleShape.RECT: {
                 this.position = new Vec2(
-                    (Math.random() - 0.5) * (this.options.emitRect?.width  ?? 0),
+                    (Math.random() - 0.5) * (this.options.emitRect?.width ?? 0),
                     (Math.random() - 0.5) * (this.options.emitRect?.height ?? 0),
                 );
                 break;
@@ -327,10 +318,10 @@ export class ParticleEmitter {
      * @param options - Emitter configuration options
      */
     constructor(rapid: Rapid, options: IParticleOptions) {
-        this.rapid    = rapid;
-        this.options  = options;
-        this.emitRate = options.emitRate  !== undefined ? options.emitRate  : DEFAULT_EMIT_RATE;
-        this.emitTime = options.emitTime  !== undefined ? options.emitTime  : DEFAULT_EMIT_TIME;
+        this.rapid = rapid;
+        this.options = options;
+        this.emitRate = options.emitRate !== undefined ? options.emitRate : DEFAULT_EMIT_RATE;
+        this.emitTime = options.emitTime !== undefined ? options.emitTime : DEFAULT_EMIT_TIME;
         this.localSpace = options.localSpace !== undefined ? options.localSpace : DEFAULT_LOCAL_SPACE;
         this.position = options.position ?? Vec2.ZERO;
     }
@@ -360,7 +351,7 @@ export class ParticleEmitter {
 
     /** Starts continuous particle emission. */
     start() {
-        this.emitting       = true;
+        this.emitting = true;
         this.emitTimeCounter = 0;
     }
 
@@ -371,7 +362,7 @@ export class ParticleEmitter {
 
     /** Removes all particles and resets timers. */
     clear() {
-        this.particles       = [];
+        this.particles = [];
         this.emitTimeCounter = 0;
     }
 
@@ -380,10 +371,10 @@ export class ParticleEmitter {
      * Respects `maxParticles` if set.
      */
     emit(count: number) {
-        const max    = this.options.maxParticles ?? Infinity;
+        const max = this.options.maxParticles ?? Infinity;
         const actual = Math.min(count, max - this.particles.length);
         for (let i = 0; i < actual; i++) {
-            this.particles.push(new Particle(this.rapid, { ...this.options }));
+            this.particles.push(new Particle(this.rapid, { ...this.options, position: this.position }));
         }
     }
 

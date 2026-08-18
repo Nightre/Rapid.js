@@ -72,13 +72,11 @@ requestAnimationFrame(frame);
 - `rotation`  -  旋转角度（弧度），同时决定 `speed` 的方向。
 - `scale`  -  统一缩放。
 - `color`  -  染色（`Color`，0~255 分量）。
-- `velocity`  -  附加速度向量（像素/秒）。
-- `acceleration`  -  加速度向量，每秒累加到 `velocity`（像素/秒²）。
+- `velocity`  -  附加速度向量（像素/秒）。用 `velocity.delta` 可以模拟恒定加速度（比如重力）。
 
 ```ts
 animation: {
-  velocity: { start: new Vec2(0, -60) },
-  acceleration: new Vec2(0, 200),   // 重力
+  velocity: { start: new Vec2(0, -60), delta: new Vec2(0, 200) },   // 初速向上，受重力影响
   color: {
     start: new Color(255, 255, 255),
     end: new Color(255, 255, 255, 0), // 淡出
