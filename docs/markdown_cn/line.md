@@ -43,7 +43,7 @@ rapid.drawLine({
 
 ## 圆头线帽
 
-`roundCap: true` 会在折线的起点和终点各加一个半圆，让端点变圆润。闭合路径没有端点，所以这个选项对 `closed` 无效。
+`roundCap: true` 会在折线的起点和终点各加一个半圆，让端点变圆润。闭合路径没有端点，所以这个选项在 `closed: true` 时无效。
 
 ```ts
 rapid.drawLine({
@@ -62,9 +62,10 @@ rapid.drawLine({
 - `LineTextureMode.REPEAT`：按线段长度重复平铺纹理，适合虚线、锁链、轨迹这类素材。
 
 ```ts
-import { LineTextureMode } from "rapid-render";
+import { LineTextureMode, Vec2 } from "rapid-render";
 
 const dash = await rapid.texture.load("./image/dash.png");
+const path = Vec2.FromArray([[20, 20], [120, 80], [220, 30]]);
 
 rapid.drawLine({
   points: path,

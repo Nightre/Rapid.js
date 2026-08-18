@@ -38,7 +38,7 @@ rapid.withMask(
 
 ## 用图片的 alpha 当遮罩
 
-`drawSprite` 在写遮罩阶段会被跳过，请使用 `drawMaskImage` 会用一张纹理的 alpha 通道作为遮罩形状，适合不规则的镂空图案。
+`drawSprite` 在写遮罩阶段会被跳过，请使用 `drawMaskImage`，它会用一张纹理的 alpha 通道作为遮罩形状，适合不规则的镂空图案。
 
 ```ts
 rapid.withMask(

@@ -30,13 +30,22 @@ const emitter = new ParticleEmitter(rapid, {
 emitter.position = new Vec2(160, 120);
 emitter.start();
 
-function frame(dt: number) {
+let lastTime = performance.now();
+
+function frame(time: number) {
+  const dt = (time - lastTime) / 1000;
+  lastTime = time;
+
   emitter.update(dt);
 
   rapid.clear();
   emitter.render();
   rapid.flush();
+  
+  requestAnimationFrame(frame);
 }
+
+requestAnimationFrame(frame);
 ```
 
 `update` 的参数是`距上一帧的秒数`（delta time），不是毫秒，注意换算。

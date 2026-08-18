@@ -56,7 +56,7 @@ rapid.drawSprite({
 
 ## Padding
 
-`padding` 会让 Sprite 的绘制范围向外扩一点，单位是像素。普通图片一般不需要传；滤镜或自定义 shader 采样到边缘时可以用。比如制作 `Outline Shader` 时
+`padding` 会让 Sprite 的绘制范围向外扩一点，单位是像素。普通图片一般不需要传；滤镜或自定义 shader 采样到边缘时可以用。比如制作 `Outline Shader` 时。
 
 ```ts
 rapid.drawSprite({

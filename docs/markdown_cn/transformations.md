@@ -27,7 +27,7 @@ rapid.drawSprite({
     offsetY: 0,
     // offset: new Vec2(0, 0),
 
-    saveTransform: true, // 是否自动调用 matrixstack 创建一个新的状态来渲染
+    saveTransform: true, // 是否自动调用 MatrixStack 创建一个新的状态来渲染
     afterSave: () => {
         // 在状态入栈后、应用当前变换前触发的回调
         // 可以再次绘制子精灵，继承父的变换
@@ -157,7 +157,7 @@ ms.restore();
 
 ## updateMatrix: 只改一个节点，整棵子树跟着动
 
-如果你直接改了某个节点的 local 矩阵，它底下的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(step)`，就可以从这个节点开始，把整棵子树的 world 矩阵更新一遍。
+如果你直接改了某个节点的 local 矩阵，它底下的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把整棵子树的 world 矩阵更新一遍。
 
 ```ts
 const ms = rapid.matrixStack;

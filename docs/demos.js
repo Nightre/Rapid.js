@@ -27,6 +27,7 @@ export const demoOrder = [
   "image-animation",
   "sprite-sheet",
   "transformations",
+  "matrix-tree",
   "update-matrix",
   "custom-matrix",
   "screen-coordinates",
@@ -51,6 +52,7 @@ const demoTitles = {
   "image-animation": "Image Animation",
   "sprite-sheet": "Sprite Sheet",
   transformations: "Transformations",
+  "matrix-tree": "Matrix Tree",
   "update-matrix": "Update Matrix",
   "custom-matrix": "Custom Matrix",
   "screen-coordinates": "Screen Coordinates",
@@ -149,9 +151,9 @@ export const mountDemo = (id) => {
       const step = (now) => {
         if (stopped) return;
         // Clamped so a backgrounded tab does not resume with a huge delta.
-        const delta = Math.min((now - previous) / 1000, 0.05);
+        const delta = Math.max(0, Math.min((now - previous) / 1000, 0.05));
         previous = now;
-        callback((now - start) / 1000, delta);
+        callback(Math.max(0, (now - start) / 1000), delta);
         frameId = requestAnimationFrame(step);
       };
 

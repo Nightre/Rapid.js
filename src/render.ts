@@ -30,6 +30,11 @@ export interface IAppOptions {
     /** The HTML canvas element to render onto. */
     canvas: HTMLCanvasElement;
 
+    /** Alias ​​for logicWidth */
+    width?: number,
+    /** Alias ​​for logicHeight */
+    height?: number,
+
     /** The logical width of the application (CSS pixels). */
     logicWidth?: number;
     /** The logical height of the application (CSS pixels). */
@@ -216,8 +221,8 @@ export class Rapid {
         this.physicsWidth = options.physicsWidth || Math.round(cssW * this.dpr);
         this.physicsHeight = options.physicsHeight || Math.round(cssH * this.dpr);
 
-        this.logicWidth = options.logicWidth || (this.physicsWidth / this.dpr);
-        this.logicHeight = options.logicHeight || (this.physicsHeight / this.dpr);
+        this.logicWidth = options.logicWidth || options.width || (this.physicsWidth / this.dpr);
+        this.logicHeight = options.logicHeight || options.height || (this.physicsHeight / this.dpr);
 
         this.resize(this.logicWidth, this.logicHeight, this.physicsWidth, this.physicsHeight);
 

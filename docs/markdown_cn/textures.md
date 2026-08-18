@@ -32,7 +32,7 @@ const toycar = await rapid.texture.load("./image/toycar.png");
 
 ## 从已有图像创建
 
-如果你已经有了 `HTMLImageElement`、`HTMLCanvasElement`、`HTMLVideoElement`、`ImageBitmap` 或 `OffscreenCanvas`，可以用 `rapid.texture.create(source)` 同步创建纹理。
+如果你已经有了 `HTMLImageElement`、`ImageBitmap` 或 `OffscreenCanvas`，可以用 `rapid.texture.create(source)` 同步创建纹理。
 
 ```ts
 const image = new Image();
@@ -95,7 +95,7 @@ const frames = sheet.splitGrid(32, 32);
 const frames = sheet.splitGrid(32, 32, 4, 2, 1);
 ```
 
-没有传 `cols` 和 `rows` 时，Rapid.js 会根据当前 Texture 的宽高自动向下取整。`gap` 会算进每个格子的步进距离里。
+没有传 `cols` 和 `rows` 时（若要使用 `gap` 可以在代码中传 `undefined` 占位），Rapid.js 会根据当前 Texture 的宽高自动向下取整。`gap` 会算进每个格子的步进距离里。
 
 ## 过滤与重复模式
 
@@ -145,9 +145,7 @@ function frame() {
 frame();
 ```
 
-如果新资源尺寸没变，内部会走更轻的 `texSubImage2D` 路径；尺寸变化时才会重新分配纹理存储。
-
-## 透明度
+## 预乘 Alpha
 
 `premultipliedAlpha` 控制上传纹理时是否使用预乘 alpha。默认情况下会跟随 `Rapid` 实例的 `premultipliedAlpha` 设置。
 
