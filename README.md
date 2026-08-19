@@ -36,6 +36,23 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. It hand
 - **A complete 2D toolkit**  
   Draw sprites, lines, masks, particles, render textures, text, and custom geometry from one compact WebGL renderer.
 
+
+## Benchmark
+
+Performance Comparison: Rapid vs. Other Renderers and Game Engines
+
+<p align="center">
+  <a href="https://nightre.github.io/Rapid.js/benchmark/">
+    <img src="./docs/benchmark/benchmark.png" alt="Benchmark Result" width="100%">
+  </a>
+</p>
+
+<p align="center">
+  🎮 <strong><a href="https://nightre.github.io/Rapid.js/benchmark/">Run Interactive Benchmark Live &rarr;</a></strong>
+</p>
+
+Tested on **NVIDIA GeForce RTX 4070 Laptop GPU** (Chrome / WebGL 2.0)
+
 ## Install
 
 ```bash
