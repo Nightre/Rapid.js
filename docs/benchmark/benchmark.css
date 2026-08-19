@@ -1,0 +1,131 @@
+.benchmark-main {
+  padding: 2.5rem 0 4rem;
+}
+
+.benchmark-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.benchmark-header h1 {
+  margin: 0 0 0.6rem;
+  font-size: clamp(3rem, 9vw, 5.5rem);
+}
+
+.benchmark-lead {
+  max-width: 46rem;
+  margin: 0;
+  color: #4e5f6b;
+  font-size: 1.08rem;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.benchmark-grid {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.9fr) minmax(22rem, 1.45fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.benchmark-panel {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--rapid-line);
+  border-radius: 8px;
+  box-shadow: 0 8px 0 rgba(84, 184, 234, 0.12);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.panel-head span {
+  min-width: 0;
+  color: #5a6877;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+#stage,
+#chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #f7fdff;
+  border: 2px solid var(--rapid-line);
+  border-radius: 8px;
+}
+
+#stage {
+  aspect-ratio: 16 / 9;
+}
+
+#chart {
+  aspect-ratio: 43 / 23;
+}
+
+.result-panel {
+  margin-top: 1.25rem;
+}
+
+.benchmark-table {
+  margin: 0;
+  color: var(--rapid-ink);
+  vertical-align: middle;
+}
+
+.benchmark-table th {
+  color: #385365;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.benchmark-table td {
+  min-width: 4.25rem;
+  font-weight: 800;
+}
+
+.renderer-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.renderer-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65);
+}
+
+.is-running {
+  color: #267fa9;
+}
+
+@media (max-width: 991.98px) {
+  .benchmark-header,
+  .benchmark-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .benchmark-header .btn {
+    justify-self: start;
+  }
+}

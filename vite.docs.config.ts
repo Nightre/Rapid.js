@@ -27,6 +27,7 @@ export default defineConfig({
       input: {
         main: fromRoot('./docs/index.html'),
         docs: fromRoot('./docs/docs.html'),
+        benchmark: fromRoot('./docs/benchmark/index.html'),
       },
     },
   },

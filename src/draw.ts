@@ -70,10 +70,10 @@ const withOptionsTransform = (
     height: number,
     draw: () => void,
 ) => {
-    if (!hasTransformOptions(options)) {
-        draw();
-        return;
-    }
+    // if (!hasTransformOptions(options)) {
+    //     draw();
+    //     return;
+    // }
 
     // matrixStack save in applyTransform
     rapid.matrixStack.applyTransform(options, width, height);

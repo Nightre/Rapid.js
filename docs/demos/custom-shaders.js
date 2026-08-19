@@ -45,7 +45,7 @@ void fragment(inout vec4 color) {
   // The trailing object declares the uniforms and their initial values.
   const shader = new CustomGlShader(rapid, vertexSource, fragmentSource, 0, {
     uTime: 0,
-    uWobble: 3,
+    uWobble: 10,
   });
 
   loop((time) => {
