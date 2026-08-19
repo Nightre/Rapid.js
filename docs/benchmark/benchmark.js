@@ -29,16 +29,14 @@ const PHASER4_URL = "https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.j
 const EXCALIBUR_URL = "https://esm.sh/excalibur";
 const KAPLAY_URL = "https://unpkg.com/kaplay@3001.0.19/dist/kaplay.mjs";
 const MELONJS_URL = "https://cdn.jsdelivr.net/npm/melonjs/+esm";
-const WARMUP_MS = 1000;
-const SAMPLE_MS = 1600;
+const WARMUP_MS = 2000;
+const SAMPLE_MS = 3000;
 
 const renderers = [
-
   { id: "rapid", name: "Rapid.js", color: "#54b8ea", maxCount: 400000, run: runRapid },
-  { id: "excalibur", name: "Excalibur", color: "#f2c14e", maxCount: 1000, run: runExcalibur },
 
+  { id: "excalibur", name: "Excalibur", color: "#f2c14e", maxCount: 400000, run: runExcalibur },
   { id: "kaplay", name: "KAPLAY", color: "#ef5da8", maxCount: 20000, run: runKaplay },
-
 
   { id: "pixijs", name: "PixiJS", color: "#5fc37a", maxCount: 400000, run: runPixi },
   { id: "phaser", name: "Phaser", color: "#ff5b5f", maxCount: 400000, run: runPhaser4 },
@@ -193,17 +191,32 @@ function updateSprites(sprites, delta) {
 
 function sampleLoop(draw) {
   return new Promise((resolve) => {
-    let previous = performance.now();
+    let warmupStart = 0;
     let sampleStart = 0;
+    let previous = 0;
     let frames = 0;
 
     const step = (now) => {
+      // 1. 在真正渲染的第一帧初始化所有时间（避免因引擎初始化卡顿吞噬预热时间）
+      if (!previous) {
+        previous = now;
+        warmupStart = now;
+      }
+
+      // 计算 delta 并绘制
       const delta = Math.min((now - previous) / 1000, 0.05);
       previous = now;
       draw(delta);
 
+      // 2. 预热阶段拦截 (完全保证拥有真实的 WARMUP_MS 运行时间)
+      if (now - warmupStart < WARMUP_MS) {
+        requestAnimationFrame(step);
+        return;
+      }
+
+      // 3. 正式采样阶段
       if (!sampleStart) {
-        sampleStart = now;
+        sampleStart = now; // 记录采样的真正起点
       } else {
         frames++;
       }
@@ -217,21 +230,7 @@ function sampleLoop(draw) {
       requestAnimationFrame(step);
     };
 
-    const warmupStart = performance.now();
-    const warmupStep = (now) => {
-      const delta = Math.min((now - previous) / 1000, 0.05);
-      previous = now;
-      draw(delta);
-
-      if (now - warmupStart >= WARMUP_MS) {
-        requestAnimationFrame(step);
-        return;
-      }
-
-      requestAnimationFrame(warmupStep);
-    };
-
-    requestAnimationFrame(warmupStep);
+    requestAnimationFrame(step);
   });
 }
 
@@ -467,16 +466,16 @@ async function runExcalibur(canvas, sprites) {
   const halfSize = SPRITE_SIZE / 2;
   engine.currentScene.on("postdraw", (event) => {
     const ctx = event.ctx;
-    
+
     // 遍历数据并直接向 WebGL 提交绘制指令，引擎底层会自动执行 Auto-batching (批处理)
     for (let i = 0; i < sprites.count; i++) {
       ctx.save();
       ctx.translate(sprites.x[i], sprites.y[i]);
       ctx.rotate(sprites.rotation[i]);
-      
+
       // 手动偏移图形来实现原本 anchor: vec(0.5, 0.5) 的居中效果
       renderSprites[i].draw(ctx, -halfSize, -halfSize);
-      
+
       ctx.restore();
     }
   });
