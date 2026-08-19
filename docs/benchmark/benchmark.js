@@ -29,21 +29,18 @@ const PHASER4_URL = "https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.j
 const EXCALIBUR_URL = "https://esm.sh/excalibur";
 const KAPLAY_URL = "https://unpkg.com/kaplay@3001.0.19/dist/kaplay.mjs";
 const MELONJS_URL = "https://cdn.jsdelivr.net/npm/melonjs/+esm";
-const WARMUP_MS = 2000;
-const SAMPLE_MS = 3000;
+const WARMUP_MS = 500;
+const SAMPLE_MS = 1000;
 
 const renderers = [
-  { id: "rapid", name: "Rapid.js", color: "#54b8ea", maxCount: 400000, run: runRapid },
+  { id: "rapid",     name: "Rapid.js",  color: "#ff0048", maxCount: 400000, run: runRapid },
 
-  { id: "excalibur", name: "Excalibur", color: "#f2c14e", maxCount: 400000, run: runExcalibur },
-  { id: "kaplay", name: "KAPLAY", color: "#ef5da8", maxCount: 20000, run: runKaplay },
-
-  { id: "pixijs", name: "PixiJS", color: "#5fc37a", maxCount: 400000, run: runPixi },
-  { id: "phaser", name: "Phaser", color: "#ff5b5f", maxCount: 400000, run: runPhaser4 },
-
-  { id: "canvas", name: "Canvas 2D", color: "#8d7cf6", maxCount: 50000, run: runCanvas2D },
+  { id: "pixijs",    name: "PixiJS",    color: "#00c49f", maxCount: 400000, run: runPixi },    // 蓝绿
+  { id: "phaser",    name: "Phaser",    color: "#ffb703", maxCount: 400000, run: runPhaser4 }, // 暖金
+  { id: "excalibur", name: "Excalibur", color: "#6291f0", maxCount: 400000, run: runExcalibur },// 纯蓝
+  { id: "kaplay",    name: "KAPLAY",    color: "#ec6de4", maxCount: 20000,  run: runKaplay },   // 炫紫
+  { id: "canvas",    name: "Canvas 2D", color: "#6c757d", maxCount: 50000,  run: runCanvas2D }, // 稳重灰
 ];
-
 let stage = document.querySelector("#stage");
 const chart = document.querySelector("#chart");
 const statusText = document.querySelector("#status-text");
@@ -197,26 +194,22 @@ function sampleLoop(draw) {
     let frames = 0;
 
     const step = (now) => {
-      // 1. 在真正渲染的第一帧初始化所有时间（避免因引擎初始化卡顿吞噬预热时间）
       if (!previous) {
         previous = now;
         warmupStart = now;
       }
 
-      // 计算 delta 并绘制
       const delta = Math.min((now - previous) / 1000, 0.05);
       previous = now;
       draw(delta);
 
-      // 2. 预热阶段拦截 (完全保证拥有真实的 WARMUP_MS 运行时间)
       if (now - warmupStart < WARMUP_MS) {
         requestAnimationFrame(step);
         return;
       }
 
-      // 3. 正式采样阶段
       if (!sampleStart) {
-        sampleStart = now; // 记录采样的真正起点
+        sampleStart = now;
       } else {
         frames++;
       }
@@ -278,7 +271,6 @@ async function runCanvas2D(canvas, sprites) {
   return sampleLoop((delta) => {
     updateSprites(sprites, delta);
 
-    // 清屏并绘制背景色
     ctx.fillStyle = "#f7fdff";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -291,12 +283,10 @@ async function runCanvas2D(canvas, sprites) {
       const cos = Math.cos(sprites.rotation[i]);
       const sin = Math.sin(sprites.rotation[i]);
 
-      // 应用旋转与平移变换（以中心点对齐）
       ctx.setTransform(cos, sin, -sin, cos, sprites.x[i], sprites.y[i]);
       ctx.drawImage(image, -hw, -hh, w, h);
     }
 
-    // 重置变换矩阵
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   });
 }
@@ -439,7 +429,6 @@ async function runExcalibur(canvas, sprites) {
   const imageSources = TEXTURE_URLS.map((url) => new ex.ImageSource(url));
   await Promise.all(imageSources.map((source) => source.load()));
 
-  // 1. 缓存 Sprite 实例：避免重复调用 toSprite() 以及 fromHex() 造成的内存暴涨
   const spriteCache = new Map();
   function getSprite(textureIndex, tintCss) {
     const key = `${textureIndex}-${tintCss}`;
@@ -451,29 +440,24 @@ async function runExcalibur(canvas, sprites) {
     return spriteCache.get(key);
   }
 
-  // 预先建立好所有需要渲染的 Sprite 引用数组 (同一种类/颜色的精灵指向同一内存地址)
   const renderSprites = new Array(sprites.count);
   for (let i = 0; i < sprites.count; i++) {
     renderSprites[i] = getSprite(sprites.textureIndex[i], sprites.tintCss[i]);
   }
 
-  // 2. 解耦数据更新：只更新你的纯数据 state，不操作任何笨重的 Actor 实体
   engine.currentScene.on("preupdate", (event) => {
     updateSprites(sprites, Math.min(event.elapsed / 1000, 0.05));
   });
 
-  // 3. 绕过 ECS 开销，直接利用底层 ExcaliburGraphicsContext 批量渲染
   const halfSize = SPRITE_SIZE / 2;
   engine.currentScene.on("postdraw", (event) => {
     const ctx = event.ctx;
 
-    // 遍历数据并直接向 WebGL 提交绘制指令，引擎底层会自动执行 Auto-batching (批处理)
     for (let i = 0; i < sprites.count; i++) {
       ctx.save();
       ctx.translate(sprites.x[i], sprites.y[i]);
       ctx.rotate(sprites.rotation[i]);
 
-      // 手动偏移图形来实现原本 anchor: vec(0.5, 0.5) 的居中效果
       renderSprites[i].draw(ctx, -halfSize, -halfSize);
 
       ctx.restore();
@@ -528,85 +512,6 @@ async function runKaplay(canvas, sprites) {
 
   const fps = await sampleExternalLoop();
   k.quit();
-  return fps;
-}
-
-async function runMelonJS(canvas, sprites) {
-  const me = await loadMelonJS();
-  const stagePanel = canvas.parentElement;
-
-  // 1. 初始化 Application
-  const app = new me.Application(WIDTH, HEIGHT, {
-    parent: stagePanel,
-    scale: 1,
-    renderer: me.video?.WEBGL ?? me.video?.AUTO,
-    backgroundColor: "#f7fdff",
-    antiAlias: false,
-    physic: "none",
-    textureFilter: "nearest",
-    consoleHeader: false,
-  });
-  await app.init();
-
-  // 2. 预加载纹理资源
-  const manifest = TEXTURE_URLS.map((url, index) => ({
-    name: `bench-sprite-${index}`,
-    type: "image",
-    src: url,
-  }));
-  await me.loader.preload(manifest);
-
-  const world = app.world ?? me.game.world;
-  const melonSprites = new Array(sprites.count);
-
-  // 3. 批量创建精灵
-  for (let i = 0; i < sprites.count; i++) {
-    const sprite = new me.Sprite(sprites.x[i], sprites.y[i], {
-      image: me.loader.getImage(`bench-sprite-${sprites.textureIndex[i]}`),
-    });
-
-    // 默认 anchorPoint 即为 (0.5, 0.5)
-    // 旋转初始角度
-    sprite.currentTransform.rotate(sprites.rotation[i]);
-
-    world.addChild(sprite);
-    melonSprites[i] = sprite;
-  }
-
-  // 4. 自定义帧循环更新器
-  class BenchmarkUpdater extends me.Renderable {
-    constructor() {
-      super(0, 0, WIDTH, HEIGHT);
-      this.alwaysUpdate = true;
-      this.visible = false;
-    }
-
-    update(dt) {
-      updateSprites(sprites, Math.min(dt / 1000, 0.05));
-
-      for (let i = 0; i < sprites.count; i++) {
-        const sprite = melonSprites[i];
-        sprite.pos.x = sprites.x[i];
-        sprite.pos.y = sprites.y[i];
-
-        // 重置变换矩阵并旋转
-        sprite.currentTransform.identity().rotate(sprites.rotation[i]);
-        sprite.isDirty = true;
-      }
-      return true; // 告知世界需要重绘
-    }
-  }
-
-  world.addChild(new BenchmarkUpdater(), Number.MAX_SAFE_INTEGER);
-
-  // 5. 采样外部主循环 FPS
-  const fps = await sampleExternalLoop();
-
-  // 6. 销毁实例清理上下文
-  app.destroy?.();
-
-  // 重置 stage 引用
-  stage = stagePanel.querySelector("canvas") || canvas;
   return fps;
 }
 
@@ -783,7 +688,13 @@ function drawChart() {
 
   ctx.fillText("Sprite Count", pad.left + plotW / 2, height - 20);
 
-  for (const renderer of renderers) {
+  const sortedRenderers = [...renderers].sort((a, b) => {
+    if (a.id === "rapid") return 1;
+    if (b.id === "rapid") return -1;
+    return 0;
+  });
+
+  for (const renderer of sortedRenderers) {
     const points = COUNTS
       .filter((count) => results[renderer.id].has(count))
       .map((count) => ({
@@ -814,7 +725,7 @@ function drawChart() {
 }
 
 function drawLegend(ctx, width, items) {
-  ctx.font = "800 12px system-ui, sans-serif";
+  
   ctx.textBaseline = "middle";
   let x = width - 24;
   const y = 24;
@@ -825,6 +736,7 @@ function drawLegend(ctx, width, items) {
     x -= textWidth + 26;
     ctx.fillStyle = item.color;
     ctx.fillRect(x, y - 5, 14, 10);
+    ctx.font = `${item.id == "rapid" ? "1000" : "500"} 12px system-ui, sans-serif`;
     ctx.fillStyle = "#243142";
     ctx.textAlign = "left";
     ctx.fillText(item.name, x + 20, y);
