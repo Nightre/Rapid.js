@@ -49,19 +49,19 @@ export interface ICircleOptions extends IDrawOptions {
     segments?: number;
 }
 
-const hasTransformOptions = (options: ITransformOptions): boolean => (
-    options.saveTransform !== undefined ||
-    options.afterSave !== undefined ||
-    options.x !== undefined ||
-    options.y !== undefined ||
-    options.position !== undefined ||
-    options.rotation !== undefined ||
-    options.scale !== undefined ||
-    options.offsetX !== undefined ||
-    options.offsetY !== undefined ||
-    options.offset !== undefined ||
-    options.origin !== undefined
-);
+// const hasTransformOptions = (options: ITransformOptions): boolean => (
+//     options.saveTransform !== undefined ||
+//     options.afterSave !== undefined ||
+//     options.x !== undefined ||
+//     options.y !== undefined ||
+//     options.position !== undefined ||
+//     options.rotation !== undefined ||
+//     options.scale !== undefined ||
+//     options.offsetX !== undefined ||
+//     options.offsetY !== undefined ||
+//     options.offset !== undefined ||
+//     options.origin !== undefined
+// );
 
 const withOptionsTransform = (
     rapid: Rapid,
