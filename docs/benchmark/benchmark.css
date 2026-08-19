@@ -26,57 +26,29 @@
 
 .benchmark-grid {
   display: grid;
-  grid-template-columns: minmax(18rem, 0.9fr) minmax(22rem, 1.45fr);
+  grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
   align-items: stretch;
 }
 
-.benchmark-panel {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--rapid-line);
-  border-radius: 8px;
-  box-shadow: 0 8px 0 rgba(84, 184, 234, 0.12);
-}
-
-.panel-head {
+.benchmark-stage-panel {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.8rem;
+  flex-direction: column;
 }
 
-.panel-head h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 900;
-}
-
-.panel-head span {
-  min-width: 0;
-  color: #5a6877;
-  font-size: 0.86rem;
-  font-weight: 800;
-  text-align: right;
+.benchmark-chart-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 #stage,
 #chart {
   display: block;
   width: 100%;
-  height: auto;
+  flex: 1;
   background: #f7fdff;
   border: 2px solid var(--rapid-line);
   border-radius: 8px;
-}
-
-#stage {
-  aspect-ratio: 16 / 9;
-}
-
-#chart {
-  aspect-ratio: 43 / 23;
 }
 
 .result-panel {

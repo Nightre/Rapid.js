@@ -34,12 +34,10 @@ const SAMPLE_MS = 1000;
 
 const renderers = [
   { id: "rapid",     name: "Rapid.js",  color: "#ff0048", maxCount: 400000, run: runRapid },
-
   { id: "pixijs",    name: "PixiJS",    color: "#00c49f", maxCount: 400000, run: runPixi },    // 蓝绿
   { id: "phaser",    name: "Phaser",    color: "#ffb703", maxCount: 400000, run: runPhaser4 }, // 暖金
   { id: "excalibur", name: "Excalibur", color: "#6291f0", maxCount: 400000, run: runExcalibur },// 纯蓝
-  { id: "kaplay",    name: "KAPLAY",    color: "#ec6de4", maxCount: 20000,  run: runKaplay },   // 炫紫
-  { id: "canvas",    name: "Canvas 2D", color: "#6c757d", maxCount: 50000,  run: runCanvas2D }, // 稳重灰
+  { id: "canvas",    name: "Canvas 2D", color: "#6c757d", maxCount: 5000,  run: runCanvas2D }, // 稳重灰
 ];
 let stage = document.querySelector("#stage");
 const chart = document.querySelector("#chart");
@@ -210,6 +208,7 @@ function sampleLoop(draw) {
 
       if (!sampleStart) {
         sampleStart = now;
+        frames = 1;
       } else {
         frames++;
       }
@@ -283,8 +282,14 @@ async function runCanvas2D(canvas, sprites) {
       const cos = Math.cos(sprites.rotation[i]);
       const sin = Math.sin(sprites.rotation[i]);
 
+      ctx.save();
+      //ctx.fillStyle = sprites.tintCss[i];
       ctx.setTransform(cos, sin, -sin, cos, sprites.x[i], sprites.y[i]);
+      //ctx.fillRect(-hw, -hh, w, h);
+      //ctx.globalCompositeOperation = "multiply";
       ctx.drawImage(image, -hw, -hh, w, h);
+      //ctx.globalCompositeOperation = "source-over";
+      ctx.restore();
     }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -429,20 +434,11 @@ async function runExcalibur(canvas, sprites) {
   const imageSources = TEXTURE_URLS.map((url) => new ex.ImageSource(url));
   await Promise.all(imageSources.map((source) => source.load()));
 
-  const spriteCache = new Map();
-  function getSprite(textureIndex, tintCss) {
-    const key = `${textureIndex}-${tintCss}`;
-    if (!spriteCache.has(key)) {
-      spriteCache.set(key, imageSources[textureIndex].toSprite({
-        tint: ex.Color.fromHex(tintCss),
-      }));
-    }
-    return spriteCache.get(key);
-  }
-
   const renderSprites = new Array(sprites.count);
   for (let i = 0; i < sprites.count; i++) {
-    renderSprites[i] = getSprite(sprites.textureIndex[i], sprites.tintCss[i]);
+    renderSprites[i] = imageSources[sprites.textureIndex[i]].toSprite({
+      tint: ex.Color.fromHex(sprites.tintCss[i]),
+    });
   }
 
   engine.currentScene.on("preupdate", (event) => {
@@ -567,8 +563,12 @@ function sampleExternalLoop() {
         return;
       }
 
-      if (!sampleStart) sampleStart = now;
-      else frames++;
+      if (!sampleStart) {
+        sampleStart = now;
+        frames = 1;
+      } else {
+        frames++;
+      }
 
       const elapsed = now - sampleStart;
       if (elapsed >= SAMPLE_MS) {
