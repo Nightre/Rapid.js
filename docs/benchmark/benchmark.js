@@ -33,15 +33,17 @@ const WARMUP_MS = 1000;
 const SAMPLE_MS = 1600;
 
 const renderers = [
+
+  { id: "rapid", name: "Rapid.js", color: "#54b8ea", maxCount: 400000, run: runRapid },
+  { id: "excalibur", name: "Excalibur", color: "#f2c14e", maxCount: 1000, run: runExcalibur },
+
   { id: "kaplay", name: "KAPLAY", color: "#ef5da8", maxCount: 20000, run: runKaplay },
 
-  { id: "excalibur", name: "Excalibur", color: "#f2c14e", maxCount: 1000, run: runExcalibur },
 
   { id: "pixijs", name: "PixiJS", color: "#5fc37a", maxCount: 400000, run: runPixi },
   { id: "phaser", name: "Phaser", color: "#ff5b5f", maxCount: 400000, run: runPhaser4 },
 
   { id: "canvas", name: "Canvas 2D", color: "#8d7cf6", maxCount: 50000, run: runCanvas2D },
-  { id: "rapid", name: "Rapid.js", color: "#54b8ea", maxCount: 400000, run: runRapid },
 ];
 
 let stage = document.querySelector("#stage");
@@ -437,32 +439,45 @@ async function runExcalibur(canvas, sprites) {
 
   const imageSources = TEXTURE_URLS.map((url) => new ex.ImageSource(url));
   await Promise.all(imageSources.map((source) => source.load()));
-  const actors = new Array(sprites.count);
 
-  for (let i = 0; i < sprites.count; i++) {
-    const actor = new ex.Actor({
-      x: sprites.x[i],
-      y: sprites.y[i],
-      width: SPRITE_SIZE,
-      height: SPRITE_SIZE,
-      anchor: ex.vec(0.5, 0.5),
-    });
-    actor.scale = ex.vec(1, 1);
-    actor.rotation = sprites.rotation[i];
-    actor.graphics.use(imageSources[sprites.textureIndex[i]].toSprite({
-      tint: ex.Color.fromHex(sprites.tintCss[i]),
-    }));
-    engine.add(actor);
-    actors[i] = actor;
+  // 1. 缓存 Sprite 实例：避免重复调用 toSprite() 以及 fromHex() 造成的内存暴涨
+  const spriteCache = new Map();
+  function getSprite(textureIndex, tintCss) {
+    const key = `${textureIndex}-${tintCss}`;
+    if (!spriteCache.has(key)) {
+      spriteCache.set(key, imageSources[textureIndex].toSprite({
+        tint: ex.Color.fromHex(tintCss),
+      }));
+    }
+    return spriteCache.get(key);
   }
 
+  // 预先建立好所有需要渲染的 Sprite 引用数组 (同一种类/颜色的精灵指向同一内存地址)
+  const renderSprites = new Array(sprites.count);
+  for (let i = 0; i < sprites.count; i++) {
+    renderSprites[i] = getSprite(sprites.textureIndex[i], sprites.tintCss[i]);
+  }
+
+  // 2. 解耦数据更新：只更新你的纯数据 state，不操作任何笨重的 Actor 实体
   engine.currentScene.on("preupdate", (event) => {
     updateSprites(sprites, Math.min(event.elapsed / 1000, 0.05));
+  });
+
+  // 3. 绕过 ECS 开销，直接利用底层 ExcaliburGraphicsContext 批量渲染
+  const halfSize = SPRITE_SIZE / 2;
+  engine.currentScene.on("postdraw", (event) => {
+    const ctx = event.ctx;
+    
+    // 遍历数据并直接向 WebGL 提交绘制指令，引擎底层会自动执行 Auto-batching (批处理)
     for (let i = 0; i < sprites.count; i++) {
-      const actor = actors[i];
-      actor.pos.x = sprites.x[i];
-      actor.pos.y = sprites.y[i];
-      actor.rotation = sprites.rotation[i];
+      ctx.save();
+      ctx.translate(sprites.x[i], sprites.y[i]);
+      ctx.rotate(sprites.rotation[i]);
+      
+      // 手动偏移图形来实现原本 anchor: vec(0.5, 0.5) 的居中效果
+      renderSprites[i].draw(ctx, -halfSize, -halfSize);
+      
+      ctx.restore();
     }
   });
 
