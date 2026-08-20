@@ -102,17 +102,16 @@ const withOptionsTransform = (
     height: number,
     draw: () => void,
 ) => {
-    // if (!hasTransformOptions(options)) {
-    //     draw();
-    //     return;
-    // }
-
     // matrixStack save in applyTransform
     rapid.matrixStack.applyTransform(options, width, height);
     draw();
 
-    if (options.saveTransform !== false) {
-        rapid.matrixStack.restore();
+    try {
+        draw();
+    } finally {
+        if (options.saveTransform !== false) {
+            rapid.matrixStack.restore();
+        }
     }
 };
 

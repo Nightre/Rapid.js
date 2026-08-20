@@ -122,7 +122,7 @@ export class SpriteRegion extends Region {
         }
 
         const base = texture.base!;
-        const textureScale = texture.scale || 1;
+        const textureScale = texture.scale ?? 1;
 
         const rawWidth = texture.rawWidth;
         const rawHeight = texture.rawHeight;
