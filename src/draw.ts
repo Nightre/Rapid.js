@@ -104,7 +104,6 @@ const withOptionsTransform = (
 ) => {
     // matrixStack save in applyTransform
     rapid.matrixStack.applyTransform(options, width, height);
-    draw();
 
     try {
         draw();
