@@ -186,3 +186,32 @@ export class Vec2 {
         return new Vec2(Math.cos(angle), Math.sin(angle));
     }
 }
+
+export const composeProjectionWithAffine = (
+    projection: Float32Array,
+    affine: Float32Array
+): Float32Array => {
+    const [a, b, c, d, e, f] = affine;
+    const affineMat4 = new Float32Array([
+        a, d, 0, 0,
+        b, e, 0, 0,
+        c, f, 1, 0,
+        0, 0, 0, 1 
+    ]);
+
+    return multiplyMat4(projection, affineMat4);
+}
+
+export const multiplyMat4 = (A: Float32Array, B: Float32Array): Float32Array => {
+    const out = new Float32Array(16);
+    for (let col = 0; col < 4; col++) {
+        for (let row = 0; row < 4; row++) {
+            let sum = 0;
+            for (let k = 0; k < 4; k++) {
+                sum += A[row * 4 + k] * B[k * 4 + col];
+            }
+            out[row * 4 + col] = sum;
+        }
+    }
+    return out;
+}

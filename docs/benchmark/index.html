@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Sprite rendering benchmark comparing Rapid.js, PixiJS, Phaser 3, Phaser 4, Excalibur, KAPLAY, MelonJS, and Canvas 2D.">
+    <meta name="description" content="Sprite and particle rendering benchmark comparing Rapid.js, PixiJS, Phaser, Excalibur, and Canvas 2D.">
     <title>Rapid Benchmark</title>
     <link rel="icon" href="../image/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
@@ -34,9 +34,15 @@
       <section class="container">
         <div class="benchmark-header">
           <div>
-            <p class="eyebrow">Benchmark</p>
             <h1>Sprite FPS</h1>
-            <p class="benchmark-lead">Rapid.js, PixiJS, Phaser, Excalibur, KAPLAY, and Canvas 2D render the same moving sprite set using separate base textures. Each sprite has a random color tint, a direction, wall bounce, and continuous rotation.</p>
+            <p class="benchmark-lead">Rapid.js, PixiJS, Phaser, Excalibur, and Canvas 2D render the same moving sprite set. Each sprite has random tint, velocity, wall bounce, and continuous rotation.</p>
+            <div class="benchmark-controls">
+              <label for="texture-mode" class="form-label mb-0">Texture Mode</label>
+              <select id="texture-mode" class="form-select benchmark-select">
+                <option value="multi">Multi Texture (5 textures)</option>
+                <option value="single">Single Texture</option>
+              </select>
+            </div>
           </div>
           <button class="btn btn-rapid btn-lg btn-icon" id="run-benchmark" type="button">
             <img src="../image/up.png" class="pixel-art" alt="">
@@ -53,14 +59,27 @@
             <canvas id="stage" width="640" height="360" aria-label="Benchmark render target"></canvas>
           </section>
 
-          <section class="benchmark-panel benchmark-chart-panel">
+          <section class="benchmark-panel code-panel">
             <div class="panel-head">
-              <h2>FPS Chart (5 independent texture renders)</h2>
-              <span id="chart-note">Higher is better</span>
+              <div>
+                <h2 id="code-title">Renderer Code</h2>
+                <span id="code-note">The active renderer snippet appears here while the benchmark runs.</span>
+              </div>
+              <span id="code-meta">Idle</span>
             </div>
-            <canvas id="chart" width="860" height="460" aria-label="FPS chart"></canvas>
+            <div class="code-card benchmark-code-card">
+              <pre><code id="renderer-code" class="language-javascript"></code></pre>
+            </div>
           </section>
         </div>
+
+        <section class="benchmark-panel benchmark-chart-panel">
+          <div class="panel-head">
+            <h2 id="chart-title">FPS Chart</h2>
+            <span id="chart-note">Higher is better</span>
+          </div>
+          <canvas id="chart" width="860" height="460" aria-label="FPS chart"></canvas>
+        </section>
 
         <section class="benchmark-panel result-panel">
           <div class="panel-head">
@@ -70,28 +89,7 @@
           <div class="table-responsive">
             <table class="table benchmark-table">
               <thead>
-                <tr>
-                  <th>Renderer</th>
-                  <th>500</th>
-                  <th>1000</th>
-                  <th>3000</th>
-                  <th>5000</th>
-                  <th>10000</th>
-                  <th>20000</th>
-                  <th>30000</th>
-                  <th>40000</th>
-                  <th>50000</th>
-                  <th>60000</th>
-                  <th>70000</th>
-                  <th>80000</th>
-                  <th>90000</th>
-                  <th>100000</th>
-                  <th>125000</th>
-                  <th>150000</th>
-                  <th>175000</th>
-                  <th>200000</th>
-                  <th>400000</th>
-                </tr>
+                <tr id="results-head"></tr>
               </thead>
               <tbody id="results-body"></tbody>
             </table>

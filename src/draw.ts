@@ -14,6 +14,38 @@ export interface IDrawOptions extends ITransformOptions {
     customMatrix?: number;
 }
 
+export interface IDrawParticleOptions {
+    shader?: DrawShader;
+    texture: Texture;
+    color?: Color;
+    flipX?: boolean;
+    flipY?: boolean;
+
+    x?: number;
+    y?: number;
+    position?: Vec2;
+    rotation?: number;
+    scaleX?: number;
+    scaleY?: number;
+
+    isRotated?: boolean;
+}
+
+export interface IDrawParticleBatchOptions {
+    shader?: DrawShader;
+    texture: Texture;
+    x: Array<number>;
+    y: Array<number>;
+    rotation: Array<number>;
+    color: Array<Color>;
+    count?: number;
+    scaleX?: number;
+    scaleY?: number;
+    flipX?: boolean;
+    flipY?: boolean;
+    isRotated?: boolean;
+}
+
 export interface ISpriteOptions extends IDrawOptions {
     texture: Texture;
     color?: Color;
@@ -77,12 +109,10 @@ const withOptionsTransform = (
 
     // matrixStack save in applyTransform
     rapid.matrixStack.applyTransform(options, width, height);
-    try {
-        draw();
-    } finally {
-        if (options.saveTransform ?? true) {
-            rapid.matrixStack.restore();
-        }
+    draw();
+
+    if (options.saveTransform !== false) {
+        rapid.matrixStack.restore();
     }
 };
 
@@ -139,6 +169,71 @@ export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
     withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
         drawSpriteRaw(rapid, options);
     });
+};
+
+export const drawParticle = (rapid: Rapid, options: IDrawParticleOptions): void => {
+    const region = rapid.particleRegion
+    rapid.enterRegion(region, options.shader);
+    const texture = options.texture
+
+    const u0 = texture.uvX;
+    const v0 = texture.uvY;
+    const u1 = texture.uvW;
+    const v1 = texture.uvH;
+
+    region.drawParticle(
+        texture,
+        options.x,
+        options.y,
+        options.scaleX,
+        options.scaleY,
+        options.rotation,
+        u0, v0, u1, v1,
+        getColorUint32(rapid, options.color),
+        options.flipX,
+        options.flipY,
+        options.isRotated
+    )
+};
+
+export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions): void => {
+    const region = rapid.particleRegion
+    rapid.enterRegion(region, options.shader);
+    const texture = options.texture
+
+    const count = options.count ?? options.x.length;
+    const color = options.color;
+
+    const len = color.length;
+    const numColor = new Array(len);
+
+    if (rapid.premultipliedAlpha) {
+        for (let i = 0; i < len; i++) {
+            numColor[i] = color[i].premultipliedUint32;
+        }
+    } else {
+        for (let i = 0; i < len; i++) {
+            numColor[i] = color[i].uint32;
+        }
+    }
+
+    region.drawParticles(
+        texture,
+        options.x,
+        options.y,
+        options.rotation,
+        numColor,
+        count,
+        options.scaleX,
+        options.scaleY,
+        texture.uvX,
+        texture.uvY,
+        texture.uvW,
+        texture.uvH,
+        options.flipX,
+        options.flipY,
+        options.isRotated,
+    )
 };
 
 export const drawGraphic = (rapid: Rapid, options: IGraphicOptions): void => {

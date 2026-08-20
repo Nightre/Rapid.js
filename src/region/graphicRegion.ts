@@ -102,6 +102,11 @@ export class GraphicRegion extends Region {
         this.matrixIndex = matrixIndex;
         this.drawMode = drawMode;
         this.texture = texture;
+        if (this.texture?.glTexture) {
+            // It does not rely on the region to set the texture;
+            // it merely occupies a texture unit to prevent the custom shader from overwriting it
+            this.useTexture(this.texture.glTexture, 0, 0)
+        }
     }
 
     /**
@@ -176,6 +181,7 @@ export class GraphicRegion extends Region {
 
         gl.drawArrays(this.drawMode, 0, this.vertexCount);
         this.rapid.drawcallCount++;
+        this.texture = undefined;
     }
 
     override hasPendingContent(): boolean {

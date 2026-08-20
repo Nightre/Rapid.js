@@ -1,5 +1,5 @@
 .benchmark-main {
-  padding: 2.5rem 0 4rem;
+  padding: 4.25rem 0 4rem;
 }
 
 .benchmark-header {
@@ -12,16 +12,40 @@
 
 .benchmark-header h1 {
   margin: 0 0 0.6rem;
-  font-size: clamp(3rem, 9vw, 5.5rem);
+  font-size: clamp(3.2rem, 8vw, 5.5rem);
+  line-height: 0.92;
 }
 
 .benchmark-lead {
   max-width: 46rem;
   margin: 0;
+  margin-top: 2rem;
   color: #4e5f6b;
   font-size: 1.08rem;
   font-weight: 650;
   line-height: 1.7;
+}
+
+.benchmark-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.benchmark-controls label {
+  color: #385365;
+  font-weight: 850;
+}
+
+.benchmark-select {
+  width: auto;
+  min-width: 15rem;
+  color: var(--rapid-ink);
+  border-color: #9bdcb0;
+  border-radius: 8px;
+  font-weight: 750;
 }
 
 .benchmark-grid {
@@ -29,6 +53,34 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
   align-items: stretch;
+}
+
+.benchmark-panel {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--rapid-line);
+  border-radius: 8px;
+  box-shadow: 0 8px 0 rgba(84, 184, 234, 0.12);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.panel-head span {
+  color: #5a6877;
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .benchmark-stage-panel {
@@ -41,18 +93,49 @@
   flex-direction: column;
 }
 
-#stage,
+#stage {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  flex: 0 0 auto;
+  background: #f7fdff;
+  border: 1px solid var(--rapid-line);
+  border-radius: 8px;
+}
+
 #chart {
   display: block;
   width: 100%;
   flex: 1;
   background: #f7fdff;
-  border: 2px solid var(--rapid-line);
+  border: 1px solid var(--rapid-line);
   border-radius: 8px;
 }
 
+.benchmark-chart-panel,
 .result-panel {
   margin-top: 1.25rem;
+}
+
+.benchmark-grid .benchmark-chart-panel {
+  margin-top: 0;
+}
+
+.benchmark-chart-panel #chart {
+  min-height: 28rem;
+}
+
+.benchmark-code-card {
+  padding: 1rem;
+  min-height: 24rem;
+}
+
+.benchmark-code-card pre {
+  height: 24rem;
+  overflow: auto;
+  font-size: 0.78rem;
+  line-height: 1.55;
 }
 
 .benchmark-table {
@@ -99,5 +182,14 @@
 
   .benchmark-header .btn {
     justify-self: start;
+  }
+
+  .panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .benchmark-code-card pre {
+    height: 18rem;
   }
 }

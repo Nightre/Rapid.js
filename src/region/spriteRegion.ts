@@ -1,5 +1,5 @@
 import { Rapid } from "../render";
-import { Region } from "./region";
+import { MAX_INSTANCES, Region } from "./region";
 import { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
 import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
@@ -20,14 +20,14 @@ const INSTANCE_STRIDE = 48;
 
 // Static quad vertices: 4 × vec2 for TRIANGLE_STRIP
 // (0,0) (1,0) (0,1) (1,1)
-const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+export const QUAD_VERTICES = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
 
 export class SpriteRegion extends Region {
-    private instanceBuffer!: WebglBufferArray;
-    private quadBuffer!: WebglBufferArray;
-    private instanceCount: number = 0;
-    private localSpriteMatrix = new Float32Array(6);
-    private worldSpriteMatrix = new Float32Array(6);
+    protected instanceBuffer!: WebglBufferArray;
+    protected quadBuffer!: WebglBufferArray;
+    protected instanceCount: number = 0;
+    protected localSpriteMatrix = new Float32Array(6);
+    protected worldSpriteMatrix = new Float32Array(6);
 
     KEY = "Sprite"
 
@@ -38,7 +38,7 @@ export class SpriteRegion extends Region {
         this.createDefaultShader()
     }
 
-    createBuffer(){
+    createBuffer() {
         const gl = this.gl;
 
         // Static quad geometry buffer
@@ -117,7 +117,7 @@ export class SpriteRegion extends Region {
         flipY: boolean = false,
         isRotated: boolean = false,
     ): void {
-       if (this.freeTextureUnitNum === 0) {
+        if (this.freeTextureUnitNum === 0 || this.instanceCount > MAX_INSTANCES) {
             this.flush();
         }
 
@@ -153,7 +153,7 @@ export class SpriteRegion extends Region {
 
         const drawWidth = width + 2 * paddingX;
         const drawHeight = height + 2 * paddingY;
-        
+
         const originX = offsetX - paddingX;
         const originY = offsetY - paddingY;
 

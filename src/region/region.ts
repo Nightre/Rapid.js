@@ -3,6 +3,7 @@ import { MatrixStore } from "../matrix-engine";
 import GLShader, { CustomGlShader } from "../webgl/glshader";
 import { WebGLContext } from "../webgl/utils";
 
+export const MAX_INSTANCES = Infinity
 export class Region {
     defaultShader!: GLShader
     currentShader!: GLShader
