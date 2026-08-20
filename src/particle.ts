@@ -249,6 +249,8 @@ export class Particle {
         }
 
         //this.rapid.drawSprite({ texture: this.texture, color });
+
+        // TODO: use drawparticles
         drawSpriteRaw(this.rapid, { texture: this.texture, color })
         ms.restore();
     }

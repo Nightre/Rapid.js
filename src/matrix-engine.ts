@@ -359,6 +359,36 @@ export class MatrixStore {
         d[o + 4] = f[4];
         d[o + 5] = f[5];
     }
+
+
+    multiplyAffineInPlace(
+        index: number,
+        a: number,
+        b: number,
+        c: number,
+        dValue: number,
+        tx: number,
+        ty: number
+    ): void {
+        const o = index * 6;
+        const data = this.data;
+
+        const ma = data[o];
+        const mb = data[o + 1];
+        const mc = data[o + 2];
+        const md = data[o + 3];
+        const mx = data[o + 4];
+        const my = data[o + 5];
+
+        data[o] = ma * a + mc * b;
+        data[o + 1] = mb * a + md * b;
+
+        data[o + 2] = ma * c + mc * dValue;
+        data[o + 3] = mb * c + md * dValue;
+
+        data[o + 4] = ma * tx + mc * ty + mx;
+        data[o + 5] = mb * tx + md * ty + my;
+    }
 }
 
 /**
@@ -629,23 +659,73 @@ export class MatrixStack {
      * Optionally saves the matrix first (saveTransform defaults to true).
      */
     applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0) {
+        // if (transform.saveTransform ?? true) {
+        //     this.save();
+        // }
+        // transform.afterSave?.();
+
+        // const x = transform.x ?? 0;
+        // const y = transform.y ?? 0;
+        // if (x || y) this.translate(x, y);
+
+        // if (transform.position) this.translate(transform.position.x, transform.position.y);
+        // if (transform.rotation) this.rotate(transform.rotation);
+        // const scale = transform.scale;
+        // const isScaleNumber = typeof scale === "number";
+        // if (scale) this.scale(
+        //     isScaleNumber ? scale : scale.x,
+        //     isScaleNumber ? scale : scale.y
+        // );
+
+        // let offsetX = transform.offsetX ?? 0;
+        // let offsetY = transform.offsetY ?? 0;
+
+        // if (transform.offset) {
+        //     offsetX += transform.offset.x;
+        //     offsetY += transform.offset.y;
+        // }
+
+        // const origin = transform.origin;
+        // if (origin !== undefined) {
+        //     if (typeof origin === "number") {
+        //         offsetX -= origin * width;
+        //         offsetY -= origin * height;
+        //     } else {
+        //         offsetX -= origin.x * width;
+        //         offsetY -= origin.y * height;
+        //     }
+        // }
+
+        // this.translate(offsetX, offsetY)
+
         if (transform.saveTransform ?? true) {
             this.save();
         }
-        transform.afterSave?.();
 
-        const x = transform.x ?? 0;
-        const y = transform.y ?? 0;
-        if (x || y) this.translate(x, y);
+        let x = transform.x ?? 0;
+        let y = transform.y ?? 0;
 
-        if (transform.position) this.translate(transform.position.x, transform.position.y);
-        if (transform.rotation) this.rotate(transform.rotation);
+        if (transform.position) {
+            x += transform.position.x;
+            y += transform.position.y;
+        }
+
+        let scaleX = 1;
+        let scaleY = 1;
+
         const scale = transform.scale;
-        const isScaleNumber = typeof scale === "number";
-        if (scale) this.scale(
-            isScaleNumber ? scale : scale.x,
-            isScaleNumber ? scale : scale.y
-        );
+
+        if (scale) {
+            if (typeof scale === "number") {
+                scaleX = scale;
+                scaleY = scale;
+            } else {
+                scaleX = scale.x;
+                scaleY = scale.y;
+            }
+        }
+
+        const rotation = transform.rotation ?? 0;
 
         let offsetX = transform.offsetX ?? 0;
         let offsetY = transform.offsetY ?? 0;
@@ -656,6 +736,7 @@ export class MatrixStack {
         }
 
         const origin = transform.origin;
+
         if (origin !== undefined) {
             if (typeof origin === "number") {
                 offsetX -= origin * width;
@@ -666,6 +747,46 @@ export class MatrixStack {
             }
         }
 
-        this.translate(offsetX, offsetY)
+        const cos = rotation ? Math.cos(rotation) : 1;
+        const sin = rotation ? Math.sin(rotation) : 0;
+
+        // R * S
+        const a = cos * scaleX;
+        const b = sin * scaleX;
+        const c = -sin * scaleY;
+        const d = cos * scaleY;
+
+        // translate(x, y)
+        // rotate(rotation)
+        // scale(scaleX, scaleY)
+        // translate(offsetX, offsetY)
+        const tx = x + a * offsetX + c * offsetY;
+        const ty = y + b * offsetX + d * offsetY;
+
+        // localMatrix = localMatrix * localTransform
+        if (transform.afterSave !== undefined || transform.saveTransform === false) {
+            this.matrix.multiplyAffineInPlace(
+                this.curLocalM,
+                a,
+                b,
+                c,
+                d,
+                tx,
+                ty
+            );
+        }
+
+        // worldMatrix = worldMatrix * localTransform
+        this.matrix.multiplyAffineInPlace(
+            this.curWorldM,
+            a,
+            b,
+            c,
+            d,
+            tx,
+            ty
+        );
+
+        transform.afterSave?.();
     }
 }
