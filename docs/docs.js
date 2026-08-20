@@ -17,7 +17,8 @@ const chapters = [
   { id: "text", title: "Text", file: "text.md", icon: "./image/text.png" },
   { id: "render-textures", title: "Render Textures", file: "render-textures.md", icon: "./image/render-texture.png" },
   { id: "masks", title: "Masks & Clipping", file: "masks.md", icon: "./image/mask.png" },
-  { id: "particles", title: "Particles", file: "particles.md", icon: "./image/particle.png" },
+  { id: "particles", title: "Particle Emitter", file: "particles.md", icon: "./image/particle.png" },
+  { id: "particle-drawing", title: "Particle Drawing", file: "particle-drawing.md", icon: "./image/fast.png" },
   { id: "advanced", title: "Advanced Render", file: "advanced.md", icon: "./image/advanced.png" },
 ];
 
@@ -96,6 +97,7 @@ const normalizeCodeLanguage = (value) => {
 };
 
 const inlineMarkdown = (value) => escapeHtml(value)
+  .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
   .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
   .replace(/`([^`]+)`/g, "<code>$1</code>")
   .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");

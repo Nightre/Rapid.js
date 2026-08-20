@@ -1,4 +1,4 @@
-# 粒子绘制
+# 粒子发射器 Particle Emitter
 
 Rapid.js 内置了一个轻量的粒子系统。核心是 `ParticleEmitter`：你描述粒子的外观和随时间的变化，发射器负责生成、更新、回收和绘制这些粒子。
 

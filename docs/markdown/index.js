@@ -12,6 +12,7 @@ import text from './text.md?raw'
 import renderTextures from './render-textures.md?raw'
 import masks from './masks.md?raw'
 import particles from './particles.md?raw'
+import particleDrawing from './particle-drawing.md?raw'
 import advanced from './advanced.md?raw'
 
 export default {
@@ -29,5 +30,6 @@ export default {
   'render-textures.md': renderTextures,
   'masks.md': masks,
   'particles.md': particles,
+  'particle-drawing.md': particleDrawing,
   'advanced.md': advanced,
 }

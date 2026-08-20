@@ -1,4 +1,4 @@
-# Particle Rendering
+# Particle Emitter
 
 Rapid.js includes a lightweight built-in particle system powered by `ParticleEmitter`. You describe particle visual attributes and behavior over time, and the emitter manages creation, update, recycling, and rendering of particles.
 

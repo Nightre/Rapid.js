@@ -659,45 +659,6 @@ export class MatrixStack {
      * Optionally saves the matrix first (saveTransform defaults to true).
      */
     applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0) {
-        // if (transform.saveTransform ?? true) {
-        //     this.save();
-        // }
-        // transform.afterSave?.();
-
-        // const x = transform.x ?? 0;
-        // const y = transform.y ?? 0;
-        // if (x || y) this.translate(x, y);
-
-        // if (transform.position) this.translate(transform.position.x, transform.position.y);
-        // if (transform.rotation) this.rotate(transform.rotation);
-        // const scale = transform.scale;
-        // const isScaleNumber = typeof scale === "number";
-        // if (scale) this.scale(
-        //     isScaleNumber ? scale : scale.x,
-        //     isScaleNumber ? scale : scale.y
-        // );
-
-        // let offsetX = transform.offsetX ?? 0;
-        // let offsetY = transform.offsetY ?? 0;
-
-        // if (transform.offset) {
-        //     offsetX += transform.offset.x;
-        //     offsetY += transform.offset.y;
-        // }
-
-        // const origin = transform.origin;
-        // if (origin !== undefined) {
-        //     if (typeof origin === "number") {
-        //         offsetX -= origin * width;
-        //         offsetY -= origin * height;
-        //     } else {
-        //         offsetX -= origin.x * width;
-        //         offsetY -= origin.y * height;
-        //     }
-        // }
-
-        // this.translate(offsetX, offsetY)
-
         if (transform.saveTransform ?? true) {
             this.save();
         }
