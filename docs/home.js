@@ -2,7 +2,7 @@ import { demoOrder, demos, mountDemo, renderDemoCode } from "./demos.js";
 
 const chartColors = { rapid: "#ff3b67", pixi: "#16b89c", phaser: "#ffb20f", excalibur: "#6b97ec", canvas: "#68747d" };
 const packageData = [
-  ["rapid", "Rapid.js", 61.9, "61.9 kB"],
+  ["rapid", "Rapid.js", 67, "67 kB"],
   ["phaser", "Phaser", 1380, "1.38 MB"],
   ["pixi", "PixiJS", 798, "798 kB"],
   ["excalibur", "Excalibur", 574, "574 kB"],

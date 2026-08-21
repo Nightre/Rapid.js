@@ -18,7 +18,7 @@
 
 ## What is Rapid?
 
-Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight at just **61.9 kB** (**~18 kB gzipped**) It handles the rendering layer while leaving your game architecture, update loop, and state management fully in your hands.
+Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight at just **67 kB** (**~19.5 kB gzipped**) It handles the rendering layer while leaving your game architecture, update loop, and state management fully in your hands.
 
 > The documentation and demos are still being written.
 
@@ -77,3 +77,11 @@ Performance Comparison: Rapid vs. Other Renderers and Game Engines
 </p>
 
 Tested on **NVIDIA GeForce RTX 4070 Laptop GPU** (Chrome / WebGL 2.0)
+
+## Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+Before submitting a Pull Request, please ensure:
+- **Strict TypeScript (Zero any)**: All code must pass strict type checking with zero `any`, loose casts, or `@ts-ignore` directives.
+- **Passing Checks**: Run `npm run build` to ensure clean compilation with zero warnings or errors.
