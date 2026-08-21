@@ -1,23 +1,23 @@
-# Particle Rendering
+# Drawing Particles
 
-`drawParticle` and `drawParticles` are low-level particle rendering APIs in Rapid.js. They are best suited for scenarios where you manage the particle state and lifecycle yourself and only need Rapid.js to render them with minimal overhead.
+`drawParticle` and `drawParticles` are the direct particle rendering APIs in Rapid.js. They are ideal when you are already managing particle states yourself and simply want Rapid.js to draw them with minimal overhead.
 
-## Use Cases
+## Use Cases:
 
-Commonly used for rendering large amounts of elements, such as particle effects, tilemaps, and bullet hells.
+Commonly used for rendering a massive number of elements, such as particle effects and tilemaps. 
+Differences from `drawSprite`:
 
-### Differences from `drawSprite`:
+- **Limitations:** Only suitable for drawing large numbers of elements based on the same base texture (`BaseTexture`; different sub-regions/Atlas within a texture atlas can be used).
 
-- **Limitation**: Only suitable for batch rendering elements that share the same base texture (`BaseTexture`, though different frames/sub-regions within a texture atlas are supported).
-- **Benefit**: Bypasses complex scene graph / hierarchical transform calculations, delivering significant performance gains.
+- **Benefits:** Bypasses complex node calculations, resulting in extremely significant performance improvements.
 
-If you want Rapid.js to automatically handle the creation, updating, recycling, and rendering of particles for you, use [`ParticleEmitter`](#particles) instead.
+If you want Rapid.js to handle the creation, updating, recycling, and rendering of particles for you, use [ParticleEmitter](#particles).
 
-This approach is very similar to PixiJS's `ParticleContainer`: you supply a compact set of particle attributes to the renderer, and it draws a large batch of sprites efficiently using a single texture.
+It is very similar to PixiJS's `ParticleContainer`: you hand over a compact set of particle properties to the renderer, and the renderer efficiently draws a massive amount of sprites using a single texture.
 
 ## drawParticle
 
-`drawParticle` renders a single particle-style sprite with compact parameters:
+`drawParticle` draws a particle-style sprite using more compact parameters.
 
 ```ts
 rapid.drawParticle({
@@ -29,12 +29,13 @@ rapid.drawParticle({
   scaleY: 1,
   color: new Color(255, 220, 120),
 });
+```
 
-drawParticles
+## drawParticles
 
-drawParticles is the high-throughput path. Instead of calling drawParticle once
-per particle, you pass the particle attribute arrays all at once to Rapid.js.
+`drawParticles` is the high-throughput path. Instead of calling `drawParticle` once for every single particle, you pass the arrays of particle properties to Rapid.js all at once.
 
+```ts
 const count = 10000;
 const x = new Array(count);
 const y = new Array(count);
@@ -65,4 +66,4 @@ function frame() {
   rapid.flush();
   requestAnimationFrame(frame);
 }
-
+```
