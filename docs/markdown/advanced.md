@@ -57,22 +57,3 @@ rapid.setBlendMode(BlendMode.NORMAL);
 ```
 
 > `setBlendMode` will `flush` previous queued draw calls first.
-
-## Fast Raw Rendering: drawSpriteRaw
-
-Every `drawSprite` call parses transform parameters (`x`, `y`, `rotation`, `scale`, `origin`, etc.) by operating on `matrixStack`. In hot loops with thousands of draws per frame (such as particles or tilemaps), this CPU overhead accumulates.
-
-`drawSpriteRaw` skips transform parameter parsing and uses the current world matrix of `matrixStack` directly to render the sprite. It is a standalone function imported from `rapid-render`, rather than a method on `rapid`:
-
-```ts
-import { drawSpriteRaw } from "rapid-render";
-
-rapid.matrixStack.save();
-rapid.matrixStack.translate(x, y);
-drawSpriteRaw(rapid, { texture });
-rapid.matrixStack.restore();
-```
-
-> The difference between `drawSpriteRaw` and `drawSprite` exists **solely on the CPU side** by avoiding transform parameter parsing. The vertex data submitted to the GPU is identical and enters the exact same batching pipeline, meaning **there is zero difference in batching efficiency, draw calls, or GPU workload**. In other words, it optimizes JS-side execution per frame, not the WebGL rendering pipeline.
-
-The built-in particle emitter uses `drawSpriteRaw` internally for batching particles. Unless you explicitly need to save CPU overhead from [ITransformOptions](api/interfaces/ITransformOptions) parsing, standard `drawSprite` is sufficient for everyday use.
