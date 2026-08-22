@@ -1,12 +1,13 @@
 {
   "name": "rapid-render",
   "private": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "files": [
     "dist",
     "index.d.ts"
   ],
+  "license":"MIT",
   "main": "./dist/rapid.umd.cjs",
   "module": "./dist/rapid.js",
   "types": "./dist/index.d.ts",
