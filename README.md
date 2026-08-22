@@ -80,7 +80,7 @@ Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google C
 
 ## Who is using Rapid.js?
 
-If you built something with Rapid.js and want it to appear here, please tell [nightscratch1145@gmail.com](mailto:nightscratch1145@gmail.com).
+We'd love to feature your work! Submit a Pull Request or Open an Issue to add your project to the showcase.
 
 <table>
   <tr>
