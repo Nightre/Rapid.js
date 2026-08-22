@@ -92,7 +92,7 @@ If you built something with Rapid.js and want it to appear here, please tell [ni
     <td valign="top">
       <strong><a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">Avoid the Zeros</a></strong><br>
       Foxdog Studios used Rapid.js to deliver fast download times and smooth multi-sprite rendering for thousands of audience members playing simultaneously on their mobile phones at the <strong>Sydney Opera House</strong>.<br>
-      <sub><strong>Foxdog Studios</strong> · Live Audience Game</sub>
+      <sub><strong>Foxdog Studios</sub>
     </td>
   </tr>
   <tr>
@@ -104,7 +104,7 @@ If you built something with Rapid.js and want it to appear here, please tell [ni
     <td valign="top">
       <strong><a href="https://poki.com/zh/g/emoji-party">Emoji Party</a></strong><br>
       A featured puzzle hit on Poki with over <strong>13,000+ player ratings</strong>. Rapid.js powers its snappy sprite animations and instant-play experience across hundreds of thousands of diverse mobile and desktop browsers.<br>
-      <sub><strong>illusivegames</strong> · Featured on Poki</sub>
+      <sub><strong>illusivegames</sub>
     </td>
   </tr>
 </table>
