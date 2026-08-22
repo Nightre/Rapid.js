@@ -78,7 +78,7 @@ Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google C
 
 ## Who is using Rapid.js?
 
-We'd love to feature your work! Please [**Submit a Pull Request**](https://github.com/Nightre/Rapid.js/pulls) or [**Open an Issue**](https://github.com/Nightre/Rapid.js/issues/new?title=Showcase%20Submission:%20[Your%20Project%20Name]) to add your game or app to the showcase!
+We'd love to feature your work! Please [**Submit a Pull Request**](https://github.com/Nightre/Rapid.js/pulls) or tell nightscratch1145@gmail.com to add your game or app to the showcase!
 <table>
   <tr>
     <td width="96" valign="top">
