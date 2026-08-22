@@ -1,189 +1,227 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Rapid is a small WebGL 2D rendering engine for playful browser games.">
-    <title>Rapid</title>
-    <link rel="icon" href="./image/logo.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="stylesheet" href="./styles.css">
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg sticky-top">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Rapid is a small WebGL 2D rendering engine for playful browser games.">
+  <title>Rapid</title>
+  <link rel="icon" href="./image/logo.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="./index.html">
+        <img src="./image/logo_title.png" class="brand-title-logo pixel-art" alt="Rapid">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+        aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+          <li class="nav-item"><a class="nav-link nav-icon-link" href="./docs.html"><img src="./image/docs.png"
+                class="pixel-art" alt="">Docs</a></li>
+          <li class="nav-item"><a class="nav-link nav-icon-link" href="./benchmark/"><img src="./image/demo.png"
+                class="pixel-art" alt="">Benchmark</a></li>
+          <li class="nav-item"><a class="nav-link nav-icon-link" href="./api/"><img src="./image/api.png"
+                class="pixel-art" alt="">API</a></li>
+          <li class="nav-item"><a class="nav-link nav-icon-link" href="https://github.com/Nightre/Rapid.js"
+              target="_blank" rel="noreferrer"><img src="./image/github.png" class="pixel-art" alt="">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
       <div class="container">
-        <a class="navbar-brand" href="./index.html">
-          <img src="./image/logo_title.png" class="brand-title-logo pixel-art" alt="Rapid">
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNav">
-          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-            <li class="nav-item"><a class="nav-link nav-icon-link" href="./docs.html"><img src="./image/docs.png" class="pixel-art" alt="">Docs</a></li>
-            <li class="nav-item"><a class="nav-link nav-icon-link" href="./benchmark/"><img src="./image/demo.png" class="pixel-art" alt="">Benchmark</a></li>
-            <li class="nav-item"><a class="nav-link nav-icon-link" href="./api/"><img src="./image/api.png" class="pixel-art" alt="">API</a></li>
-            <li class="nav-item"><a class="nav-link nav-icon-link" href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer"><img src="./image/github.png" class="pixel-art" alt="">GitHub</a></li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+        <div class="row align-items-stretch g-5">
+          <div class="col-lg-6">
+            <div class="hero-copy-column">
+              <h1 class="hero-logo-title">
+                <img src="./image/logo_title.png" class="pixel-art" alt="Rapid">
+              </h1>
+              <p class="lead">
+                A
+                <span class="lead-word lead-word-flex">Flexible</span>
+                <span class="lead-word lead-word-tiny">Fast</span>
+                yet
+                <span class="lead-word lead-word-power">Powerful</span>
+                stateless renderer built for html5 games. Rapid adapts cleanly to any game architecture you design.
+              </p>
+              <div class="hero-actions">
+                <div class="install-strip" aria-label="Install Rapid Render">
+                  <code id="install-command">npm install rapid-render</code>
+                  <button class="copy-button" type="button" data-copy-target="#install-command"><img
+                      src="./image/copy.png" class="pixel-art" alt="">Copy</button>
+                </div>
+                <a class="btn btn-outline-rapid btn-lg btn-icon" href="./docs.html"><img src="./image/docs.png"
+                    class="pixel-art" alt="">Read Docs</a>
+              </div>
 
-    <main>
-      <section class="hero">
-        <div class="container">
-          <div class="row align-items-stretch g-5">
-            <div class="col-lg-6">
-              <div class="hero-copy-column">
-                <h1 class="hero-logo-title">
-                  <img src="./image/logo_title.png" class="pixel-art" alt="Rapid">
-                </h1>
-                <p class="lead">
-                  A
-                  <span class="lead-word lead-word-flex">Flexible</span>
-                  <span class="lead-word lead-word-tiny">Fast</span>
-                  yet
-                  <span class="lead-word lead-word-power">Powerful</span>
-                  stateless renderer built for html5 games. Rapid adapts cleanly to any game architecture you design.
-                </p>
-                <div class="hero-actions">
-                  <div class="install-strip" aria-label="Install Rapid Render">
-                    <code id="install-command">npm install rapid-render</code>
-                    <button class="copy-button" type="button" data-copy-target="#install-command"><img src="./image/copy.png" class="pixel-art" alt="">Copy</button>
+              <div class="features-heading">
+                <img src="./image/demo.png" class="features-heading-icon pixel-art" alt="">
+                <h2>Main Features.</h2>
+              </div>
+
+              <div class="hero-features" id="features">
+                <article class="feature-card">
+                  <img src="./image/batch.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                  <div class="feature-copy">
+                    <h2>Automatic Batching</h2>
+                    <p>Automatically batches compatible draw work. Multi-texture batching binds different textures into
+                      a single draw call, eliminating manual grouping</p>
                   </div>
-                  <a class="btn btn-outline-rapid btn-lg btn-icon" href="./docs.html"><img src="./image/docs.png" class="pixel-art" alt="">Read Docs</a>
-                </div>
-
-                <div class="features-heading">
-                  <img src="./image/demo.png" class="features-heading-icon pixel-art" alt="">
-                  <h2>Main Features.</h2>
-                </div>
-
-                <div class="hero-features" id="features">
-                  <article class="feature-card">
-                    <img src="./image/batch.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
-                    <div class="feature-copy">
-                      <h2>Automatic Batching</h2>
-                      <p>Automatically batches compatible draw work. Multi-texture batching binds different textures into a single draw call, eliminating manual grouping</p>
-                    </div>
-                  </article>
-                  <article class="feature-card">
-                    <img src="./image/shader.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
-                    <div class="feature-copy">
-                      <h2>Custom Shaders</h2>
-                      <p>Build powerful sprite and geometry effects with a shader pipeline that stays close to Rapid's renderer.</p>
-                    </div>
-                  </article>
-                  <article class="feature-card">
-                    <img src="./image/transformation.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
-                    <div class="feature-copy">
-                      <h2>Flexible Transforms</h2>
-                      <p>Compose motion, hierarchy, and camera behavior with multiple transform styles backed by a fast matrix engine.</p>
-                    </div>
-                  </article>
-                  <article class="feature-card">
-                    <img src="./image/draw.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
-                    <div class="feature-copy">
-                      <h2>Full 2D Toolkit</h2>
-                      <p>Draw lines, masks, particles, render textures, sprites, and custom geometry from one focused WebGL renderer.</p>
-                    </div>
-                  </article>
-                </div>
+                </article>
+                <article class="feature-card">
+                  <img src="./image/shader.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                  <div class="feature-copy">
+                    <h2>Custom Shaders</h2>
+                    <p>Build powerful sprite and geometry effects with a shader pipeline that stays close to Rapid's
+                      renderer.</p>
+                  </div>
+                </article>
+                <article class="feature-card">
+                  <img src="./image/transformation.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                  <div class="feature-copy">
+                    <h2>Flexible Transforms</h2>
+                    <p>Compose motion, hierarchy, and camera behavior with multiple transform styles backed by a fast
+                      matrix engine.</p>
+                  </div>
+                </article>
+                <article class="feature-card">
+                  <img src="./image/draw.png" class="feature-icon pixel-art" alt="" aria-hidden="true">
+                  <div class="feature-copy">
+                    <h2>Full 2D Toolkit</h2>
+                    <p>Draw lines, masks, particles, render textures, sprites, and custom geometry from one focused
+                      WebGL renderer.</p>
+                  </div>
+                </article>
               </div>
             </div>
-            <div class="col-lg-6 d-flex flex-column">
-              <div class="hero-demo-stack mx-auto w-100 flex-grow-1">
-                <div class="demo-topline">
-                  <select class="form-select demo-select home-demo-select" id="home-demo-select" aria-label="Choose homepage demo"></select>
-                </div>
-                <canvas id="game" class="rapid-canvas" width="480" height="300" aria-label="Selected Rapid demo"></canvas>
-                <div class="code-card hero-code-card">
-                  <pre><code id="home-demo-code" class="language-javascript"></code></pre>
-                </div>
+          </div>
+          <div class="col-lg-6 d-flex flex-column">
+            <div class="hero-demo-stack mx-auto w-100 flex-grow-1">
+              <div class="demo-topline">
+                <select class="form-select demo-select home-demo-select" id="home-demo-select"
+                  aria-label="Choose homepage demo"></select>
+              </div>
+              <canvas id="game" class="rapid-canvas" width="480" height="300" aria-label="Selected Rapid demo"></canvas>
+              <div class="code-card hero-code-card">
+                <pre><code id="home-demo-code" class="language-javascript"></code></pre>
               </div>
             </div>
           </div>
         </div>
-      </section>
-
-      <section class="proof-section" aria-labelledby="proof-title">
-        <div class="container">
-          <div class="proof-heading">
-            <div class="users-title">
-              <img src="./image/fast.png" class="users-title-icon pixel-art" alt="">
-              <h2 id="proof-title">Built to stay light.</h2>
-            </div>
-            <p>Small downloads, steady frames, and a renderer that keeps its shape as your scene grows.</p>
-          </div>
-
-          <div class="proof-grid">
-            <article class="proof-row proof-row-chart-first reveal-chart" data-chart="package">
-              <div class="proof-visual">
-                <div class="chart-kicker"><span><span class="chart-dot chart-dot-blue"></span> Production bundle size</span></div>
-                <div class="chart-frame"><div class="package-chart" role="img" aria-label="Bundle size comparison chart"></div></div>
-              </div>
-              <div class="proof-copy">
-                <div class="proof-title"><img src="./image/fast-download.png" class="proof-title-icon pixel-art" alt=""><h3>Less to download.<br><em>More room to play.</em></h3></div>
-                <p>Rapid Render stays compact at <strong>67 kB (~19.5 kB gzipped)</strong>, leaving more room for the game code that makes your world feel alive.</p>
-                <span class="proof-note">Compared with popular 2D renderers</span>
-              </div>
-            </article>
-
-            <article class="proof-row proof-row-copy-first reveal-chart" data-chart="multi">
-              <div class="proof-copy">
-                <div class="proof-title"><img src="./image/run-fast.png" class="proof-title-icon pixel-art" alt=""><h3>Batch more sprites.<br><em>Keep the frame.</em></h3></div>
-                <p>Rapid.js keeps its frame-time curve remarkably steady as scenes grow. Automatic batching handles the grouping, so your game code can stay focused on the scene.</p>
-                <a class="proof-benchmark" href="./benchmark/">Test it yourself in the benchmark <span aria-hidden="true">→</span></a>
-              </div>
-              <div class="proof-visual">
-                <div class="chart-kicker"><span><span class="chart-dot chart-dot-coral"></span> FPS chart · multi texture</span><span class="chart-quality">Higher is better</span></div>
-                <div class="chart-frame"><div class="line-chart" role="img" aria-label="Multi texture frames per second comparison chart"></div></div>
-              </div>
-            </article>
-
-          </div>
-        </div>
-      </section>
-
-      <section class="users-section" id="start">
-        <div class="container">
-          <div class="users-heading">
-            <div class="users-title">
-              <img src="./image/use.png" class="users-title-icon pixel-art" alt="">
-              <h2>Who is using Rapid.js?</h2>
-            </div>
-            <p>If you built something with Rapidjs and want it to appear here, please tell <a href="mailto:nightscratch1145@gmail.com">nightscratch1145@gmail.com</a></p>
-          </div>
-          <div class="users-list">
-            <article class="user-item">
-              <img src="./image/toycar.png" class="pixel-art" alt="Toy Car demo">
-              <div>
-                <h3><a href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer">Toy Car Demo</a></h3>
-                <p>lalalalalalalalalalalala</p>
-                <span>NightScratch</span>
-              </div>
-            </article>
-            <article class="user-item">
-              <img src="./image/tree.png" class="pixel-art" alt="Forest Sketch">
-              <div>
-                <h3><a href="https://github.com/Nightre/Rapid.js" target="_blank" rel="noreferrer">Forest Sketch</a></h3>
-                <p>lalalalalalalalalalalala</p>
-                <span>NightScratch</span>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer py-4">
-      <div class="container d-flex flex-column flex-sm-row justify-content-between gap-2">
-        <span>By <a href="https://github.com/Nightre" target="_blank" rel="noreferrer">NightScratch</a></span>
-        <span>Made with <span class="footer-heart" aria-label="love">❤</span></span>
       </div>
-    </footer>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <script type="module" src="./home.js"></script>
-  </body>
+    <section class="proof-section" aria-labelledby="proof-title">
+      <div class="container">
+        <div class="proof-heading">
+          <div class="users-title">
+            <img src="./image/fast.png" class="users-title-icon pixel-art" alt="">
+            <h2 id="proof-title">Built to stay light.</h2>
+          </div>
+          <p>Small downloads, steady frames, and a renderer that keeps its shape as your scene grows.</p>
+        </div>
+
+        <div class="proof-grid">
+          <article class="proof-row proof-row-chart-first reveal-chart" data-chart="package">
+            <div class="proof-visual">
+              <div class="chart-kicker"><span><span class="chart-dot chart-dot-blue"></span> Production bundle
+                  size</span></div>
+              <div class="chart-frame">
+                <div class="package-chart" role="img" aria-label="Bundle size comparison chart"></div>
+              </div>
+            </div>
+            <div class="proof-copy">
+              <div class="proof-title"><img src="./image/fast-download.png" class="proof-title-icon pixel-art" alt="">
+                <h3>Less to download.<br><em>More room to play.</em></h3>
+              </div>
+              <p>Rapid Render stays compact at <strong>67 kB (~19.5 kB gzipped)</strong>, leaving more room for the game
+                code that makes your world feel alive.</p>
+              <span class="proof-note">Compared with popular 2D renderers</span>
+            </div>
+          </article>
+
+          <article class="proof-row proof-row-copy-first reveal-chart" data-chart="multi">
+            <div class="proof-copy">
+              <div class="proof-title"><img src="./image/run-fast.png" class="proof-title-icon pixel-art" alt="">
+                <h3>Batch more sprites.<br><em>Keep the frame.</em></h3>
+              </div>
+              <p>Rapid.js keeps its frame-time curve remarkably steady as scenes grow. Automatic batching handles the
+                grouping, so your game code can stay focused on the scene.</p>
+              <a class="proof-benchmark" href="./benchmark/">Test it yourself in the benchmark <span
+                  aria-hidden="true">→</span></a>
+            </div>
+            <div class="proof-visual">
+              <div class="chart-kicker"><span><span class="chart-dot chart-dot-coral"></span> FPS chart · multi
+                  texture</span><span class="chart-quality">Higher is better</span></div>
+              <div class="chart-frame">
+                <div class="line-chart" role="img" aria-label="Multi texture frames per second comparison chart"></div>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="users-section" id="start">
+      <div class="container">
+        <div class="users-heading">
+          <div class="users-title">
+            <img src="./image/use.png" class="users-title-icon pixel-art" alt="">
+            <h2>Who is using Rapid.js?</h2>
+          </div>
+          <p>If you built something with Rapidjs and want it to appear here, please tell <a
+              href="mailto:nightscratch1145@gmail.com">nightscratch1145@gmail.com</a></p>
+        </div>
+        <div class="users-list">
+          <!-- Case 1: Sydney Opera House Live Interactive Show -->
+          <article class="user-item">
+            <img src="./image/with-rapid-0.png" class="user-case-image" alt="Avoid the Zeros at the Sydney Opera House">
+            <div>
+              <h3><a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3" target="_blank" rel="noreferrer">Avoid
+                  the Zeros</a></h3>
+              <p>Foxdog Studios used Rapid.js to deliver fast download times and smooth multi-sprite rendering for thousands of audience members playing simultaneously on their mobile phones at the <strong>Sydney Opera House</strong>.</p>
+              <span>Foxdog Studios</span>
+            </div>
+          </article>
+
+          <!-- Case 2: Poki Featured Hit Web Game -->
+          <article class="user-item">
+            <img src="./image/with-rapid-1.png" class="user-case-image" alt="Emoji Party on Poki">
+            <div>
+              <h3><a href="https://poki.com/zh/g/emoji-party" target="_blank" rel="noreferrer">Emoji Party</a></h3>
+              <p>A featured puzzle hit on Poki with over <strong>13,000+ player ratings</strong>. Rapid.js powers its
+                snappy sprite animations and instant-play experience across hundreds of thousands of diverse mobile and
+                desktop browsers.</p>
+              <span>illusivegames</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer py-4">
+    <div class="container d-flex flex-column flex-sm-row justify-content-between gap-2">
+      <span>By <a href="https://github.com/Nightre" target="_blank" rel="noreferrer">NightScratch</a></span>
+      <span>Made with <span class="footer-heart" aria-label="love">❤</span></span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
+  <script type="module" src="./home.js"></script>
+</body>
+
 </html>

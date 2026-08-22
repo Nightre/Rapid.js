@@ -78,6 +78,37 @@ Performance Comparison: Rapid vs. Other Renderers and Game Engines
 
 Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google Chrome (WebGL 2.0)** (Chrome / WebGL 2.0)
 
+## Who is using Rapid.js?
+
+If you built something with Rapid.js and want it to appear here, please tell [nightscratch1145@gmail.com](mailto:nightscratch1145@gmail.com).
+
+<table>
+  <tr>
+    <td width="96" valign="top">
+      <a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">
+        <img src="./docs/image/with-rapid-0.png" alt="Avoid the Zeros at the Sydney Opera House" width="88" height="88">
+      </a>
+    </td>
+    <td valign="top">
+      <strong><a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">Avoid the Zeros</a></strong><br>
+      Foxdog Studios used Rapid.js to deliver fast download times and smooth multi-sprite rendering for thousands of audience members playing simultaneously on their mobile phones at the <strong>Sydney Opera House</strong>.<br>
+      <sub><strong>Foxdog Studios</strong> · Live Audience Game</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="96" valign="top">
+      <a href="https://poki.com/zh/g/emoji-party">
+        <img src="./docs/image/with-rapid-1.png" alt="Emoji Party" width="88" height="88">
+      </a>
+    </td>
+    <td valign="top">
+      <strong><a href="https://poki.com/zh/g/emoji-party">Emoji Party</a></strong><br>
+      A featured puzzle hit on Poki with over <strong>13,000+ player ratings</strong>. Rapid.js powers its snappy sprite animations and instant-play experience across hundreds of thousands of diverse mobile and desktop browsers.<br>
+      <sub><strong>illusivegames</strong> · Featured on Poki</sub>
+    </td>
+  </tr>
+</table>
+
 ## Contributing
 
 Contributions, issues, and feature requests are welcome!

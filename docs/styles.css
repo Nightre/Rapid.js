@@ -486,21 +486,32 @@ h1 {
 
 .user-item {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 100px minmax(0, 1fr);
   gap: 1.25rem;
   align-items: center;
 }
 
-.user-item img {
-  width: 88px;
-  height: 88px;
+.user-case-image {
+  width: 100px;
+  height: 100px;
   object-fit: contain;
+  border-radius: 0.5rem;
 }
 
 .user-item h3 {
   margin: 0 0 0.35rem;
   font-size: 1.25rem;
   font-weight: 900;
+}
+
+.user-item > div > p {
+  line-height: 1.55;
+}
+
+.user-item span {
+  color: #71808c;
+  font-size: .82rem;
+  font-weight: 800;
 }
 
 .user-item h3 a {
@@ -719,6 +730,35 @@ h1 {
   background: #253142;
   border-radius: 8px;
   overflow: auto;
+}
+
+.user-case-doc-entry {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  column-gap: 1.25rem;
+  align-items: start;
+  margin: 2rem 0;
+}
+
+.user-case-doc-entry h2,
+.user-case-doc-entry p:not(:has(img)) {
+  grid-column: 2;
+}
+
+.user-case-doc-entry h2 {
+  margin-top: 0;
+}
+
+.user-case-doc-entry p:has(img) {
+  grid-column: 1;
+  grid-row: 1 / span 10;
+  margin: 0;
+}
+
+.user-case-doc-entry p:has(img) img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
 }
 
 .demo-main {
