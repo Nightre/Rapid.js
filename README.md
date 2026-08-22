@@ -72,39 +72,34 @@ Performance Comparison: Rapid vs. Other Renderers and Game Engines
   </a>
 </p>
 
-<p align="center">
-  🎮 <strong><a href="https://nightre.github.io/Rapid.js/benchmark/">Run Interactive Benchmark Live &rarr;</a></strong>
-</p>
+[Run Interactive Benchmark Live](https://nightre.github.io/Rapid.js/benchmark/)
 
 Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google Chrome (WebGL 2.0)** (Chrome / WebGL 2.0)
 
 ## Who is using Rapid.js?
 
-We'd love to feature your work! Submit a Pull Request or Open an Issue to add your project to the showcase.
-
+We'd love to feature your work! Please [**Submit a Pull Request**](https://github.com/Nightre/Rapid.js/pulls) or [**Open an Issue**](https://github.com/Nightre/Rapid.js/issues/new?title=Showcase%20Submission:%20[Your%20Project%20Name]) to add your game or app to the showcase!
 <table>
   <tr>
     <td width="96" valign="top">
       <a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">
-        <img src="./docs/image/with-rapid-0.png" alt="Avoid the Zeros at the Sydney Opera House" width="88" height="88">
+        <img src="./docs/image/with-rapid-0.png" alt="Avoid the Zeros at the Sydney Opera House">
       </a>
     </td>
     <td valign="top">
-      <strong><a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">Avoid the Zeros</a></strong><br>
+      <strong><a href="https://www.instagram.com/p/DJboaWgMzhK/?img_index=3">Avoid the Zeros</a> by Foxdog Studios</strong><br>
       Foxdog Studios used Rapid.js to deliver fast download times and smooth multi-sprite rendering for thousands of audience members playing simultaneously on their mobile phones at the <strong>Sydney Opera House</strong>.<br>
-      <sub><strong>Foxdog Studios</sub>
     </td>
   </tr>
   <tr>
     <td width="96" valign="top">
       <a href="https://poki.com/zh/g/emoji-party">
-        <img src="./docs/image/with-rapid-1.png" alt="Emoji Party" width="88" height="88">
+        <img src="./docs/image/with-rapid-1.png" alt="Emoji Party">
       </a>
     </td>
     <td valign="top">
-      <strong><a href="https://poki.com/zh/g/emoji-party">Emoji Party</a></strong><br>
+      <strong><a href="https://poki.com/zh/g/emoji-party">Emoji Party</a> by illusivegames</strong><br>
       A featured puzzle hit on Poki with over <strong>13,000+ player ratings</strong>. Rapid.js powers its snappy sprite animations and instant-play experience across hundreds of thousands of diverse mobile and desktop browsers.<br>
-      <sub><strong>illusivegames</sub>
     </td>
   </tr>
 </table>
