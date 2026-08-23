@@ -74,7 +74,7 @@ Performance Comparison: Rapid vs. Other Renderers and Game Engines
 
 [Run Interactive Benchmark Live](https://nightre.github.io/Rapid.js/benchmark/)
 
-Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google Chrome (WebGL 2.0)** (Chrome / WebGL 2.0)
+Tested on **Windows 11 / Intel i7-12850H / NVIDIA RTX 4070 Laptop GPU / Google Chrome (WebGL 2.0)**
 
 ## Who is using Rapid.js?
 
