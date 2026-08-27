@@ -38,7 +38,7 @@ vec4 sampleTextureLocal(vec2 uv){
 // CUSTOM_CODE
 
 void main(void) {
-    fragColor = sampleClampTexture(vRegion);
+    fragColor = sampleClampTexture(vRegion) * vColor;
     // if (vPadding.x != 0.0) {
     //     if (clampUV(vRegion)) {
     //         fragColor = vec4(0.0, 0.0, 0.0, 0.0);

@@ -18,9 +18,9 @@ bool clampUV(vec2 uv) {
 
 vec4 sampleTexture(vec2 uv) {
     if (uUseTexture > 0) {
-        return texture(uTexture, uv) * vColor;
+        return texture(uTexture, uv);
     }
-    return vColor;
+    return vec4(1,1,1,1);
 }
 
 vec4 sampleClampTexture(vec2 uv) {
@@ -41,6 +41,6 @@ vec4 sampleTextureLocal(vec2 uv) {
 // CUSTOM_CODE
 
 void main(void) {
-    fragColor = sampleTexture(vRegion);
+    fragColor = sampleTexture(vRegion) * vColor;
     // CUSTOM_CODE_CALL
 }

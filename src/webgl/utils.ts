@@ -155,7 +155,7 @@ export function generateShader(fs: string, max: number) {
             } else {
                 code += `else if(vTextureId == ${index})`
             }
-            code += `{return texture(uTextures[${index}], uv) * vColor;}`
+            code += `{return texture(uTextures[${index}], uv);}`
         }
         fs = fs.replace("%GET_COLOR%", code)
     }
