@@ -3,7 +3,7 @@ export const BENCHMARK = Object.freeze({
     height: 360,
     spriteSize: 64,
     background: "#f7fdff",
-    warmupMs: 2000,
+    warmupMs: 1000,
     sampleMs: 3000,
     externalTimeoutMs: 15000,
     textureUrls: Object.freeze([
