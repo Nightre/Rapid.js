@@ -1,5 +1,5 @@
 import { Rapid } from "../render";
-import { MAX_INSTANCES, Region } from "./region";
+import { Region } from "./region";
 import { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
 import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
@@ -159,10 +159,6 @@ export class SpriteRegion extends Region {
         flipY: boolean = false,
         isRotated: boolean = false,
     ): void {
-        if (this.instanceCount > MAX_INSTANCES) {
-            this.flush();
-        }
-
         const base = texture.base!;
         const textureScale = texture.scale ?? 1;
 

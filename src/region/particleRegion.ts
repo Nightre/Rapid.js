@@ -5,7 +5,6 @@ import { Rapid } from "../render";
 import GLShader, { CustomGlShader } from "../webgl/glshader";
 import { drawArraysInstanced, UNSIGNED_BYTE } from "../webgl/utils";
 import { Texture } from "../texture";
-import { MAX_INSTANCES } from "./region";
 import { composeProjectionWithAffine } from "../math";
 
 // Per-instance buffer stride: 11 floats + 1 packed color = 48 bytes
@@ -71,71 +70,6 @@ export class ParticleRegion extends SpriteRegion {
         return shader;
     }
 
-    drawParticle(
-        texture: Texture,
-        x: number = 0, y: number = 0,
-        scaleX: number = 1, scaleY: number = 1,
-        rotation: number = 0,
-        u0: number = 0, v0: number = 0, u1: number = 1, v1: number = 1,
-        color: number = 0xFFFFFFFF,
-        flipX: boolean = false,
-        flipY: boolean = false,
-        isRotated: boolean = false,
-        originX: number = 0.5,
-        originY: number = 0.5,
-    ): void {
-        if (this.instanceCount >= MAX_INSTANCES || (this.texture && texture != this.texture)) {
-            this.flush();
-        }
-
-        if (texture.glTexture) {
-            this.texture = texture
-            // It does not rely on the region to set the texture;
-            // it merely occupies a texture unit to prevent the custom shader from overwriting it
-            this.useTexture(texture.glTexture, 0, 0)
-        }
-
-        const buf = this.instanceBuffer;
-        const index = buf.usedElemNum;
-        const rawWidth = texture.rawWidth;
-        const rawHeight = texture.rawHeight;
-
-        buf.resize(INSTANCE_ELEMS);
-        const f32 = buf.float32!;
-        const u32 = buf.uint32!;
-
-        // aPosition
-        f32[index] = x;
-        f32[index + 1] = y;
-
-        // aScale
-        f32[index + 2] = scaleX * (flipX ? -1 : 1) * rawWidth;
-        f32[index + 3] = scaleY * (flipY ? -1 : 1) * rawHeight;
-
-        // aRotation
-        f32[index + 4] = rotation;
-        if (isRotated) {
-            f32[index + 4] += Math.PI / 2;
-        }
-
-        // aUVRect
-        f32[index + 5] = u0;
-        f32[index + 6] = v0;
-        f32[index + 7] = u1;
-        f32[index + 8] = v1;
-
-        // aColor
-        u32[index + 9] = color;
-
-        // aOrigin
-        f32[index + 10] = originX;
-        f32[index + 11] = originY;
-
-        buf.usedElemNum += INSTANCE_ELEMS;
-        buf.makeDirty();
-        this.instanceCount++;
-    }
-
     drawParticles(
         texture: Texture,
         x: Array<number>,
@@ -169,9 +103,7 @@ export class ParticleRegion extends SpriteRegion {
                 this.useTexture(texture.glTexture, 0, 0);
             }
 
-            const remaining = count - offset;
-            const available = MAX_INSTANCES - this.instanceCount;
-            const batchCount = Math.min(remaining, available);
+            const batchCount = count - offset;
             const buf = this.instanceBuffer;
             let index = buf.usedElemNum;
 
@@ -212,10 +144,6 @@ export class ParticleRegion extends SpriteRegion {
             buf.makeDirty();
             this.instanceCount += batchCount;
             offset += batchCount;
-
-            if (this.instanceCount >= MAX_INSTANCES) {
-                this.flush();
-            }
         }
     }
 
@@ -235,9 +163,14 @@ export class ParticleRegion extends SpriteRegion {
         this.instanceBuffer.bindBuffer();
         this.instanceBuffer.bufferData();
         shader.bindVAO();
+        
+        const ms = this.rapid.matrixStack
+        const m = this.rapid.matrix
+        const worldMatrix = m.getMatrix(ms.curWorldM)
 
-        const matrix = composeProjectionWithAffine(this.rapid.projection, this.worldSpriteMatrix)
+        const matrix = composeProjectionWithAffine(this.rapid.projection, worldMatrix)
         this.currentShader.setUniform("u_projection", matrix);
+        this.currentShader.setUniform("u_projection", this.rapid.projection);
 
         drawArraysInstanced(gl, gl.TRIANGLE_STRIP, 0, 4, this.instanceCount);
         this.rapid.drawcallCount++;

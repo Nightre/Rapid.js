@@ -14,25 +14,6 @@ export interface IDrawOptions extends ITransformOptions {
     customMatrix?: number;
 }
 
-export interface IDrawParticleOptions {
-    shader?: DrawShader;
-    texture: Texture;
-    color?: Color;
-    flipX?: boolean;
-    flipY?: boolean;
-
-    x?: number;
-    y?: number;
-    position?: Vec2;
-    rotation?: number;
-    scaleX?: number;
-    scaleY?: number;
-    originX?: number;
-    originY?: number;
-
-    isRotated?: boolean;
-}
-
 export interface IDrawParticleBatchOptions {
     shader?: DrawShader;
     texture: Texture;
@@ -171,33 +152,6 @@ export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
     withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
         drawSpriteRaw(rapid, options);
     });
-};
-
-export const drawParticle = (rapid: Rapid, options: IDrawParticleOptions): void => {
-    const region = rapid.particleRegion
-    rapid.enterRegion(region, options.shader);
-    const texture = options.texture
-
-    const u0 = texture.uvX;
-    const v0 = texture.uvY;
-    const u1 = texture.uvW;
-    const v1 = texture.uvH;
-
-    region.drawParticle(
-        texture,
-        options.x,
-        options.y,
-        options.scaleX,
-        options.scaleY,
-        options.rotation,
-        u0, v0, u1, v1,
-        getColorUint32(rapid, options.color),
-        options.flipX,
-        options.flipY,
-        options.isRotated,
-        options.originX,
-        options.originY,
-    )
 };
 
 export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions): void => {

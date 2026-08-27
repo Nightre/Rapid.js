@@ -8,7 +8,6 @@ import { RenderTexture, Texture, TextureManager } from "./texture";
 import { Color } from "./color";
 import {
     ICircleOptions,
-    IDrawParticleOptions,
     IDrawParticleBatchOptions,
     IGraphicOptions,
     ILineOptions,
@@ -19,7 +18,6 @@ import {
     drawGraphic,
     drawLine,
     drawMaskImage,
-    drawParticle,
     drawParticles,
     drawRect,
     drawSprite,
@@ -283,12 +281,9 @@ export class Rapid {
         region.enter(customShader);
     }
 
-    drawParticle(options: IDrawParticleOptions): void {
-        drawParticle(this, options)
-    }
-
     drawParticles(options: IDrawParticleBatchOptions): void {
-        drawParticles(this, options)
+        drawParticles(this, options);
+        this.flush(); // flush now
     }
 
     drawSprite(options: ISpriteOptions): void {
