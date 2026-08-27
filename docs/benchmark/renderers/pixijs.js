@@ -40,7 +40,8 @@ async function run(runtime) {
         for (let i = 0; i < sprites.count; i++) {
             const particle = new PIXI.Particle({
                 texture: textures[0],
-                anchor: 0.5,
+                anchorX: 0.5,
+                anchorY: 0.5,
                 x: sprites.x[i],
                 y: sprites.y[i],
                 rotation: sprites.rotation[i],
