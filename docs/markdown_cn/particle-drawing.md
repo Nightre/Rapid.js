@@ -27,6 +27,8 @@ rapid.drawParticle({
   rotation: Math.PI * 0.25,
   scaleX: 1,
   scaleY: 1,
+  originX: 0.5,
+  originY: 0.5,
   color: new Color(255, 220, 120),
 });
 ```

@@ -27,6 +27,8 @@ export interface IDrawParticleOptions {
     rotation?: number;
     scaleX?: number;
     scaleY?: number;
+    originX?: number;
+    originY?: number;
 
     isRotated?: boolean;
 }
@@ -41,6 +43,8 @@ export interface IDrawParticleBatchOptions {
     count?: number;
     scaleX?: number;
     scaleY?: number;
+    originX?: number;
+    originY?: number;
     flipX?: boolean;
     flipY?: boolean;
     isRotated?: boolean;
@@ -190,7 +194,9 @@ export const drawParticle = (rapid: Rapid, options: IDrawParticleOptions): void 
         getColorUint32(rapid, options.color),
         options.flipX,
         options.flipY,
-        options.isRotated
+        options.isRotated,
+        options.originX,
+        options.originY,
     )
 };
 
@@ -231,6 +237,8 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         options.flipX,
         options.flipY,
         options.isRotated,
+        options.originX,
+        options.originY,
     )
 };
 

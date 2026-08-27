@@ -8,14 +8,15 @@ import { Texture } from "../texture";
 import { MAX_INSTANCES } from "./region";
 import { composeProjectionWithAffine } from "../math";
 
-// Per-instance buffer stride: 9 floats + 1 packed color = 40 bytes
+// Per-instance buffer stride: 11 floats + 1 packed color = 48 bytes
 // layout:
 //   aPosition    vec2        float32×2  offset  0  (x, y)
 //   aScale       vec2        float32×2  offset  8  (scaleX, scaleY)
 //   aRotation    float       float32×1  offset 16  (angle in radians)
 //   aUVRect      vec4        float32×4  offset 20  (u0, v0, u1, v1)
-//   aColor       vec4        float32×4  offset 36  (r, g, b, a, 0–1)
-const INSTANCE_STRIDE = 40;
+//   aColor       vec4        uint8×4    offset 36  (r, g, b, a, 0–255)
+//   aOrigin      vec2        float32×2  offset 40  (normalized pivot)
+const INSTANCE_STRIDE = 48;
 const INSTANCE_ELEMS = INSTANCE_STRIDE / 4;
 
 export class ParticleRegion extends SpriteRegion {
@@ -57,6 +58,7 @@ export class ParticleRegion extends SpriteRegion {
             { name: "aRotation", size: 1, stride: INSTANCE_STRIDE, offset: 16, divisor: 1 },
             { name: "aUVRect", size: 4, stride: INSTANCE_STRIDE, offset: 20, divisor: 1 },
             { name: "aColor", size: 4, type: UNSIGNED_BYTE, normalized: true, stride: INSTANCE_STRIDE, offset: 36, divisor: 1 },
+            { name: "aOrigin", size: 2, stride: INSTANCE_STRIDE, offset: 40, divisor: 1 },
         ]);
         this.quadBuffer.bindBuffer();
         shader.setAttributes([
@@ -79,6 +81,8 @@ export class ParticleRegion extends SpriteRegion {
         flipX: boolean = false,
         flipY: boolean = false,
         isRotated: boolean = false,
+        originX: number = 0.5,
+        originY: number = 0.5,
     ): void {
         if (this.instanceCount >= MAX_INSTANCES || (this.texture && texture != this.texture)) {
             this.flush();
@@ -123,6 +127,10 @@ export class ParticleRegion extends SpriteRegion {
         // aColor
         u32[index + 9] = color;
 
+        // aOrigin
+        f32[index + 10] = originX;
+        f32[index + 11] = originY;
+
         buf.usedElemNum += INSTANCE_ELEMS;
         buf.makeDirty();
         this.instanceCount++;
@@ -141,6 +149,8 @@ export class ParticleRegion extends SpriteRegion {
         flipX: boolean = false,
         flipY: boolean = false,
         isRotated: boolean = false,
+        originX: number = 0.5,
+        originY: number = 0.5,
     ): void {
         if (!texture.glTexture || count <= 0) return;
 
@@ -191,6 +201,10 @@ export class ParticleRegion extends SpriteRegion {
 
                 // aColor
                 u32[index + 9] = color[sourceIndex];
+
+                // aOrigin
+                f32[index + 10] = originX;
+                f32[index + 11] = originY;
                 index += INSTANCE_ELEMS;
             }
 
