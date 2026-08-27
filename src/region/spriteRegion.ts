@@ -159,7 +159,7 @@ export class SpriteRegion extends Region {
         flipY: boolean = false,
         isRotated: boolean = false,
     ): void {
-        if (this.freeTextureUnitNum === 0 || this.instanceCount > MAX_INSTANCES) {
+        if (this.instanceCount > MAX_INSTANCES) {
             this.flush();
         }
 

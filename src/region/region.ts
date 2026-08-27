@@ -63,6 +63,9 @@ export class Region {
     useTexture(texture: WebGLTexture, paddingX: number = 0, paddingY: number = 0) {
         const textureUnit = this.findTextureUnit(texture, paddingX, paddingY)
         if (textureUnit == -1) {
+            if (this.freeTextureUnitNum === 0) {
+                this.flush();
+            }
             this.usedTextures.push(texture)
 
             this.usedTexturePadding.push(paddingX)
