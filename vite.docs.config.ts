@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { cpSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { benchmarkRendererSources } from './vite.benchmark-renderers'
 
 const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
@@ -23,6 +24,8 @@ export default defineConfig({
     outDir: './dist',
     emptyOutDir: true,
     target: 'esnext',
+    minify: 'esbuild',
+    cssMinify: 'esbuild',
     rollupOptions: {
       input: {
         main: fromRoot('./docs/index.html'),
@@ -32,6 +35,10 @@ export default defineConfig({
     },
   },
   plugins: [
+    benchmarkRendererSources({
+      requestPrefix: '/benchmark/renderers/',
+      copyTo: fromRoot('./docs/dist/benchmark/renderers'),
+    }),
     {
       name: 'copy-demo-images',
       closeBundle() {

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
 import dts from 'vite-plugin-dts';
+import { benchmarkRendererSources } from './vite.benchmark-renderers'
 
 export default defineConfig({
   resolve: {
@@ -19,5 +20,11 @@ export default defineConfig({
     },
     target: 'esnext',
   },
-  plugins: [dts()],
+  plugins: [
+    benchmarkRendererSources({
+      // `yarn dev` serves the existing docs URL from the repository root.
+      requestPrefix: '/docs/benchmark/renderers/',
+    }),
+    dts(),
+  ],
 })

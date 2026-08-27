@@ -1,70 +1,45 @@
-const EXCALIBUR_URL = "https://esm.sh/excalibur";
-
-let excaliburModule = null;
-
-export const excaliburRenderer = {
-    id: "excalibur",
-    name: "Excalibur",
-    color: "#6291f0",
-    run: runExcalibur,
-    snippets: {
-        multi: `const imageSources = TEXTURE_URLS.map((url) => new ex.ImageSource(url));
-await Promise.all(imageSources.map((source) => source.load()));
-
-const renderSprites = new Array(sprites.count);
-for (let i = 0; i < sprites.count; i++) {
-    renderSprites[i] = imageSources[sprites.textureIndex[i]].toSprite({
-        tint: ex.Color.fromHex(sprites.tintCss[i]),
-    });
-}
-
-engine.currentScene.on("preupdate", (event) => {
-    updateSprites(sprites, Math.min(event.elapsed / 1000, 0.05));
-});
-
-engine.currentScene.on("postdraw", (event) => {
-    const ctx = event.ctx;
-    for (let i = 0; i < sprites.count; i++) {
-        ctx.save();
-        ctx.translate(sprites.x[i], sprites.y[i]);
-        ctx.rotate(sprites.rotation[i]);
-        renderSprites[i].draw(ctx, -32, -32);
-        ctx.restore();
-    }
-});`,
-    },
-};
-
-async function runExcalibur(context, canvas, sprites) {
-    const ex = await loadExcalibur();
+async function run(runtime) {
+    const {
+        canvas,
+        width,
+        height,
+        spriteSize,
+        background,
+        textureUrls,
+        sampleExternalLoop,
+        updateSprites,
+        loadModule,
+        createSprites,
+    } = runtime;
+    const ex = await loadModule("https://esm.sh/excalibur");
+    const createColor = (red, green, blue) => new ex.Color(red, green, blue);
+    const sprites = createSprites(createColor);
     const engine = new ex.Engine({
         canvasElement: canvas,
-        width: context.width,
-        height: context.height,
+        width,
+        height,
         displayMode: ex.DisplayMode.Fixed,
-        backgroundColor: ex.Color.fromHex("#f7fdff"),
+        backgroundColor: ex.Color.fromHex(background),
         suppressPlayButton: true,
         antialiasing: false,
     });
-
-    const imageSources = context.textureUrls.map((url) => new ex.ImageSource(url));
+    const imageSources = textureUrls.map((url) => new ex.ImageSource(url));
     await Promise.all(imageSources.map((source) => source.load()));
 
     const renderSprites = new Array(sprites.count);
     for (let i = 0; i < sprites.count; i++) {
         renderSprites[i] = imageSources[sprites.textureIndex[i]].toSprite({
-            tint: ex.Color.fromHex(sprites.tintCss[i]),
+            tint: sprites.color[i],
         });
     }
 
     engine.currentScene.on("preupdate", (event) => {
-        context.updateSprites(sprites, Math.min(event.elapsed / 1000, 0.05));
+        updateSprites(sprites, Math.min(event.elapsed / 1000, 0.05));
     });
 
-    const halfSize = context.spriteSize / 2;
+    const halfSize = spriteSize * 0.5;
     engine.currentScene.on("postdraw", (event) => {
         const ctx = event.ctx;
-
         for (let i = 0; i < sprites.count; i++) {
             ctx.save();
             ctx.translate(sprites.x[i], sprites.y[i]);
@@ -74,14 +49,14 @@ async function runExcalibur(context, canvas, sprites) {
         }
     });
 
-    await engine.start();
-    const fps = await context.sampleExternalLoop();
-    engine.stop();
-    engine.dispose?.();
-    return fps;
-}
-
-async function loadExcalibur() {
-    excaliburModule ??= import(/* @vite-ignore */ EXCALIBUR_URL);
-    return excaliburModule;
+    try {
+        await engine.start();
+        return await sampleExternalLoop((frameCompleted) => {
+            engine.on("postframe", frameCompleted);
+            return () => engine.off("postframe", frameCompleted);
+        });
+    } finally {
+        engine.stop();
+        engine.dispose?.();
+    }
 }

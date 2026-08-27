@@ -1,108 +1,79 @@
-import { CanvasScaleMode, Color, Rapid, TextureFilterMode } from "rapid-render";
-
-export const rapidRenderer = {
-    id: "rapid",
-    name: "Rapid.js",
-    singleName: "Rapid.js (DrawParticles)",
-    color: "#ff0048",
-    run: runRapid,
-    snippets: {
-        multi: `const textures = textureImages.map((image) => rapid.texture.create(image));
-const drawOptions = { texture: textures[0], x: 0, y: 0, rotation: 0, color: null };
-
-sampleLoop((delta) => {
-    updateSprites(sprites, delta);
-    rapid.clear();
-
-    for (let i = 0; i < sprites.count; i++) {
-        drawOptions.x = sprites.x[i];
-        drawOptions.y = sprites.y[i];
-        drawOptions.rotation = sprites.rotation[i];
-        drawOptions.color = sprites.color[i];
-        drawOptions.texture = textures[sprites.textureIndex[i]];
-        rapid.drawSprite(drawOptions);
-    }
-
-    rapid.flush();
-});`,
-        single: `const rapidParticles = {
-    x: new Float32Array(sprites.count),
-    y: new Float32Array(sprites.count),
-    rotation: new Float32Array(sprites.count),
-    color: new Array(sprites.count),
-};
-
-const particleOptions = {
-    texture: textures[0],
-    x: rapidParticles.x,
-    y: rapidParticles.y,
-    rotation: rapidParticles.rotation,
-    color: rapidParticles.color,
-    count: sprites.count,
-};
-
-sampleLoop((delta) => {
-    updateSprites(sprites, delta);
-
-    for (let i = 0; i < sprites.count; i++) {
-        rapidParticles.x[i] = sprites.x[i];
-        rapidParticles.y[i] = sprites.y[i];
-        rapidParticles.rotation[i] = sprites.rotation[i];
-        rapidParticles.color[i] = sprites.color[i];
-    }
-
-    rapid.clear();
-    rapid.drawParticles(particleOptions);
-    rapid.flush();
-});`,
-    },
-};
-
-async function runRapid(context, canvas, sprites) {
+async function run(runtime) {
+    const {
+        canvas,
+        mode,
+        width,
+        height,
+        background,
+        textureImages,
+        sampleLoop,
+        updateSprites,
+        libraries,
+        createSprites,
+    } = runtime;
+    const { CanvasScaleMode, Color, Rapid, TextureFilterMode } = libraries;
+    const createColor = (red, green, blue) => new Color(red, green, blue, 255);
+    const sprites = createSprites(createColor);
     const rapid = new Rapid({
         canvas,
-        logicWidth: context.width,
-        logicHeight: context.height,
-        physicsWidth: context.width,
-        physicsHeight: context.height,
-        backgroundColor: new Color(247, 253, 255),
+        logicWidth: width,
+        logicHeight: height,
+        physicsWidth: width,
+        physicsHeight: height,
+        backgroundColor: Color.fromHex(background),
         antialias: false,
         roundPixels: false,
         scaleMode: CanvasScaleMode.Viewport,
         textureFilter: TextureFilterMode.NEAREST,
     });
-    const textures = context.textureImages.map((image) => rapid.texture.create(image));
+    const textures = textureImages.map((image) => rapid.texture.create(image));
 
-    const drawOptions = { texture: textures[0], x: 0, y: 0, rotation: 0, origin: 0.5, color: null };
+    try {
+        if (mode === "single") {
+            const particles = {
+                x: new Float32Array(sprites.count),
+                y: new Float32Array(sprites.count),
+                rotation: new Float32Array(sprites.count),
+                color: new Array(sprites.count),
+            };
+            const particleOptions = {
+                texture: textures[0],
+                x: particles.x,
+                y: particles.y,
+                rotation: particles.rotation,
+                color: particles.color,
+                count: sprites.count,
+                originX: 0.5,
+                originY: 0.5,
+            };
 
-    const rapidParticles = {
-        x: new Float32Array(sprites.count),
-        y: new Float32Array(sprites.count),
-        rotation: new Float32Array(sprites.count),
-        color: new Array(sprites.count),
-    };
-    const particleOptions = {
-        texture: textures[0],
-        x: rapidParticles.x,
-        y: rapidParticles.y,
-        rotation: rapidParticles.rotation,
-        color: rapidParticles.color,
-        count: sprites.count,
-    };
+            return await sampleLoop((delta) => {
+                updateSprites(sprites, delta);
+                for (let i = 0; i < sprites.count; i++) {
+                    particles.x[i] = sprites.x[i];
+                    particles.y[i] = sprites.y[i];
+                    particles.rotation[i] = sprites.rotation[i];
+                    particles.color[i] = sprites.color[i];
+                }
 
-    const fps = await context.sampleLoop((delta) => {
-        context.updateSprites(sprites, delta);
-        rapid.clear();
+                rapid.clear();
+                rapid.drawParticles(particleOptions);
+                rapid.flush();
+            });
+        }
 
-        if (!context.isMultiTextureMode()) {
-            for (let i = 0; i < sprites.count; i++) {
-                rapidParticles.x[i] = sprites.x[i];
-                rapidParticles.y[i] = sprites.y[i];
-                rapidParticles.rotation[i] = sprites.rotation[i];
-                rapidParticles.color[i] = sprites.color[i];
-            }
-            rapid.drawParticles(particleOptions);
-        } else {
+        const drawOptions = {
+            texture: textures[0],
+            x: 0,
+            y: 0,
+            rotation: 0,
+            origin: 0.5,
+            color: null,
+        };
+
+        return await sampleLoop((delta) => {
+            updateSprites(sprites, delta);
+            rapid.clear();
             for (let i = 0; i < sprites.count; i++) {
                 drawOptions.texture = textures[sprites.textureIndex[i]];
                 drawOptions.x = sprites.x[i];
@@ -111,12 +82,9 @@ async function runRapid(context, canvas, sprites) {
                 drawOptions.color = sprites.color[i];
                 rapid.drawSprite(drawOptions);
             }
-        }
-        rapid.flush();
-    });
-
-    for (const texture of textures) {
-        rapid.texture.destroy(texture, true);
+            rapid.flush();
+        });
+    } finally {
+        for (const texture of textures) rapid.texture.destroy(texture, true);
     }
-    return fps;
 }

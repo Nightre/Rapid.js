@@ -1,76 +1,30 @@
-export const pixiRenderer = {
-    id: "pixijs",
-    name: "PixiJS",
-    singleName: "PixiJS (ParticleContainer)",
-    color: "#00c49f",
-    run: runPixi,
-    snippets: {
-        multi: `const container = new PIXI.Container();
-app.stage.addChild(container);
-
-for (let i = 0; i < sprites.count; i++) {
-    const item = new PIXI.Sprite(textures[sprites.textureIndex[i]]);
-    item.anchor.set(0.5);
-    item.position.set(sprites.x[i], sprites.y[i]);
-    item.rotation = sprites.rotation[i];
-    item.tint = sprites.tint[i];
-    container.addChild(item);
-}
-
-sampleLoop((delta) => {
-    updateSprites(sprites, delta);
-    for (let i = 0; i < sprites.count; i++) {
-        container.children[i].position.set(sprites.x[i], sprites.y[i]);
-        container.children[i].rotation = sprites.rotation[i];
-    }
-    app.renderer.render(app.stage);
-});`,
-        single: `const container = new PIXI.ParticleContainer({
-    dynamicProperties: {
-        position: true,
-        rotation: true,
-        scale: false,
-        alpha: false,
-        tint: true,
-    },
-});
-app.stage.addChild(container);
-
-const pixiSprites = [];
-for (let i = 0; i < sprites.count; i++) {
-    const particle = new PIXI.Particle({
-        texture: textures[0],
-        anchor: 0.5,
-        x: sprites.x[i],
-        y: sprites.y[i],
-        rotation: sprites.rotation[i],
-        tint: sprites.tint[i],
-    });
-    container.addParticle(particle);
-    pixiSprites.push(particle);
-}
-
-sampleLoop((delta) => {
-    updateSprites(sprites, delta);
-    for (let i = 0; i < sprites.count; i++) {
-        pixiSprites[i].x = sprites.x[i];
-        pixiSprites[i].y = sprites.y[i];
-        pixiSprites[i].rotation = sprites.rotation[i];
-    }
-    app.renderer.render(app.stage);
-});`,
-    },
-};
-
-async function runPixi(context, canvas, sprites) {
-    const app = await createPixiApp(context, canvas);
-    const PIXI = window.PIXI;
-    const textures = context.textureImages.map((image) => PIXI.Texture.from(image));
-
+async function run(runtime) {
+    const {
+        canvas,
+        mode,
+        width,
+        height,
+        background,
+        textureImages,
+        sampleLoop,
+        updateSprites,
+        loadGlobalScript,
+        createSprites,
+    } = runtime;
+    const PIXI = await loadGlobalScript(
+        "https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js",
+        "PIXI",
+    );
+    const createColor = (red, green, blue) => (
+        new PIXI.Color({ r: red, g: green, b: blue })
+    );
+    const sprites = createSprites(createColor);
+    const app = await createApplication(PIXI, canvas, width, height, background);
+    const textures = textureImages.map((image) => PIXI.Texture.from(image));
     let container;
-    let pixiSprites;
+    let renderSprites;
 
-    if (!context.isMultiTextureMode() && PIXI.ParticleContainer) {
+    if (mode === "single") {
         container = new PIXI.ParticleContainer({
             dynamicProperties: {
                 position: true,
@@ -81,8 +35,8 @@ async function runPixi(context, canvas, sprites) {
             },
         });
         app.stage.addChild(container);
+        renderSprites = new Array(sprites.count);
 
-        pixiSprites = [];
         for (let i = 0; i < sprites.count; i++) {
             const particle = new PIXI.Particle({
                 texture: textures[0],
@@ -90,52 +44,50 @@ async function runPixi(context, canvas, sprites) {
                 x: sprites.x[i],
                 y: sprites.y[i],
                 rotation: sprites.rotation[i],
-                tint: sprites.tint[i],
+                tint: sprites.color[i],
             });
             container.addParticle(particle);
-            pixiSprites.push(particle);
+            renderSprites[i] = particle;
         }
     } else {
         container = new PIXI.Container();
         app.stage.addChild(container);
 
         for (let i = 0; i < sprites.count; i++) {
-            const item = new PIXI.Sprite(textures[sprites.textureIndex[i]]);
-            item.anchor.set(0.5);
-            item.position.set(sprites.x[i], sprites.y[i]);
-            item.rotation = sprites.rotation[i];
-            item.tint = sprites.tint[i];
-            container.addChild(item);
+            const sprite = new PIXI.Sprite(textures[sprites.textureIndex[i]]);
+            sprite.anchor.set(0.5);
+            sprite.position.set(sprites.x[i], sprites.y[i]);
+            sprite.rotation = sprites.rotation[i];
+            sprite.tint = sprites.color[i];
+            container.addChild(sprite);
         }
-        pixiSprites = container.children;
+        renderSprites = container.children;
     }
 
-    const fps = await context.sampleLoop((delta) => {
-        context.updateSprites(sprites, delta);
-        for (let i = 0; i < sprites.count; i++) {
-            const item = pixiSprites[i];
-            item.x = sprites.x[i];
-            item.y = sprites.y[i];
-            item.rotation = sprites.rotation[i];
-        }
-        app.renderer.render(app.stage);
-    });
-
-    app.destroy(false, { children: true, texture: true, textureSource: true, baseTexture: true });
-    return fps;
+    try {
+        return await sampleLoop((delta) => {
+            updateSprites(sprites, delta);
+            for (let i = 0; i < sprites.count; i++) {
+                const sprite = renderSprites[i];
+                sprite.x = sprites.x[i];
+                sprite.y = sprites.y[i];
+                sprite.rotation = sprites.rotation[i];
+            }
+            app.renderer.render(app.stage);
+        });
+    } finally {
+        app.destroy(false, { children: true, texture: true, textureSource: true });
+    }
 }
 
-async function createPixiApp(context, canvas) {
-    const PIXI = window.PIXI;
-    if (!PIXI) throw new Error("PixiJS did not load.");
-
+async function createApplication(PIXI, canvas, width, height, background) {
     if (PIXI.Application.prototype.init) {
         const app = new PIXI.Application();
         await app.init({
             canvas,
-            width: context.width,
-            height: context.height,
-            background: "#f7fdff",
+            width,
+            height,
+            background,
             antialias: false,
             autoDensity: false,
             resolution: 1,
@@ -147,9 +99,9 @@ async function createPixiApp(context, canvas) {
 
     const app = new PIXI.Application({
         view: canvas,
-        width: context.width,
-        height: context.height,
-        backgroundColor: 0xf7fdff,
+        width,
+        height,
+        backgroundColor: Number.parseInt(background.slice(1), 16),
         antialias: false,
         resolution: 1,
         autoStart: false,
