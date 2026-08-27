@@ -139,6 +139,10 @@ export class Region {
     }
 
     render(): void {
+        this.prepareRender()
+    }
+
+    protected prepareRender(): void {
         const shader = this.currentShader
         shader.use()
 

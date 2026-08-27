@@ -143,7 +143,7 @@ export class GraphicRegion extends Region {
 
     render() {
         if (this.vertexCount === 0) return;
-        super.render();
+        this.prepareRender();
 
         const gl = this.gl;
         const shader = this.currentShader;

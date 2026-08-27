@@ -221,7 +221,7 @@ export class ParticleRegion extends SpriteRegion {
 
     override render(): void {
         if (this.instanceCount === 0) return;
-        super.render();
+        this.prepareRender();
 
         const gl = this.gl
         if (this.texture) {

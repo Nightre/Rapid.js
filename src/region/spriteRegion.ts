@@ -250,7 +250,7 @@ export class SpriteRegion extends Region {
 
     override render(): void {
         if (this.instanceCount === 0) return;
-        super.render();
+        this.prepareRender();
 
         const gl = this.gl;
         const shader = this.currentShader;
