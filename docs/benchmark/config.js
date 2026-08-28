@@ -4,8 +4,8 @@ export const BENCHMARK = Object.freeze({
     spriteSize: 64,
     background: "#f7fdff",
     warmupMs: 2000,
-    sampleMs: 3000,
-    externalTimeoutMs: 15000,
+    sampleMs: 6000,
+    externalTimeoutMs: 20000,
     textureUrls: Object.freeze([
         "../image/toycar.png",
         "../image/tree.png",
