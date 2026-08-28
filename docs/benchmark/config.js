@@ -1,6 +1,6 @@
 export const BENCHMARK = Object.freeze({
-    width: 640,
-    height: 360,
+    width: 1280,
+    height: 720,
     spriteSize: 64,
     background: "#f7fdff",
     warmupMs: 2000,
@@ -19,22 +19,25 @@ export const MODES = Object.freeze({
     multi: Object.freeze({
         key: "multi",
         label: "Multi Texture",
-        counts: Object.freeze([
-            500, 1000, 3000, 5000, 10000, 20000, 30000, 40000, 50000,
-            60000, 70000, 80000, 90000, 100000, 125000, 150000, 175000,
-            200000, 400000,
-        ]),
+        counts: createDoublingCounts(500, 400000),
     }),
     single: Object.freeze({
         key: "single",
         label: "Single Texture",
-        counts: Object.freeze([
-            10000, 50000, 100000, 150000, 200000, 250000, 300000,
-            400000, 500000, 1000000,
-        ]),
+        counts: createDoublingCounts(10000, 1000000),
     }),
 });
 
 export function getMode(key) {
     return MODES[key] ?? MODES.multi;
+}
+
+function createDoublingCounts(start, target) {
+    const counts = [start];
+    while (counts.at(-1) < target) counts.push(counts.at(-1) * 2);
+
+    const upper = counts.at(-1);
+    const lower = counts.at(-2);
+    if (lower && target - lower < upper - target) counts.pop();
+    return Object.freeze(counts);
 }

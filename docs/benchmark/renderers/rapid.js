@@ -30,18 +30,12 @@ async function run(runtime) {
 
     try {
         if (mode === "single") {
-            const particles = {
-                x: new Float32Array(sprites.count),
-                y: new Float32Array(sprites.count),
-                rotation: new Float32Array(sprites.count),
-                color: new Array(sprites.count),
-            };
             const particleOptions = {
                 texture: textures[0],
-                x: particles.x,
-                y: particles.y,
-                rotation: particles.rotation,
-                color: particles.color,
+                x: sprites.x,
+                y: sprites.y,
+                rotation: sprites.rotation,
+                color: sprites.color,
                 count: sprites.count,
                 originX: 0.5,
                 originY: 0.5,
@@ -49,13 +43,6 @@ async function run(runtime) {
 
             return await sampleLoop((delta) => {
                 updateSprites(sprites, delta);
-                for (let i = 0; i < sprites.count; i++) {
-                    particles.x[i] = sprites.x[i];
-                    particles.y[i] = sprites.y[i];
-                    particles.rotation[i] = sprites.rotation[i];
-                    particles.color[i] = sprites.color[i];
-                }
-
                 rapid.clear();
                 rapid.drawParticles(particleOptions);
                 rapid.flush();

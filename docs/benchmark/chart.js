@@ -1,4 +1,6 @@
-export function drawBenchmarkChart(canvas, options) {
+import { averageMetric, getMetric, isPositiveNumber } from "./metrics.js";
+
+export function drawBenchmarkChart(canvas, options, output = {}) {
     const {
         counts,
         renderers,
@@ -6,72 +8,155 @@ export function drawBenchmarkChart(canvas, options) {
         getName,
         formatCount,
         background,
+        metric = "fps",
     } = options;
+    const metricConfig = getMetric(metric);
     const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth || canvas.width;
-    const height = canvas.clientHeight || canvas.height;
+    const isExport = Number.isFinite(output.width) && Number.isFinite(output.height);
+    const dpr = isExport ? 1 : window.devicePixelRatio || 1;
+    const width = isExport ? output.width : canvas.clientWidth || canvas.width;
+    const height = isExport ? output.height : canvas.clientHeight || canvas.height;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const pad = { left: 70, right: 32, top: 36, bottom: 88 };
-    const plotWidth = width - pad.left - pad.right;
-    const plotHeight = height - pad.top - pad.bottom;
-    const allFps = renderers.flatMap((renderer) => [...results[renderer.id].values()]);
-    const maxFps = Math.max(60, Math.ceil((Math.max(...allFps, 0) + 10) / 10) * 10);
+    const unit = Math.max(0.62, Math.min(3, Math.min(width / 1280, height / 640)));
+    const requestedFontSize = Number(output.fontSize);
+    const fontSize = isExport && Number.isFinite(requestedFontSize) && requestedFontSize > 0
+        ? requestedFontSize
+        : 14 * unit;
+    const legend = layoutLegend(ctx, width, renderers, getName, unit, fontSize);
+    const pad = {
+        left: Math.max(82 * unit, 5.5 * fontSize),
+        right: 28 * unit,
+        top: 30 * unit + legend.height,
+        bottom: Math.max(92 * unit, 5.6 * fontSize),
+    };
+    const plotWidth = Math.max(1, width - pad.left - pad.right);
+    const plotHeight = Math.max(1, height - pad.top - pad.bottom);
+    const values = renderers.flatMap((renderer) => counts
+        .map((count) => averageMetric(results[renderer.id].get(count), metric))
+        .filter(isPositiveNumber));
+    const yScale = createLinearScale(values, metricConfig.fallbackMax);
+    const xScale = createLogPosition(counts[0], counts.at(-1));
 
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
-    drawGrid(ctx, { width, height, pad, plotWidth, plotHeight, maxFps, counts, formatCount });
-    drawLines(ctx, { pad, plotWidth, plotHeight, maxFps, counts, renderers, results });
-    drawLegend(ctx, width, renderers, getName);
+    drawGrid(ctx, {
+        width,
+        height,
+        unit,
+        fontSize,
+        pad,
+        plotWidth,
+        plotHeight,
+        yScale,
+        xScale,
+        counts,
+        formatCount,
+        metricConfig,
+    });
+    drawLines(ctx, {
+        unit,
+        pad,
+        plotWidth,
+        plotHeight,
+        yScale,
+        xScale,
+        counts,
+        renderers,
+        results,
+        metric,
+    });
+    drawLegend(ctx, legend, fontSize);
 }
 
 function drawGrid(ctx, options) {
-    const { width, height, pad, plotWidth, plotHeight, maxFps, counts, formatCount } = options;
-    ctx.strokeStyle = "#d7ecdf";
-    ctx.lineWidth = 1;
+    const {
+        width,
+        height,
+        unit,
+        fontSize,
+        pad,
+        plotWidth,
+        plotHeight,
+        yScale,
+        xScale,
+        counts,
+        formatCount,
+        metricConfig,
+    } = options;
+    ctx.lineWidth = Math.max(1, unit);
     ctx.fillStyle = "#5a6877";
-    ctx.font = "800 15px system-ui, sans-serif";
+    ctx.font = `800 ${fontSize}px system-ui, sans-serif`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
 
-    for (let i = 0; i <= 5; i++) {
-        const value = (maxFps / 5) * i;
-        const y = pad.top + plotHeight - (value / maxFps) * plotHeight;
+    for (const value of yScale.ticks) {
+        const y = pad.top + plotHeight - yScale.position(value) * plotHeight;
+        ctx.strokeStyle = "#d7ecdf";
         ctx.beginPath();
         ctx.moveTo(pad.left, y);
         ctx.lineTo(width - pad.right, y);
         ctx.stroke();
-        ctx.fillText(String(Math.round(value)), pad.left - 14, y);
+        ctx.fillText(formatAxisValue(value), pad.left - Math.max(12 * unit, 0.8 * fontSize), y);
     }
 
+    const labelIndices = getVisibleLabelIndices(
+        counts,
+        (value) => pad.left + xScale.position(value) * plotWidth,
+        Math.max(62 * unit, 4.4 * fontSize),
+    );
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    for (let i = 0; i < counts.length; i++) {
-        const x = pad.left + (i / (counts.length - 1)) * plotWidth;
+    for (let index = 0; index < counts.length; index++) {
+        if (!labelIndices.has(index)) continue;
+        const count = counts[index];
+        const x = pad.left + xScale.position(count) * plotWidth;
+        ctx.strokeStyle = "#d7ecdf";
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotHeight);
+        ctx.stroke();
+
         ctx.save();
-        ctx.translate(x, pad.top + plotHeight + 16);
+        ctx.translate(x, pad.top + plotHeight + Math.max(14 * unit, fontSize));
         ctx.rotate(-Math.PI / 4);
         ctx.textAlign = "right";
-        ctx.fillText(formatCount(counts[i]), 0, 0);
+        ctx.fillText(formatCount(count), 0, 0);
         ctx.restore();
     }
 
     ctx.save();
-    ctx.translate(16, pad.top + plotHeight / 2);
+    ctx.translate(Math.max(18 * unit, 1.3 * fontSize), pad.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = "center";
-    ctx.font = "900 16px system-ui, sans-serif";
-    ctx.fillText("FPS", 0, 0);
+    ctx.font = `900 ${fontSize}px system-ui, sans-serif`;
+    ctx.fillText(metricConfig.axisLabel, 0, 0);
     ctx.restore();
-    ctx.fillText("Sprite Count", pad.left + plotWidth / 2, height - 20);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(
+        "Sprite Count (log scale)",
+        pad.left + plotWidth / 2,
+        height - Math.max(16 * unit, fontSize),
+    );
 }
 
 function drawLines(ctx, options) {
-    const { pad, plotWidth, plotHeight, maxFps, counts, renderers, results } = options;
+    const {
+        unit,
+        pad,
+        plotWidth,
+        plotHeight,
+        yScale,
+        xScale,
+        counts,
+        renderers,
+        results,
+        metric,
+    } = options;
     const ordered = [...renderers].sort((a, b) => {
         if (a.id === "rapid") return 1;
         if (b.id === "rapid") return -1;
@@ -80,15 +165,21 @@ function drawLines(ctx, options) {
 
     for (const renderer of ordered) {
         const points = counts
-            .filter((count) => results[renderer.id].has(count))
             .map((count) => ({
-                x: pad.left + (counts.indexOf(count) / (counts.length - 1)) * plotWidth,
-                y: pad.top + plotHeight - (results[renderer.id].get(count) / maxFps) * plotHeight,
+                count,
+                value: averageMetric(results[renderer.id].get(count), metric),
+            }))
+            .filter((point) => isPositiveNumber(point.value))
+            .map((point) => ({
+                x: pad.left + xScale.position(point.count) * plotWidth,
+                y: pad.top + plotHeight - yScale.position(point.value) * plotHeight,
             }));
         if (!points.length) continue;
 
         ctx.strokeStyle = renderer.color;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = (renderer.id === "rapid" ? 4.5 : 3.5) * unit;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
         ctx.beginPath();
         points.forEach((point, index) => {
             if (index === 0) ctx.moveTo(point.x, point.y);
@@ -99,28 +190,114 @@ function drawLines(ctx, options) {
         ctx.fillStyle = renderer.color;
         for (const point of points) {
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+            ctx.arc(point.x, point.y, 4.5 * unit, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 }
 
-function drawLegend(ctx, width, renderers, getName) {
-    ctx.textBaseline = "middle";
-    let x = width - 24;
-    const y = 28;
+function layoutLegend(ctx, width, renderers, getName, unit, fontSize) {
+    const items = [];
+    const left = 24 * unit;
+    const right = width - 24 * unit;
+    const rowHeight = Math.max(24 * unit, 1.7 * fontSize);
+    const firstRowY = Math.max(18 * unit, fontSize);
+    let x = left;
+    let row = 0;
 
-    for (let i = renderers.length - 1; i >= 0; i--) {
-        const renderer = renderers[i];
+    for (const renderer of renderers) {
         const name = getName(renderer);
-        ctx.font = `${renderer.id === "rapid" ? "1000" : "650"} 15px system-ui, sans-serif`;
-        const textWidth = ctx.measureText(name).width;
-        x -= textWidth + 32;
-        ctx.fillStyle = renderer.color;
-        ctx.fillRect(x, y - 7, 18, 14);
-        ctx.fillStyle = "#243142";
-        ctx.textAlign = "left";
-        ctx.fillText(name, x + 25, y);
-        x -= 20;
+        ctx.font = `${renderer.id === "rapid" ? "1000" : "650"} ${fontSize}px system-ui, sans-serif`;
+        const itemWidth = ctx.measureText(name).width + 3.5 * fontSize;
+        if (x > left && x + itemWidth > right) {
+            row++;
+            x = left;
+        }
+        items.push({ renderer, name, x, y: firstRowY + row * rowHeight });
+        x += itemWidth;
     }
+
+    return { items, height: (row + 1) * rowHeight };
+}
+
+function drawLegend(ctx, legend, fontSize) {
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    for (const { renderer, name, x, y } of legend.items) {
+        ctx.fillStyle = renderer.color;
+        ctx.fillRect(x, y - 0.43 * fontSize, 1.3 * fontSize, 0.86 * fontSize);
+        ctx.fillStyle = "#243142";
+        ctx.font = `${renderer.id === "rapid" ? "1000" : "650"} ${fontSize}px system-ui, sans-serif`;
+        ctx.fillText(name, x + 1.8 * fontSize, y);
+    }
+}
+
+function createLinearScale(rawValues, fallbackMax) {
+    const values = rawValues.filter(isPositiveNumber);
+    const rawMax = values.length ? Math.max(...values) * 1.08 : fallbackMax;
+    const step = createLinearStep(rawMax / 5);
+    const max = Math.max(step, Math.ceil(rawMax / step) * step);
+    const ticks = Array.from(
+        { length: Math.round(max / step) + 1 },
+        (_value, index) => index * step,
+    );
+
+    return {
+        ticks,
+        position(value) {
+            return Math.min(max, Math.max(0, value)) / max;
+        },
+    };
+}
+
+function createLinearStep(value) {
+    const magnitude = 10 ** Math.floor(Math.log10(value));
+    const normalized = value / magnitude;
+    let factor = 10;
+    if (normalized <= 1) factor = 1;
+    else if (normalized <= 2) factor = 2;
+    else if (normalized <= 2.5) factor = 2.5;
+    else if (normalized <= 5) factor = 5;
+    return factor * magnitude;
+}
+
+function createLogPosition(min, max) {
+    const logMin = Math.log10(min);
+    const logRange = Math.max(Number.EPSILON, Math.log10(max) - logMin);
+    return {
+        position(value) {
+            const bounded = Math.min(max, Math.max(min, value));
+            return (Math.log10(bounded) - logMin) / logRange;
+        },
+    };
+}
+
+function getVisibleLabelIndices(values, getX, minimumSpacing) {
+    const visible = new Set([0]);
+    let lastX = getX(values[0]);
+    for (let index = 1; index < values.length - 1; index++) {
+        const x = getX(values[index]);
+        if (x - lastX >= minimumSpacing) {
+            visible.add(index);
+            lastX = x;
+        }
+    }
+    const finalIndex = values.length - 1;
+    if (finalIndex > 0) {
+        const finalX = getX(values[finalIndex]);
+        const previousIndex = [...visible].at(-1);
+        if (previousIndex > 0 && finalX - getX(values[previousIndex]) < minimumSpacing) {
+            visible.delete(previousIndex);
+        }
+        visible.add(finalIndex);
+    }
+    return visible;
+}
+
+function formatAxisValue(value) {
+    if (value === 0) return "0";
+    if (value >= 1000000) return `${value / 1000000}m`;
+    if (value >= 1000) return `${value / 1000}k`;
+    if (value >= 1) return Number.isInteger(value) ? String(value) : value.toFixed(1);
+    return String(Number(value.toPrecision(3)));
 }

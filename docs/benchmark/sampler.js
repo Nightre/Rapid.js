@@ -38,8 +38,10 @@ function sampleDrivenFrames(draw, warmupMs, sampleMs, signal) {
 
         let warmupStart = null;
         let sampleStart = null;
+        let previousSampleFrame = null;
         let previous = null;
         let frames = 0;
+        const frameTimes = [];
         let completed = false;
         let frameRequest = 0;
 
@@ -55,11 +57,11 @@ function sampleDrivenFrames(draw, warmupMs, sampleMs, signal) {
             reject(error);
         };
 
-        const finish = (fps) => {
+        const finish = (measurement) => {
             if (completed) return;
             completed = true;
             cleanup();
-            resolve(fps);
+            resolve(measurement);
         };
 
         const abort = () => fail(getAbortError(signal));
@@ -97,6 +99,7 @@ function sampleDrivenFrames(draw, warmupMs, sampleMs, signal) {
                     // Start between frames. The warm-up frame above is not
                     // counted, so N measured frames span N complete intervals.
                     sampleStart = completedAt;
+                    previousSampleFrame = completedAt;
                 }
                 schedule();
                 return;
@@ -104,8 +107,10 @@ function sampleDrivenFrames(draw, warmupMs, sampleMs, signal) {
 
             frames++;
             const elapsed = completedAt - sampleStart;
+            frameTimes.push(completedAt - previousSampleFrame);
+            previousSampleFrame = completedAt;
             if (elapsed >= sampleMs) {
-                finish((frames * 1000) / elapsed);
+                finish(createMeasurement(frames, elapsed, frameTimes));
                 return;
             }
 
@@ -136,7 +141,9 @@ function sampleObservedFrames(
 
         let warmupStart = null;
         let sampleStart = null;
+        let previousSampleFrame = null;
         let frames = 0;
+        const frameTimes = [];
         let unsubscribe = null;
         let completed = false;
         let timeout = 0;
@@ -161,7 +168,7 @@ function sampleObservedFrames(
             reject(error);
         };
 
-        const finish = (fps) => {
+        const finish = (measurement) => {
             if (completed) return;
             completed = true;
             try {
@@ -170,7 +177,7 @@ function sampleObservedFrames(
                 reject(error);
                 return;
             }
-            resolve(fps);
+            resolve(measurement);
         };
 
         const frameCompleted = () => {
@@ -187,13 +194,18 @@ function sampleObservedFrames(
                     // This event closes the warm-up window. Counting begins
                     // with the next completed renderer frame.
                     sampleStart = completedAt;
+                    previousSampleFrame = completedAt;
                 }
                 return;
             }
 
             frames++;
+            frameTimes.push(completedAt - previousSampleFrame);
+            previousSampleFrame = completedAt;
             const elapsed = completedAt - sampleStart;
-            if (elapsed >= sampleMs) finish((frames * 1000) / elapsed);
+            if (elapsed >= sampleMs) {
+                finish(createMeasurement(frames, elapsed, frameTimes));
+            }
         };
 
         const abort = () => fail(getAbortError(signal));
@@ -221,6 +233,20 @@ function sampleObservedFrames(
             ));
         }, timeoutMs);
     });
+}
+
+function createMeasurement(frames, elapsed, frameTimes) {
+    return Object.freeze({
+        fps: (frames * 1000) / elapsed,
+        p99: percentile(frameTimes, 0.99),
+    });
+}
+
+function percentile(values, ratio) {
+    if (!values.length) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.max(0, Math.ceil(sorted.length * ratio) - 1);
+    return sorted[index];
 }
 
 function getAbortError(signal) {

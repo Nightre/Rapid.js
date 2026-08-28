@@ -31,17 +31,23 @@
     </nav>
 
     <main class="benchmark-main">
-      <section class="container">
+      <section class="container benchmark-container">
         <div class="benchmark-header">
           <div>
             <h1>Sprite FPS</h1>
             <p class="benchmark-lead">Rapid.js, PixiJS, Phaser, Excalibur, and Canvas 2D render the same moving sprite set. Each sprite has random tint, velocity, wall bounce, and continuous rotation.</p>
-            <div class="benchmark-controls">
-              <label for="texture-mode" class="form-label mb-0">Texture Mode</label>
-              <select id="texture-mode" class="form-select benchmark-select">
-                <option value="multi">Multi Texture (5 textures)</option>
-                <option value="single">Single Texture</option>
-              </select>
+            <div class="benchmark-controls" aria-label="Benchmark options">
+              <div class="benchmark-control">
+                <label for="texture-mode" class="form-label mb-0">Texture Mode</label>
+                <select id="texture-mode" class="form-select benchmark-select">
+                  <option value="multi">Multi Texture (5 textures)</option>
+                  <option value="single">Single Texture</option>
+                </select>
+              </div>
+              <div class="benchmark-control">
+                <label for="repeat-count" class="form-label mb-0">Repeats</label>
+                <input id="repeat-count" class="form-control benchmark-number" type="number" value="1" min="1" max="20" step="1" inputmode="numeric">
+              </div>
             </div>
           </div>
           <button class="btn btn-rapid btn-lg btn-icon" id="run-benchmark" type="button">
@@ -56,7 +62,7 @@
               <h2>Live Run</h2>
               <span id="status-text">Ready</span>
             </div>
-            <canvas id="stage" width="640" height="360" aria-label="Benchmark render target"></canvas>
+            <canvas id="stage" width="1280" height="720" aria-label="Benchmark render target" style="width: 1280px; height: 720px; image-rendering: pixelated;"></canvas>
           </section>
 
           <section class="benchmark-panel code-panel">
@@ -75,10 +81,38 @@
 
         <section class="benchmark-panel benchmark-chart-panel">
           <div class="panel-head">
-            <h2 id="chart-title">FPS Chart</h2>
-            <span id="chart-note">Higher is better</span>
+            <div class="chart-heading">
+              <h2 id="chart-title">FPS Chart</h2>
+              <span id="chart-note">Higher FPS is better · Log X-axis</span>
+            </div>
+            <div class="chart-controls" aria-label="Chart options">
+              <div class="chart-control">
+                <label for="chart-metric">Metric</label>
+                <select id="chart-metric" class="form-select form-select-sm">
+                  <option value="fps">FPS</option>
+                  <option value="p99">P99 frame time</option>
+                </select>
+              </div>
+              <div class="chart-control export-size-control">
+                <label for="export-width">Export size</label>
+                <div class="export-size-inputs">
+                  <input id="export-width" class="form-control form-control-sm" type="number" value="1920" min="640" max="8192" step="1" inputmode="numeric" aria-label="Export width in pixels">
+                  <span aria-hidden="true">×</span>
+                  <input id="export-height" class="form-control form-control-sm" type="number" value="1080" min="360" max="8192" step="1" inputmode="numeric" aria-label="Export height in pixels">
+                  <span>px</span>
+                </div>
+              </div>
+              <div class="chart-control">
+                <label for="export-font-size">Font size</label>
+                <div class="export-size-inputs">
+                  <input id="export-font-size" class="form-control form-control-sm" type="number" value="22" min="8" max="96" step="1" inputmode="numeric" aria-label="Export font size in pixels">
+                  <span>px</span>
+                </div>
+              </div>
+              <button id="export-chart" class="btn btn-rapid btn-sm" type="button">Export PNG</button>
+            </div>
           </div>
-          <canvas id="chart" width="860" height="460" aria-label="FPS chart"></canvas>
+          <canvas id="chart" width="1280" height="640" aria-label="FPS benchmark chart"></canvas>
         </section>
 
         <section class="benchmark-panel result-panel">

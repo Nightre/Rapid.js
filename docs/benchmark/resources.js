@@ -24,9 +24,13 @@ export async function loadGlobalScript(url, globalName) {
         scripts.set(url, pending);
     }
 
-    await pending;
+    const script = await pending;
     const value = window[globalName];
-    if (!value) throw new Error(`${globalName} did not register after loading ${url}.`);
+    if (!value) {
+        scripts.delete(url);
+        script.remove();
+        throw new Error(`${globalName} did not register after loading ${url}.`);
+    }
     return value;
 }
 
@@ -44,25 +48,33 @@ export function loadModule(url) {
 
 function appendScript(url) {
     return new Promise((resolve, reject) => {
-        const existing = document.querySelector(`script[src="${url}"]`);
-        if (existing) {
-            if (existing.dataset.loaded === "true") resolve();
-            else {
-                existing.addEventListener("load", resolve, { once: true });
-                existing.addEventListener("error", reject, { once: true });
-            }
+        let script = [...document.scripts].find((candidate) => candidate.src === url);
+        if (script?.dataset.loaded === "true") {
+            resolve(script);
             return;
         }
 
-        const script = document.createElement("script");
-        script.src = url;
-        script.addEventListener("load", () => {
+        const cleanup = () => {
+            script.removeEventListener("load", loaded);
+            script.removeEventListener("error", failed);
+        };
+        const loaded = () => {
+            cleanup();
             script.dataset.loaded = "true";
-            resolve();
-        }, { once: true });
-        script.addEventListener("error", () => {
+            resolve(script);
+        };
+        const failed = () => {
+            cleanup();
+            script.remove();
             reject(new Error(`Failed to load ${url}.`));
-        }, { once: true });
-        document.head.append(script);
+        };
+
+        if (!script) {
+            script = document.createElement("script");
+            script.src = url;
+        }
+        script.addEventListener("load", loaded, { once: true });
+        script.addEventListener("error", failed, { once: true });
+        if (!script.isConnected) document.head.append(script);
     });
 }

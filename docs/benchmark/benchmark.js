@@ -12,6 +12,7 @@ import {
     supportsMode,
 } from "./renderer-loader.js";
 import { loadGlobalScript, loadImage, loadModule } from "./resources.js";
+import { validateMeasurement } from "./metrics.js";
 import { createSampler } from "./sampler.js";
 import { createSprites, updateSprites } from "./sprites.js";
 import * as view from "./view.js";
@@ -60,10 +61,14 @@ async function runBenchmark() {
 
     const mode = currentMode;
     const activeRenderers = getActiveRenderers(mode.key);
+    const repeatCount = view.getRepeatCount();
     const controller = new AbortController();
     const { signal } = controller;
-    let total = activeRenderers.length * mode.counts.length;
+    let total = activeRenderers.length * mode.counts.length * repeatCount;
     let completed = 0;
+    const lastCountIndices = Object.fromEntries(
+        activeRenderers.map((renderer) => [renderer.id, mode.counts.length - 1]),
+    );
 
     running = true;
     activeRunController = controller;
@@ -71,59 +76,72 @@ async function runBenchmark() {
     resetResults();
 
     try {
-        for (const renderer of activeRenderers) {
-            view.updateStatus(`Loading ${getRendererName(renderer, mode.key)} source`, true);
-            const executable = await abortable(loadRenderer(renderer), signal);
-
-            for (let countIndex = 0; countIndex < mode.counts.length; countIndex++) {
-                throwIfAborted(signal);
-                const count = mode.counts[countIndex];
-                view.showRendererCode({
-                    renderer,
-                    count,
-                    source: executable.source,
-                    mode,
-                    getName: getRendererName,
-                    formatCount,
-                });
+        for (let repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++) {
+            const repeat = repeatIndex + 1;
+            for (const renderer of rotate(activeRenderers, repeatIndex)) {
                 view.updateStatus(
-                    `${getRendererName(renderer, mode.key)} · ${formatCount(count)} sprites`,
+                    `Run ${repeat} / ${repeatCount} · loading ${getRendererName(renderer, mode.key)} source`,
                     true,
                 );
-                view.updateProgress(completed, total);
+                const executable = await abortable(loadRenderer(renderer), signal);
 
-                const fps = await abortable(
-                    executable.run(createRendererRuntime(
-                        mode.key,
-                        view.resetStageCanvas(BENCHMARK),
+                for (let countIndex = 0; countIndex <= lastCountIndices[renderer.id]; countIndex++) {
+                    throwIfAborted(signal);
+                    const count = mode.counts[countIndex];
+                    view.showRendererCode({
+                        renderer,
                         count,
-                        signal,
-                    )),
-                    signal,
-                );
-                throwIfAborted(signal);
-
-                results[renderer.id].set(count, fps);
-                completed++;
-                view.updateProgress(completed, total);
-                view.updateTableCell(renderer.id, count, fps);
-                drawChart();
-                await nextFrame(signal);
-
-                if (fps < 10) {
-                    total -= mode.counts.length - countIndex - 1;
-                    view.updateProgress(completed, total);
+                        source: executable.source,
+                        mode,
+                        getName: getRendererName,
+                        formatCount,
+                        repeat,
+                        repeatCount,
+                    });
                     view.updateStatus(
-                        `${getRendererName(renderer, mode.key)} stopped at ${formatCount(count)} sprites (FPS < 10)`,
-                        false,
+                        `Run ${repeat} / ${repeatCount} · ${getRendererName(renderer, mode.key)} · ${formatCount(count)} sprites`,
+                        true,
                     );
-                    break;
+                    view.updateProgress(completed, total, repeat, repeatCount);
+
+                    const measurement = validateMeasurement(await abortable(
+                        executable.run(createRendererRuntime(
+                            mode.key,
+                            view.resetStageCanvas(BENCHMARK),
+                            count,
+                            signal,
+                        )),
+                        signal,
+                    ));
+                    throwIfAborted(signal);
+
+                    const samples = getSamples(renderer.id, count);
+                    samples.push(measurement);
+                    completed++;
+                    view.updateProgress(completed, total, repeat, repeatCount);
+                    view.updateTableCell(renderer.id, count, samples);
+                    drawChart();
+                    await nextFrame(signal);
+
+                    if (repeatIndex === 0 && measurement.fps < 10) {
+                        const skippedCounts = lastCountIndices[renderer.id] - countIndex;
+                        lastCountIndices[renderer.id] = countIndex;
+                        total -= skippedCounts * repeatCount;
+                        view.updateProgress(completed, total, repeat, repeatCount);
+                        view.updateStatus(
+                            `${getRendererName(renderer, mode.key)} capped at ${formatCount(count)} sprites (FPS < 10); this range will be repeated ${repeatCount}×`,
+                            false,
+                        );
+                        break;
+                    }
                 }
             }
         }
 
-        view.updateStatus("Complete", false);
-        view.setCodeMeta("Complete");
+        const runLabel = repeatCount === 1 ? "1 run" : `${repeatCount} runs`;
+        view.updateStatus(`Complete · mean of ${runLabel}`, false);
+        view.showComplete(repeatCount);
+        view.setCodeMeta(`Complete · mean of ${runLabel}`);
     } catch (error) {
         if (!isAbortError(error)) {
             console.error(error);
@@ -170,16 +188,39 @@ function getActiveRenderers(mode = currentMode.key) {
 }
 
 function resetResults() {
+    const activeRenderers = getActiveRenderers();
     for (const values of Object.values(results)) values.clear();
     view.renderResultsTable({
         mode: currentMode,
-        renderers: getActiveRenderers(),
+        renderers: activeRenderers,
         getName: getRendererName,
         formatCount,
+        results,
     });
-    view.updateProgress(0, getActiveRenderers().length * currentMode.counts.length);
+    view.updateProgress(
+        0,
+        activeRenderers.length * currentMode.counts.length * view.getRepeatCount(),
+    );
     view.setChartTitle(currentMode);
     drawChart();
+}
+
+function rotate(items, offset) {
+    if (items.length < 2) return items;
+    const pivot = offset % items.length;
+    return pivot === 0
+        ? items
+        : [...items.slice(pivot), ...items.slice(0, pivot)];
+}
+
+function getSamples(rendererId, count) {
+    const rendererResults = results[rendererId];
+    let samples = rendererResults.get(count);
+    if (!samples) {
+        samples = [];
+        rendererResults.set(count, samples);
+    }
+    return samples;
 }
 
 function drawChart() {
@@ -205,9 +246,15 @@ function interruptBackgroundRun() {
 }
 
 function formatCount(count) {
-    if (count >= 1000000) return `${count / 1000000}m`;
-    if (count >= 1000) return `${count / 1000}k`;
+    if (count >= 1000000) return `${formatCompactValue(count / 1000000)}m`;
+    if (count >= 1000) return `${formatCompactValue(count / 1000)}k`;
     return String(count);
+}
+
+function formatCompactValue(value) {
+    if (value >= 100) return value.toFixed(0);
+    if (value >= 10) return value.toFixed(1).replace(/\.0$/, "");
+    return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function nextFrame(signal) {

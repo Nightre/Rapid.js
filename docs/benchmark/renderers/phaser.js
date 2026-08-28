@@ -20,9 +20,11 @@ async function run(runtime) {
     );
     const sprites = createSprites(createColor);
 
-    let ready;
-    const readyPromise = new Promise((resolve) => {
-        ready = resolve;
+    let resolveReady;
+    let rejectReady;
+    const readyPromise = new Promise((resolve, reject) => {
+        resolveReady = resolve;
+        rejectReady = reject;
     });
     const game = new Phaser.Game({
         type: Phaser.WEBGL,
@@ -35,69 +37,27 @@ async function run(runtime) {
         fps: { target: 240, forceSetTimeOut: false },
         scene: {
             create() {
-                if (mode === "single") {
-                    if (!Phaser.GameObjects?.SpriteGPULayer) {
-                        throw new Error("This Phaser build does not provide SpriteGPULayer.");
-                    }
-
-                    this.textures.addImage("bench-sprite-single", textureImages[0]);
-                    const layer = new Phaser.GameObjects.SpriteGPULayer(
-                        this,
-                        "bench-sprite-single",
-                        sprites.count,
-                    );
-                    this.add.existing(layer);
-
-                    for (let i = 0; i < sprites.count; i++) {
-                        layer.addMember({
-                            x: sprites.x[i],
-                            y: sprites.y[i],
-                            originX: 0.5,
-                            originY: 0.5,
-                            rotation: sprites.rotation[i],
-                            scaleX: 1,
-                            scaleY: 1,
-                            tint: sprites.color[i].color,
-                            alpha: 1,
-                        });
-                    }
-                    this.benchmarkLayer = layer;
-                } else {
-                    textureImages.forEach((image, index) => {
-                        this.textures.addImage(`bench-sprite-${index}`, image);
-                    });
-                    for (let i = 0; i < sprites.count; i++) {
-                        const sprite = this.add.image(
-                            sprites.x[i],
-                            sprites.y[i],
-                            `bench-sprite-${sprites.textureIndex[i]}`,
-                        );
-                        sprite.setOrigin(0.5);
-                        sprite.rotation = sprites.rotation[i];
-                        sprite.setTint?.(sprites.color[i].color);
-                    }
+                try {
+                    populateScene(this, Phaser, mode, textureImages, sprites);
+                    resolveReady();
+                } catch (error) {
+                    rejectReady(error);
                 }
-                ready();
             },
             update(_time, deltaMs) {
                 updateSprites(sprites, Math.min(deltaMs / 1000, 0.05));
 
                 if (this.benchmarkLayer) {
+                    const member = this.benchmarkMemberUpdate;
                     for (let i = 0; i < sprites.count; i++) {
-                        this.benchmarkLayer.editMember(i, {
-                            x: sprites.x[i],
-                            y: sprites.y[i],
-                            originX: 0.5,
-                            originY: 0.5,
-                            rotation: sprites.rotation[i],
-                            scaleX: 1,
-                            scaleY: 1,
-                            tintTopLeft: sprites.color[i].color,
-                            tintTopRight: sprites.color[i].color,
-                            tintBottomLeft: sprites.color[i].color,
-                            tintBottomRight: sprites.color[i].color,
-                            alpha: 1,
-                        });
+                        member.x = sprites.x[i];
+                        member.y = sprites.y[i];
+                        member.rotation = sprites.rotation[i];
+                        member.tintTopLeft = sprites.color[i].color;
+                        member.tintTopRight = sprites.color[i].color;
+                        member.tintBottomLeft = sprites.color[i].color;
+                        member.tintBottomRight = sprites.color[i].color;
+                        this.benchmarkLayer.editMember(i, member);
                     }
                     return;
                 }
@@ -121,4 +81,65 @@ async function run(runtime) {
     } finally {
         game.destroy(false);
     }
+}
+
+function populateScene(scene, Phaser, mode, textureImages, sprites) {
+    if (mode === "single") {
+        if (!Phaser.GameObjects?.SpriteGPULayer) {
+            throw new Error("This Phaser build does not provide SpriteGPULayer.");
+        }
+
+        scene.textures.addImage("bench-sprite-single", textureImages[0]);
+        const layer = new Phaser.GameObjects.SpriteGPULayer(
+            scene,
+            "bench-sprite-single",
+            sprites.count,
+        );
+        scene.add.existing(layer);
+
+        const member = createGpuMember({ tint: 0xffffff });
+        for (let i = 0; i < sprites.count; i++) {
+            member.x = sprites.x[i];
+            member.y = sprites.y[i];
+            member.rotation = sprites.rotation[i];
+            member.tint = sprites.color[i].color;
+            layer.addMember(member);
+        }
+        scene.benchmarkLayer = layer;
+        scene.benchmarkMemberUpdate = createGpuMember({
+            tintTopLeft: 0xffffff,
+            tintTopRight: 0xffffff,
+            tintBottomLeft: 0xffffff,
+            tintBottomRight: 0xffffff,
+        });
+        return;
+    }
+
+    textureImages.forEach((image, index) => {
+        scene.textures.addImage(`bench-sprite-${index}`, image);
+    });
+    for (let i = 0; i < sprites.count; i++) {
+        const sprite = scene.add.image(
+            sprites.x[i],
+            sprites.y[i],
+            `bench-sprite-${sprites.textureIndex[i]}`,
+        );
+        sprite.setOrigin(0.5);
+        sprite.rotation = sprites.rotation[i];
+        sprite.setTint?.(sprites.color[i].color);
+    }
+}
+
+function createGpuMember(properties) {
+    return {
+        x: 0,
+        y: 0,
+        originX: 0.5,
+        originY: 0.5,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        alpha: 1,
+        ...properties,
+    };
 }
