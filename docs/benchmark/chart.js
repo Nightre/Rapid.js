@@ -177,7 +177,7 @@ function drawLines(ctx, options) {
         if (!points.length) continue;
 
         ctx.strokeStyle = renderer.color;
-        ctx.lineWidth = (renderer.id === "rapid" ? 4.5 : 3.5) * unit;
+        ctx.lineWidth = 5.5 * unit;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
         ctx.beginPath();
