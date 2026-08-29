@@ -5,9 +5,8 @@ import { Rapid } from "./render";
 
 export interface ITransformOptions {
     /** Whether to push a save before applying transforms. Default: true. */
-    saveTransform?: boolean;
-    /** Called immediately after the save (if any). */
-    afterSave?: () => void;
+    modifyStack?: boolean;
+
     x?: number;
     y?: number;
     position?: Vec2;
@@ -34,6 +33,8 @@ export class MatrixStore {
     /** The raw floating-point data of all matrices. */
     public data: Float32Array;
 
+    public temporary:number = -1;
+
     /**
      * Creates a new MatrixStore.
      * @param capacity - The initial capacity of the matrix store (default is 10).
@@ -42,6 +43,7 @@ export class MatrixStore {
         this.buffer = new DynamicArrayBuffer(ArrayType.Float32);
         this.buffer.resize(capacity * NUM_ELEMENTS);
         this.data = this.buffer.getArray() as Float32Array;
+        this.reset();
     }
 
     /**
@@ -73,6 +75,7 @@ export class MatrixStore {
     reset(): void {
         this.matrixCount = 0;
         this.buffer.usedElemNum = 0;
+        this.temporary = this.alloc()
     }
 
     /**
@@ -360,7 +363,6 @@ export class MatrixStore {
         d[o + 5] = f[5];
     }
 
-
     multiplyAffineInPlace(
         index: number,
         a: number,
@@ -379,6 +381,38 @@ export class MatrixStore {
         const md = data[o + 3];
         const mx = data[o + 4];
         const my = data[o + 5];
+
+        data[o] = ma * a + mc * b;
+        data[o + 1] = mb * a + md * b;
+
+        data[o + 2] = ma * c + mc * dValue;
+        data[o + 3] = mb * c + md * dValue;
+
+        data[o + 4] = ma * tx + mc * ty + mx;
+        data[o + 5] = mb * tx + md * ty + my;
+    }
+    multiplyAffine(
+        indexIn: number,
+        indexOut: number,
+
+        a: number,
+        b: number,
+        c: number,
+        dValue: number,
+        tx: number,
+        ty: number
+    ): void {
+        const i = indexIn * 6;
+        const o = indexOut * 6;
+
+        const data = this.data;
+
+        const ma = data[i];
+        const mb = data[i + 1];
+        const mc = data[i + 2];
+        const md = data[i + 3];
+        const mx = data[i + 4];
+        const my = data[i + 5];
 
         data[o] = ma * a + mc * b;
         data[o + 1] = mb * a + md * b;
@@ -656,13 +690,9 @@ export class MatrixStack {
 
     /**
      * Applies a transform options object to the current matrix state.
-     * Optionally saves the matrix first (saveTransform defaults to true).
+     * Optionally saves the matrix first
      */
-    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0) {
-        if (transform.saveTransform ?? true) {
-            this.save();
-        }
-
+    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0, customMatrix:number=-1) {
         let x = transform.x ?? 0;
         let y = transform.y ?? 0;
 
@@ -724,18 +754,31 @@ export class MatrixStack {
         const tx = x + a * offsetX + c * offsetY;
         const ty = y + b * offsetX + d * offsetY;
 
-        // localMatrix = localMatrix * localTransform
-        if (transform.afterSave !== undefined || transform.saveTransform === false) {
-            this.matrix.multiplyAffineInPlace(
-                this.curLocalM,
+        if (customMatrix !== -1) {
+            // 不修改matrix stack
+            this.matrix.multiplyAffine(
+                this.curWorldM,
+                customMatrix,
                 a,
                 b,
                 c,
                 d,
                 tx,
                 ty
-            );
+            )
+            return
         }
+
+        // localMatrix = localMatrix * localTransform
+        this.matrix.multiplyAffineInPlace(
+            this.curLocalM,
+            a,
+            b,
+            c,
+            d,
+            tx,
+            ty
+        );
 
         // worldMatrix = worldMatrix * localTransform
         this.matrix.multiplyAffineInPlace(
@@ -747,7 +790,5 @@ export class MatrixStack {
             tx,
             ty
         );
-
-        transform.afterSave?.();
     }
 }

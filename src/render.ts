@@ -684,24 +684,14 @@ export class Rapid {
      * }, { x: 100, y: 50, rotation: Math.PI / 4, origin: 0.5 }, myTexture.width, myTexture.height);
      */
     withTransform(cb: () => void, transform?: ITransformOptions, width: number = 0, height: number = 0): void {
-        if (transform) {
-            const shouldRestore = transform.saveTransform ?? true;
-            try {
-                // save in applyTransform
+        this.matrixStack.save();
+        try {
+            if (transform) {
                 this.matrixStack.applyTransform(transform, width, height);
-                cb();
-            } finally {
-                if (shouldRestore) {
-                    this.matrixStack.restore();
-                }
             }
-        } else {
-            this.matrixStack.save();
-            try {
-                cb();
-            } finally {
-                this.matrixStack.restore();
-            }
+            cb();
+        } finally {
+            this.matrixStack.restore();
         }
     }
 

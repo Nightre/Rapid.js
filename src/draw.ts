@@ -66,36 +66,33 @@ export interface ICircleOptions extends IDrawOptions {
     segments?: number;
 }
 
-// const hasTransformOptions = (options: ITransformOptions): boolean => (
-//     options.saveTransform !== undefined ||
-//     options.afterSave !== undefined ||
-//     options.x !== undefined ||
-//     options.y !== undefined ||
-//     options.position !== undefined ||
-//     options.rotation !== undefined ||
-//     options.scale !== undefined ||
-//     options.offsetX !== undefined ||
-//     options.offsetY !== undefined ||
-//     options.offset !== undefined ||
-//     options.origin !== undefined
-// );
-
 const withOptionsTransform = (
     rapid: Rapid,
-    options: ITransformOptions,
+    options: IDrawOptions,
     width: number,
     height: number,
-    draw: () => void,
 ) => {
-    // matrixStack save in applyTransform
-    rapid.matrixStack.applyTransform(options, width, height);
+    if (options.customMatrix !== undefined) {
+        return options.customMatrix;
+    }
 
-    try {
-        draw();
-    } finally {
-        if (options.saveTransform !== false) {
-            rapid.matrixStack.restore();
-        }
+    if (options.modifyStack) {
+        rapid.matrixStack.applyTransform(
+            options,
+            width,
+            height
+        );
+
+        return
+    } else {
+        const temporary = rapid.matrix.temporary
+        rapid.matrixStack.applyTransform(
+            options,
+            width,
+            height,
+            temporary
+        );
+        return temporary
     }
 };
 
@@ -105,7 +102,7 @@ const getColorUint32 = (rapid: Rapid, color?: Color): number => {
 };
 
 const ATLAS_PADDING = 2
-export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
+export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions, matrixIndex?:number): void => {
     const texture = options.texture;
     if (!texture?.base || rapid.inCreateMask) {
         return;
@@ -134,7 +131,7 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
 
     region.drawSprite(
         texture,
-        options.customMatrix ?? rapid.matrixStack.curWorldM,
+        matrixIndex ?? options.customMatrix ?? rapid.matrixStack.curWorldM,
         u0,
         v0,
         u1,
@@ -149,9 +146,8 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions): void => {
 };
 
 export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
-    withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
-        drawSpriteRaw(rapid, options);
-    });
+    const matrix = withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight)
+    drawSpriteRaw(rapid, options, matrix);
 };
 
 export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions): void => {
@@ -199,30 +195,29 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
 export const drawGraphic = (rapid: Rapid, options: IGraphicOptions): void => {
     if (options.points.length === 0) return;
 
-    withOptionsTransform(rapid, options, 0, 0, () => {
-        rapid.startGraphic(
-            options.drawMode ?? rapid.gl.TRIANGLES,
-            options.texture,
-            options.shader,
-            options.customMatrix,
+    const matrix = withOptionsTransform(rapid, options, 0, 0);
+    rapid.startGraphic(
+        options.drawMode ?? rapid.gl.TRIANGLES,
+        options.texture,
+        options.shader,
+        matrix ?? options.customMatrix,
+    );
+
+    for (let i = 0; i < options.points.length; i++) {
+        const point = options.points[i];
+        const uv = options.uv?.[i];
+        const color = Array.isArray(options.color) ? options.color[i] : options.color;
+
+        rapid.addGraphicVertex(
+            point.x,
+            point.y,
+            uv?.x ?? 0,
+            uv?.y ?? 0,
+            getColorUint32(rapid, color),
         );
+    }
 
-        for (let i = 0; i < options.points.length; i++) {
-            const point = options.points[i];
-            const uv = options.uv?.[i];
-            const color = Array.isArray(options.color) ? options.color[i] : options.color;
-
-            rapid.addGraphicVertex(
-                point.x,
-                point.y,
-                uv?.x ?? 0,
-                uv?.y ?? 0,
-                getColorUint32(rapid, color),
-            );
-        }
-
-        rapid.endGraphic();
-    });
+    rapid.endGraphic();
 };
 
 export const drawLine = (rapid: Rapid, options: ILineOptions): void => {
@@ -240,45 +235,48 @@ export const drawLine = (rapid: Rapid, options: ILineOptions): void => {
 };
 
 export const drawMaskImage = (rapid: Rapid, options: IMaskImageOptions): void => {
-    withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight, () => {
-        rapid.startMaskGraphic(
-            rapid.gl.TRIANGLE_FAN,
-            options.texture,
-            options.customMatrix,
-        );
-        rapid.addRectVertex(options.texture.rawWidth, options.texture.rawHeight);
-        rapid.endGraphic();
-    });
+    const matrix = withOptionsTransform(
+        rapid,
+        options,
+        options.texture.rawWidth,
+        options.texture.rawHeight,
+    );
+    rapid.startMaskGraphic(
+        rapid.gl.TRIANGLE_FAN,
+        options.texture,
+        matrix ?? options.customMatrix,
+    );
+    rapid.addRectVertex(options.texture.rawWidth, options.texture.rawHeight);
+    rapid.endGraphic();
 };
 
 export const drawRect = (rapid: Rapid, options: IRectOptions): void => {
-    withOptionsTransform(rapid, options, options.width, options.height, () => {
-        rapid.startGraphic(
-            rapid.gl.TRIANGLE_FAN,
-            options.texture,
-            options.shader,
-            options.customMatrix,
-        );
-        rapid.addRectVertex(options.width, options.height, options.color);
-        rapid.endGraphic();
-    });
+    const matrix = withOptionsTransform(rapid, options, options.width, options.height)
+
+    rapid.startGraphic(
+        rapid.gl.TRIANGLE_FAN,
+        options.texture,
+        options.shader,
+        matrix ?? options.customMatrix,
+    );
+    rapid.addRectVertex(options.width, options.height, options.color);
+    rapid.endGraphic();
 };
 
 export const drawCircle = (rapid: Rapid, options: ICircleOptions): void => {
     const segments = options.segments ?? 32;
+    const matrix = withOptionsTransform(rapid, options, 0, 0);
 
-    withOptionsTransform(rapid, options, 0, 0, () => {
-        rapid.startGraphic(
-            rapid.gl.TRIANGLE_FAN,
-            undefined,
-            options.shader,
-            options.customMatrix,
-        );
+    rapid.startGraphic(
+        rapid.gl.TRIANGLE_FAN,
+        undefined,
+        options.shader,
+        matrix ?? options.customMatrix,
+    );
 
-        const unitColor = getColorUint32(rapid, options.color);
-        rapid.addGraphicVertex(0, 0, 0.5, 0.5, unitColor);
-        rapid.addCircleVertex(options.radius, options.color, segments);
-        rapid.addGraphicVertex(options.radius, 0, 1, 0.5, unitColor);
-        rapid.endGraphic();
-    });
+    const unitColor = getColorUint32(rapid, options.color);
+    rapid.addGraphicVertex(0, 0, 0.5, 0.5, unitColor);
+    rapid.addCircleVertex(options.radius, options.color, segments);
+    rapid.addGraphicVertex(options.radius, 0, 1, 0.5, unitColor);
+    rapid.endGraphic();
 };
