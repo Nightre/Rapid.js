@@ -24,7 +24,7 @@ export const MODES = Object.freeze({
     single: Object.freeze({
         key: "single",
         label: "Single Texture",
-        counts: createDoublingCounts(10000, 1000000),
+        counts: createDoublingCounts(20000, 1000000),
     }),
 });
 
