@@ -6,6 +6,7 @@ import GLShader, { CustomGlShader } from "../webgl/glshader";
 import { drawArraysInstanced, UNSIGNED_BYTE } from "../webgl/utils";
 import { Texture } from "../texture";
 import { composeProjectionWithAffine } from "../math";
+import { Color } from "../color";
 
 // Per-instance buffer stride: 11 floats + 1 packed color = 48 bytes
 // layout:
@@ -75,7 +76,7 @@ export class ParticleRegion extends SpriteRegion {
         x: Array<number>,
         y: Array<number>,
         rotation: Array<number>,
-        color: Array<number>,
+        color: Array<Color>,
         count: number,
         scaleX: number = 1,
         scaleY: number = 1,
@@ -85,6 +86,7 @@ export class ParticleRegion extends SpriteRegion {
         isRotated: boolean = false,
         originX: number = 0.5,
         originY: number = 0.5,
+        premultipliedAlpha: boolean,
     ): void {
         if (!texture.glTexture || count <= 0) return;
 
@@ -132,7 +134,7 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 8] = v1;
 
                 // aColor
-                u32[index + 9] = color[sourceIndex];
+                u32[index + 9] = premultipliedAlpha ? color[sourceIndex].premultipliedUint32 : color[sourceIndex].uint32;
 
                 // aOrigin
                 f32[index + 10] = originX;

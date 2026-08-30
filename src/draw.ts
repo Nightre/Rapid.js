@@ -96,9 +96,9 @@ const withOptionsTransform = (
     }
 };
 
-const getColorUint32 = (rapid: Rapid, color?: Color): number => {
+export const getColorUint32 = (premultipliedAlpha: boolean, color?: Color): number => {
     if (!color) return 0xFFFFFFFF;
-    return rapid.premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
+    return premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
 };
 
 const ATLAS_PADDING = 2
@@ -136,7 +136,7 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions, matrixIndex
         v0,
         u1,
         v1,
-        getColorUint32(rapid, options.color),
+        rapid.getColorUint32(options.color),
         paddingX,
         paddingY,
         flipX,
@@ -158,25 +158,12 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
     const count = options.count ?? options.x.length;
     const color = options.color;
 
-    const len = color.length;
-    const numColor = new Array(len);
-
-    if (rapid.premultipliedAlpha) {
-        for (let i = 0; i < len; i++) {
-            numColor[i] = color[i].premultipliedUint32;
-        }
-    } else {
-        for (let i = 0; i < len; i++) {
-            numColor[i] = color[i].uint32;
-        }
-    }
-
     region.drawParticles(
         texture,
         options.x,
         options.y,
         options.rotation,
-        numColor,
+        color,
         count,
         options.scaleX,
         options.scaleY,
@@ -189,6 +176,7 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         options.isRotated,
         options.originX,
         options.originY,
+        rapid.premultipliedAlpha
     )
 };
 
@@ -213,7 +201,7 @@ export const drawGraphic = (rapid: Rapid, options: IGraphicOptions): void => {
             point.y,
             uv?.x ?? 0,
             uv?.y ?? 0,
-            getColorUint32(rapid, color),
+            rapid.getColorUint32(color),
         );
     }
 
@@ -274,7 +262,7 @@ export const drawCircle = (rapid: Rapid, options: ICircleOptions): void => {
         matrix ?? options.customMatrix,
     );
 
-    const unitColor = getColorUint32(rapid, options.color);
+    const unitColor = rapid.getColorUint32(options.color);
     rapid.addGraphicVertex(0, 0, 0.5, 0.5, unitColor);
     rapid.addCircleVertex(options.radius, options.color, segments);
     rapid.addGraphicVertex(options.radius, 0, 1, 0.5, unitColor);

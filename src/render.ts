@@ -21,6 +21,7 @@ import {
     drawParticles,
     drawRect,
     drawSprite,
+    getColorUint32,
 } from "./draw";
 import { Vec2 } from "./math";
 import { AtlasSprtieRegion } from "./region/atlasSpriteRegion";
@@ -262,9 +263,8 @@ export class Rapid {
         this.antialias = antialias;
     }
 
-    private getColorUint32(color?: Color): number {
-        if (!color) return 0xFFFFFFFF;
-        return this.premultipliedAlpha ? color.premultipliedUint32 : color.uint32;
+    getColorUint32(color?: Color): number {
+        return getColorUint32(this.premultipliedAlpha, color)
     }
 
     /**
