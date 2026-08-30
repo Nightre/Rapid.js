@@ -27,14 +27,7 @@ rapid.drawSprite({
     offsetY: 0,
     // offset: new Vec2(0, 0),
 
-    saveTransform: true, // Whether to automatically call MatrixStack to save state before rendering
-    afterSave: () => {
-        // Callback triggered after state is pushed onto stack and before current transform is applied
-        // Can be used to draw child sprites inheriting parent transforms
-        rapid.drawSprite({
-            ...,
-        })
-    }
+    modifyStack: true, // Whether to modify the MatrixStack
 });
 ```
 
@@ -105,13 +98,13 @@ rapid.drawSprite({ texture });
 ms.restore();
 ```
 
-If you pass `saveTransform: false`, it modifies the current matrix directly without creating a new state stack.
+If you pass `modifyStack: true`, it modifies the current matrix stack directly (without automatically creating a new state).
 
 ```ts
 rapid.matrixStack.applyTransform({
   x: 20,
   y: 0,
-  saveTransform: false,
+  modifyStack: true,
 });
 ```
 

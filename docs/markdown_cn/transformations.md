@@ -27,14 +27,7 @@ rapid.drawSprite({
     offsetY: 0,
     // offset: new Vec2(0, 0),
 
-    saveTransform: true, // 是否自动调用 MatrixStack 创建一个新的状态来渲染
-    afterSave: () => {
-        // 在状态入栈后、应用当前变换前触发的回调
-        // 可以再次绘制子精灵，继承父的变换
-        rapid.drawSprite({
-            ...,
-        })
-    }
+    modifyStack: false, // 是否修改 MatrixStack
 });
 ```
 
@@ -105,13 +98,13 @@ rapid.drawSprite({ texture });
 ms.restore();
 ```
 
-如果传 `saveTransform: false`，它会直接改当前矩阵，不会自动创建新状态。
+如果传 `modifyStack: true`，它会直接改当前矩阵堆栈（不会自动创建新状态）
 
 ```ts
 rapid.matrixStack.applyTransform({
   x: 20,
   y: 0,
-  saveTransform: false,
+  modifyStack: true,
 });
 ```
 

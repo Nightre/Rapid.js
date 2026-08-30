@@ -49,8 +49,7 @@ rapid.drawSprite({
   shader: customShader,                 // 使用自定义 shader
   customMatrix: matrixIndex,            // 直接指定矩阵索引
 
-  saveTransform: true,                  // 是否自动 save/restore 矩阵，默认 true
-  afterSave: () => {},                  // save 之后、应用变换之前调用，可以用来做父子关系
+  modifyStack: false,                   // 是否修改矩阵堆栈，默认 false
 });
 ```
 

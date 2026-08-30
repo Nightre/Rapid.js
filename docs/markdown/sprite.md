@@ -49,8 +49,7 @@ rapid.drawSprite({
   shader: customShader,                 // Custom shader
   customMatrix: matrixIndex,            // Specify custom matrix index directly
 
-  saveTransform: true,                  // Whether to auto save/restore matrix; defaults to true
-  afterSave: () => {},                  // Callback after save and before transformation; useful for parent-child hierarchy
+  modifyStack: false,                    // Whether to modify the matrix stack; defaults to false
 });
 ```
 
