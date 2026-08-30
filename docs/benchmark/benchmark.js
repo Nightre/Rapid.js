@@ -235,7 +235,7 @@ function drawChart() {
 }
 
 function interruptBackgroundRun() {
-    const message = "检测到页面切换到后台。切换后台会导致 Benchmark 数据有误，本次测试已结束，结果已清空。";
+    const message = "The page was detected switching to the background. Switching to the background causes benchmark data inaccuracies; the test has ended, and the results have been cleared.";
     activeRunController?.abort(createAbortError(message));
     resetResults();
     view.showRendererCode();
