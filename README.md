@@ -68,7 +68,6 @@ Performance Comparison: Rapid vs. Other Renderers and Game Engines
 <p align="center">
   <a href="https://nightre.github.io/Rapid.js/benchmark/">
     <img src="./docs/benchmark/benchmark.png" alt="Benchmark Result">
-    <img src="./docs/benchmark/benchmark2.png" alt="Benchmark Result">
   </a>
 </p>
 
