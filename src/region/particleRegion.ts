@@ -170,7 +170,6 @@ export class ParticleRegion extends SpriteRegion {
 
         const matrix = composeProjectionWithAffine(this.rapid.projection, worldMatrix)
         this.currentShader.setUniform("u_projection", matrix);
-        this.currentShader.setUniform("u_projection", this.rapid.projection);
 
         drawArraysInstanced(gl, gl.TRIANGLE_STRIP, 0, 4, this.instanceCount);
         this.rapid.drawcallCount++;
