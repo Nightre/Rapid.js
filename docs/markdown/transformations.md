@@ -35,7 +35,7 @@ rapid.drawSprite({
 
 ## Controlling MatrixStack Directly
 
-In complex hierarchies, operating `matrixStack` directly is cleaner. `save()` creates a child node state, and `restore()` returns to the parent node.
+In complex hierarchies, you can operate `matrixStack` directly. `save()` creates a child node state, and `restore()` returns to the parent node.
 
 ```ts
 const ms = rapid.matrixStack;
@@ -82,11 +82,11 @@ rapid.withTransform(() => {
 
 ## applyTransform
 
-`matrixStack.applyTransform(options, width, height)` uses the same parameter options as drawing functions. By default, it calls `save()` first, so remember to call `restore()` when calling it manually.
+`matrixStack.applyTransform(options, width, height)` uses the same parameter options as drawing functions.
 
 ```ts
 const ms = rapid.matrixStack;
-
+ms.save();
 ms.applyTransform({
   x: 120,
   y: 80,

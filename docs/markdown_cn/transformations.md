@@ -35,7 +35,7 @@ rapid.drawSprite({
 
 ## 直接控制 MatrixStack
 
-复杂层级里，直接操作 `matrixStack` 会更清楚。`save()` 创建子节点状态，`restore()` 回到父节点。
+复杂层级里，可以直接操作 `matrixStack`。`save()` 创建子节点状态，`restore()` 回到父节点。
 
 ```ts
 const ms = rapid.matrixStack;
@@ -82,11 +82,11 @@ rapid.withTransform(() => {
 
 ## applyTransform
 
-`matrixStack.applyTransform(options, width, height)` 和绘制 options 使用同一套参数。它默认会先 `save()`，所以手动调用时要记得 `restore()`。
+`matrixStack.applyTransform(options, width, height)` 和绘制 options 使用同一套参数。
 
 ```ts
 const ms = rapid.matrixStack;
-
+ms.save();
 ms.applyTransform({
   x: 120,
   y: 80,
