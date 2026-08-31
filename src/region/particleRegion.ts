@@ -76,7 +76,7 @@ export class ParticleRegion extends SpriteRegion {
         x: ArrayLike<number>,
         y: ArrayLike<number>,
         rotation: ArrayLike<number> | number = 0,
-        color: ArrayLike<Color> | number = 0xFFFFFF,
+        color: ArrayLike<Color> | ArrayLike<number> | number = 0xFFFFFFFF,
         count: number,
         scaleX: ArrayLike<number> | number = 1,
         scaleY: ArrayLike<number> | number = 1,
@@ -87,6 +87,7 @@ export class ParticleRegion extends SpriteRegion {
         originX: number = 0.5,
         originY: number = 0.5,
         premultipliedAlpha: boolean,
+        reverseOrder: boolean = false,
     ): void {
         if (!texture.glTexture || count <= 0) return;
 
@@ -96,6 +97,7 @@ export class ParticleRegion extends SpriteRegion {
         const uniScaleY = typeof scaleY == "number"
         const uniRotation = typeof rotation == "number"
         const uniColor = typeof color == "number"
+        const numberColor = !uniColor && typeof color[0] == "number"
 
         let rawWidth = texture.rawWidth * (flipX ? -1 : 1);
         if (uniScaleX) {
@@ -131,7 +133,9 @@ export class ParticleRegion extends SpriteRegion {
             const u32 = buf.uint32!;
 
             for (let i = 0; i < batchCount; i++) {
-                const sourceIndex = offset + i;
+                const sourceIndex = reverseOrder
+                    ? count - 1 - offset - i
+                    : offset + i;
 
                 // aPosition
                 f32[index] = x[sourceIndex];
@@ -153,8 +157,10 @@ export class ParticleRegion extends SpriteRegion {
                 // aColor
                 if (uniColor) {
                     u32[index + 9] = 0xFFFFFFFF;
+                } else if (numberColor) {
+                    u32[index + 9] = color[sourceIndex] as number
                 } else {
-                    const curColor = color[sourceIndex]
+                    const curColor = color[sourceIndex] as Color
                     u32[index + 9] = premultipliedAlpha ? curColor.premultipliedUint32 : curColor.uint32;
                 }
 

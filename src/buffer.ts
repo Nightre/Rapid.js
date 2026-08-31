@@ -95,6 +95,48 @@ export class DynamicArrayBuffer {
         this.usedElemNum = 0;
     }
 
+    static removeAtIndices(indices: number[], targets: DynamicArrayBuffer[]): number {
+        const oldLength = Math.max(...targets.map(t => t.usedElemNum));
+
+        const removedIndices = [...new Set(indices)]
+            .filter(index =>
+                index >= 0 &&
+                index < oldLength
+            )
+            .sort((a, b) => a - b);
+
+        if (removedIndices.length === 0) {
+            return 0;
+        }
+
+        let writeIndex = 0;
+        let removedCursor = 0;
+
+        for (let readIndex = 0; readIndex < oldLength; readIndex++) {
+            if (
+                removedCursor < removedIndices.length &&
+                readIndex === removedIndices[removedCursor]
+            ) {
+                removedCursor++;
+                continue;
+            }
+
+            if (writeIndex !== readIndex) {
+                for (const target of targets) {
+                    target.typedArray[writeIndex] = target.typedArray[readIndex]
+                }
+            }
+
+            writeIndex++;
+        }
+
+        for (const target of targets) {
+            target.usedElemNum = writeIndex
+        }
+
+        return oldLength - writeIndex;
+    }
+
     /**
      * Checks if the buffer has enough space for additional elements and resizes the buffer if necessary.
      * @param size - The number of new elements that need to be accommodated.

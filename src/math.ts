@@ -199,7 +199,7 @@ export const composeProjectionWithAffine = (
         e, f, 0, 1 
     ]);
 
-    return multiplyMat4(projection, affineMat4);
+    return multiplyMat4(affineMat4, projection);
 }
 
 export const multiplyMat4 = (A: Float32Array, B: Float32Array): Float32Array => {

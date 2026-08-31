@@ -20,7 +20,7 @@ export interface IDrawParticleBatchOptions {
     x: ArrayLike<number>;
     y: ArrayLike<number>;
     rotation?: ArrayLike<number> | number;
-    color?: ArrayLike<Color> | number;
+    color?: ArrayLike<Color> | ArrayLike<number> | number;
     count?: number;
     scaleX?: ArrayLike<number>;
     scaleY?: ArrayLike<number>;
@@ -28,6 +28,7 @@ export interface IDrawParticleBatchOptions {
     originY?: number;
     flipX?: boolean;
     flipY?: boolean;
+    reverseOrder?: boolean;
 }
 
 export interface ISpriteOptions extends IDrawOptions {
@@ -101,7 +102,8 @@ export const getColorUint32 = (premultipliedAlpha: boolean, color?: Color): numb
 };
 
 const ATLAS_PADDING = 2
-export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions, matrixIndex?:number): void => {
+export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
+    const matrix = withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight)
     const texture = options.texture;
     if (!texture?.base || rapid.inCreateMask) {
         return;
@@ -130,7 +132,7 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions, matrixIndex
 
     region.drawSprite(
         texture,
-        matrixIndex ?? options.customMatrix ?? rapid.matrixStack.curWorldM,
+        matrix ?? options.customMatrix ?? rapid.matrixStack.curWorldM,
         u0,
         v0,
         u1,
@@ -142,11 +144,6 @@ export const drawSpriteRaw = (rapid: Rapid, options: ISpriteOptions, matrixIndex
         flipY,
         texture.isRotated,
     );
-};
-
-export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
-    const matrix = withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight)
-    drawSpriteRaw(rapid, options, matrix);
 };
 
 export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions): void => {
@@ -175,7 +172,8 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         texture.isRotated,
         options.originX,
         options.originY,
-        rapid.premultipliedAlpha
+        rapid.premultipliedAlpha,
+        options.reverseOrder,
     )
 };
 

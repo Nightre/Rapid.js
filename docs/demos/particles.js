@@ -7,19 +7,19 @@ import { Color, ParticleEmitter, ParticleShape, Vec2 } from "rapid-render";
 export default async function (rapid, { loop }) {
     // Use toycar.png as the particle
     const particleTex = await rapid.texture.load("./image/toycar.png");
+    const ms = rapid.matrixStack
+
 
     const emitter = new ParticleEmitter(rapid, {
         texture: particleTex,
         life: [1, 2],
-        emitRate: 20, // Less rate because cars are bigger
+        emitRate: 50, // Less rate because cars are bigger
         emitShape: ParticleShape.CIRCLE,
         emitRadius: 20,
-        position: new Vec2(50, 50),
-        
         animation: {
             // Erupt out in all directions
-            rotation: { start: [0, Math.PI * 2] },
-            speed: { start: [50, 150], end: 20 },
+            rotation: { start: [0, Math.PI * 2], delta: 2 },
+            speed: { start: [20, 250], end: 20 },
             
             // Gravity pulls them down slightly
             acceleration: new Vec2(0, 100),
@@ -30,8 +30,8 @@ export default async function (rapid, { loop }) {
             // Just fade out to transparent (white color retains the car's original colors)
             color: {
                 start: new Color(255, 255, 255, 255),
-                end: new Color(255, 255, 255, 0)
-            }
+                end: new Color(255, 50, 0, 0)
+            },
         }
     });
 
@@ -39,6 +39,7 @@ export default async function (rapid, { loop }) {
 
     loop((time, delta) => {
         rapid.clear();
+        ms.translate(200, 200)
         emitter.update(delta);
         emitter.render();
         rapid.flush();

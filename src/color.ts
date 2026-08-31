@@ -233,6 +233,27 @@ export class Color {
         );
     }
 
+    static clampColorByte(value: number): number {
+        if (value <= 0) return 0;
+        if (value >= 255) return 255;
+        return Math.round(value);
+    };
+
+    static packColor(
+        r: number,
+        g: number,
+        b: number,
+        a: number,
+        premultipliedAlpha: boolean,
+    ): number {
+        const alpha = Color.clampColorByte(a);
+        const alphaScale = premultipliedAlpha ? alpha / 255 : 1;
+        const red = Color.clampColorByte(r * alphaScale);
+        const green = Color.clampColorByte(g * alphaScale);
+        const blue = Color.clampColorByte(b * alphaScale);
+        return ((alpha << 24) | (blue << 16) | (green << 8) | red) >>> 0;
+    };
+
     /**
      * Creates a Color instance from a hexadecimal color string.
      * @param hexString - The hexadecimal color string, e.g., '#RRGGBB' or '#RRGGBBAA'.
