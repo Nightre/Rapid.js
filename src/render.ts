@@ -283,7 +283,6 @@ export class Rapid {
 
     drawParticles(options: IDrawParticleBatchOptions): void {
         drawParticles(this, options);
-        this.flush(); // flush now
     }
 
     drawSprite(options: ISpriteOptions): void {

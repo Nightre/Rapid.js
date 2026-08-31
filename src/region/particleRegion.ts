@@ -22,6 +22,7 @@ const INSTANCE_ELEMS = INSTANCE_STRIDE / 4;
 export class ParticleRegion extends SpriteRegion {
     KEY = "ParticleSprite"
     texture?: Texture
+    customMatrix?: number
 
     constructor(rapid: Rapid) {
         super(rapid)
@@ -88,6 +89,7 @@ export class ParticleRegion extends SpriteRegion {
         originY: number = 0.5,
         premultipliedAlpha: boolean,
         reverseOrder: boolean = false,
+        customMatrix?: number
     ): void {
         if (!texture.glTexture || count <= 0) return;
 
@@ -175,6 +177,9 @@ export class ParticleRegion extends SpriteRegion {
             this.instanceCount += batchCount;
             offset += batchCount;
         }
+
+        this.customMatrix = customMatrix
+        this.flush()
     }
 
     override render(): void {
@@ -196,7 +201,7 @@ export class ParticleRegion extends SpriteRegion {
 
         const ms = this.rapid.matrixStack
         const m = this.rapid.matrix
-        const worldMatrix = m.getMatrix(ms.curWorldM)
+        const worldMatrix = m.getMatrix(this.customMatrix ?? ms.curWorldM)
 
         const matrix = composeProjectionWithAffine(this.rapid.projection, worldMatrix)
         this.currentShader.setUniform("u_projection", matrix);
@@ -204,5 +209,6 @@ export class ParticleRegion extends SpriteRegion {
         drawArraysInstanced(gl, gl.TRIANGLE_STRIP, 0, 4, this.instanceCount);
         this.rapid.drawcallCount++;
         this.texture = undefined;
+        this.customMatrix = undefined
     }
 }

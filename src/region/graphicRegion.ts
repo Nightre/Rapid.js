@@ -138,7 +138,7 @@ export class GraphicRegion extends Region {
      * Finishes the graphic construction and dispatches the rendering call immediately.
      */
     endGraphic(): void {
-        this.render();
+        this.flush();
     }
 
     render() {

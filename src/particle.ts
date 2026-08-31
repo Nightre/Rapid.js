@@ -242,9 +242,9 @@ export class ParticleEmitter {
     constructor(rapid: Rapid, options: IParticleOptions) {
         this.rapid = rapid;
         this.options = options;
-        this.emitRate = options.emitRate !== undefined ? options.emitRate : DEFAULT_EMIT_RATE;
-        this.emitTime = options.emitTime !== undefined ? options.emitTime : DEFAULT_EMIT_TIME;
-        this.localSpace = options.localSpace !== undefined ? options.localSpace : DEFAULT_LOCAL_SPACE;
+        this.emitRate = options.emitRate ?? DEFAULT_EMIT_RATE;
+        this.emitTime = options.emitTime ?? DEFAULT_EMIT_TIME;
+        this.localSpace = options.localSpace ?? DEFAULT_LOCAL_SPACE;
     }
 
     getAllArrayBuffer(): DynamicArrayBuffer[] {
@@ -316,24 +316,34 @@ export class ParticleEmitter {
 
     createParticle() {
         const lifeTime = Random.scalarOrRange(this.options.life, 1)
+        let spawnX = 0
+        let spawnY = 0
+
         switch (this.options.emitShape) {
             case ParticleShape.CIRCLE: {
                 const angle = Math.random() * Math.PI * 2;
                 const radius = (this.options.emitRadius ?? 0) * Math.sqrt(Math.random());
-                this.x.push(Math.cos(angle) * radius)
-                this.y.push(Math.sin(angle) * radius)
+                spawnX = Math.cos(angle) * radius
+                spawnY = Math.sin(angle) * radius
                 break;
             }
             case ParticleShape.RECT: {
-                this.x.push((Math.random() - 0.5) * (this.options.emitRect?.width ?? 0))
-                this.y.push((Math.random() - 0.5) * (this.options.emitRect?.height ?? 0))
+                spawnX = (Math.random() - 0.5) * (this.options.emitRect?.width ?? 0)
+                spawnY = (Math.random() - 0.5) * (this.options.emitRect?.height ?? 0)
                 break;
             }
             case ParticleShape.POINT:
             default:
-                this.x.push(0)
-                this.y.push(0)
                 break;
+        }
+        const ms = this.rapid.matrixStack
+        if (this.localSpace) {
+            this.x.push(spawnX)
+            this.y.push(spawnY)
+        } else {
+            const { x, y } = ms.localToWorld(spawnX, spawnY)
+            this.x.push(x)
+            this.y.push(y)
         }
 
         const animation = this.options.animation
@@ -424,6 +434,8 @@ export class ParticleEmitter {
      */
     render() {
         const options = this.options
+        const customMatrix = this.localSpace ? undefined : this.rapid.matrix.alloc()
+
         this.rapid.drawParticles({
             texture: options.texture,
             shader: options.shader,
@@ -439,6 +451,8 @@ export class ParticleEmitter {
 
             originX: options.origin?.x ?? 0.5,
             originY: options.origin?.y ?? 0.5,
+
+            customMatrix
         })
     }
 

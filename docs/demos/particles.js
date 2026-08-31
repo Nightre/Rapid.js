@@ -20,26 +20,28 @@ export default async function (rapid, { loop }) {
             // Erupt out in all directions
             rotation: { start: [0, Math.PI * 2], delta: 2 },
             speed: { start: [20, 250], end: 20 },
-            
+
             // Gravity pulls them down slightly
             acceleration: new Vec2(0, 100),
-            
+
             // Keep cars normal size, shrinking at the end
             scale: { start: [0.8, 1.2], end: 0 },
-            
+
             // Just fade out to transparent (white color retains the car's original colors)
             color: {
                 start: new Color(255, 255, 255, 255),
                 end: new Color(255, 50, 0, 0)
             },
-        }
+            
+        },
+        localSpace : false
     });
 
     emitter.start();
 
     loop((time, delta) => {
         rapid.clear();
-        ms.translate(200, 200)
+        ms.translate(Math.sin(time) * 200 - 200 / 2 + 720 / 2, 180)
         emitter.update(delta);
         emitter.render();
         rapid.flush();

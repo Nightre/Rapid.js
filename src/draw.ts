@@ -9,13 +9,15 @@ import type { Rapid } from "./render";
 export type DrawShader = GLShader | CustomGlShader;
 export type DrawPoint = Vec2 | { x: number; y: number };
 
-export interface IDrawOptions extends ITransformOptions {
+export interface IDrawOptions extends ITransformOptions,IDisplayOptions {
+}
+
+export interface IDisplayOptions {
     shader?: DrawShader;
     customMatrix?: number;
 }
 
-export interface IDrawParticleBatchOptions {
-    shader?: DrawShader;
+export interface IDrawParticleBatchOptions extends IDisplayOptions {
     texture: Texture;
     x: ArrayLike<number>;
     y: ArrayLike<number>;
@@ -174,6 +176,7 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         options.originY,
         rapid.premultipliedAlpha,
         options.reverseOrder,
+        options.customMatrix
     )
 };
 
