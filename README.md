@@ -24,8 +24,8 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightwe
 
 ## Highlights
 
-- **Automatic batching**  
-  Rapid automatically batches compatible draw work. Multi-texture batching binds different textures into a single draw call, eliminating manual grouping.
+- **Rendering speed**  
+  An efficient batching system significantly reduces draw calls, allowing Rapid.js to maintain smooth, stable performance even when rendering large numbers of sprites at once.
 
 - **Powerful custom shaders**  
   Add sprite and geometry effects through shader hooks while still using Rapid's normal renderer, transforms, textures, and draw APIs.
