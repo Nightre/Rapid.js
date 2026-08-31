@@ -26,7 +26,6 @@ export const demoOrder = [
   "sprite",
   "image-animation",
   "sprite-sheet",
-  "multi-texture",
   "transformations",
   "matrix-tree",
   "update-matrix",
@@ -42,7 +41,6 @@ export const demoOrder = [
   "ping-pong-filter",
   "masks",
   "particles",
-  "stress-test",
 ];
 
 /** Label shown in the picker. */
@@ -52,7 +50,6 @@ const demoTitles = {
   sprite: "Sprite",
   "image-animation": "Image Animation",
   "sprite-sheet": "Sprite Sheet",
-  "multi-texture": "Multi-Texture Batching",
   transformations: "Transformations",
   "matrix-tree": "Matrix Tree",
   "update-matrix": "Update Matrix",
@@ -68,7 +65,6 @@ const demoTitles = {
   "ping-pong-filter": "Ping-Pong Filter",
   masks: "Masks & Clipping",
   particles: "Particles",
-  "stress-test": "Stress Test",
 };
 
 // Vite resolves both of these at build time: the first to lazy module
