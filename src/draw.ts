@@ -17,13 +17,13 @@ export interface IDrawOptions extends ITransformOptions {
 export interface IDrawParticleBatchOptions {
     shader?: DrawShader;
     texture: Texture;
-    x: Array<number>;
-    y: Array<number>;
-    rotation?: Array<number> | number;
-    color?: Array<Color> | number;
+    x: ArrayLike<number>;
+    y: ArrayLike<number>;
+    rotation?: ArrayLike<number> | number;
+    color?: ArrayLike<Color> | number;
     count?: number;
-    scaleX?: number;
-    scaleY?: number;
+    scaleX?: ArrayLike<number>;
+    scaleY?: ArrayLike<number>;
     originX?: number;
     originY?: number;
     flipX?: boolean;
