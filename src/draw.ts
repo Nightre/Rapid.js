@@ -19,8 +19,8 @@ export interface IDrawParticleBatchOptions {
     texture: Texture;
     x: Array<number>;
     y: Array<number>;
-    rotation: Array<number>;
-    color: Array<Color>;
+    rotation?: Array<number> | number;
+    color?: Array<Color> | number;
     count?: number;
     scaleX?: number;
     scaleY?: number;
@@ -28,7 +28,6 @@ export interface IDrawParticleBatchOptions {
     originY?: number;
     flipX?: boolean;
     flipY?: boolean;
-    isRotated?: boolean;
 }
 
 export interface ISpriteOptions extends IDrawOptions {
@@ -173,7 +172,7 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         texture.uvH,
         options.flipX,
         options.flipY,
-        options.isRotated,
+        texture.isRotated,
         options.originX,
         options.originY,
         rapid.premultipliedAlpha

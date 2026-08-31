@@ -75,8 +75,8 @@ export class ParticleRegion extends SpriteRegion {
         texture: Texture,
         x: Array<number>,
         y: Array<number>,
-        rotation: Array<number>,
-        color: Array<Color>,
+        rotation: Array<number> | number = 0,
+        color: Array<Color> | number = 0xFFFFFF,
         count: number,
         scaleX: Array<number> | number = 1,
         scaleY: Array<number> | number = 1,
@@ -94,6 +94,8 @@ export class ParticleRegion extends SpriteRegion {
 
         const uniScaleX = typeof scaleX == "number"
         const uniScaleY = typeof scaleY == "number"
+        const uniRotation = typeof rotation == "number"
+        const uniColor = typeof color == "number"
 
         let rawWidth = texture.rawWidth * (flipX ? -1 : 1);
         if (uniScaleX) {
@@ -105,7 +107,10 @@ export class ParticleRegion extends SpriteRegion {
             rawHeight *= scaleY
         }
 
-        const rotationOffset = isRotated ? Math.PI / 2 : 0;
+        let rotationOffset = isRotated ? Math.PI / 2 : 0;
+        if (uniRotation) {
+            rotationOffset += rotation
+        }
 
         while (offset < count) {
             if (this.texture && texture !== this.texture) {
@@ -137,7 +142,7 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 3] = uniScaleY ? rawHeight : rawHeight * scaleY[sourceIndex];
 
                 // aRotation
-                f32[index + 4] = rotation[sourceIndex] + rotationOffset;
+                f32[index + 4] = uniRotation ? rotationOffset : rotation[sourceIndex] + rotationOffset;
 
                 // aUVRect
                 f32[index + 5] = u0;
@@ -146,11 +151,11 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 8] = v1;
 
                 // aColor
-                const curColor = color[sourceIndex]
-                if (curColor) {
-                    u32[index + 9] = premultipliedAlpha ? curColor.premultipliedUint32 : curColor.uint32;
-                } else {
+                if (uniColor) {
                     u32[index + 9] = 0xFFFFFFFF;
+                } else {
+                    const curColor = color[sourceIndex]
+                    u32[index + 9] = premultipliedAlpha ? curColor.premultipliedUint32 : curColor.uint32;
                 }
 
                 // aOrigin
