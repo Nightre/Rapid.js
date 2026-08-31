@@ -78,8 +78,8 @@ export class ParticleRegion extends SpriteRegion {
         rotation: Array<number>,
         color: Array<Color>,
         count: number,
-        scaleX: number = 1,
-        scaleY: number = 1,
+        scaleX: Array<number> | number = 1,
+        scaleY: Array<number> | number = 1,
         u0: number = 0, v0: number = 0, u1: number = 1, v1: number = 1,
         flipX: boolean = false,
         flipY: boolean = false,
@@ -91,8 +91,20 @@ export class ParticleRegion extends SpriteRegion {
         if (!texture.glTexture || count <= 0) return;
 
         let offset = 0;
-        const rawWidth = texture.rawWidth * scaleX * (flipX ? -1 : 1);
-        const rawHeight = texture.rawHeight * scaleY * (flipY ? -1 : 1);
+
+        const uniScaleX = typeof scaleX == "number"
+        const uniScaleY = typeof scaleY == "number"
+
+        let rawWidth = texture.rawWidth * (flipX ? -1 : 1);
+        if (uniScaleX) {
+            rawWidth *= scaleX
+        }
+
+        let rawHeight = texture.rawHeight * (flipY ? -1 : 1);
+        if (uniScaleY) {
+            rawHeight *= scaleY
+        }
+
         const rotationOffset = isRotated ? Math.PI / 2 : 0;
 
         while (offset < count) {
@@ -121,8 +133,8 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 1] = y[sourceIndex];
 
                 // aScale
-                f32[index + 2] = rawWidth;
-                f32[index + 3] = rawHeight;
+                f32[index + 2] = uniScaleX ? rawWidth : rawWidth * scaleX[sourceIndex];
+                f32[index + 3] = uniScaleY ? rawHeight : rawHeight * scaleY[sourceIndex];
 
                 // aRotation
                 f32[index + 4] = rotation[sourceIndex] + rotationOffset;
@@ -134,7 +146,12 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 8] = v1;
 
                 // aColor
-                u32[index + 9] = premultipliedAlpha ? color[sourceIndex].premultipliedUint32 : color[sourceIndex].uint32;
+                const curColor = color[sourceIndex]
+                if (curColor) {
+                    u32[index + 9] = premultipliedAlpha ? curColor.premultipliedUint32 : curColor.uint32;
+                } else {
+                    u32[index + 9] = 0xFFFFFFFF;
+                }
 
                 // aOrigin
                 f32[index + 10] = originX;
@@ -165,7 +182,7 @@ export class ParticleRegion extends SpriteRegion {
         this.instanceBuffer.bindBuffer();
         this.instanceBuffer.bufferData();
         shader.bindVAO();
-        
+
         const ms = this.rapid.matrixStack
         const m = this.rapid.matrix
         const worldMatrix = m.getMatrix(ms.curWorldM)
