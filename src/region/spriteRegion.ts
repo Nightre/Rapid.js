@@ -160,7 +160,6 @@ export class SpriteRegion extends Region {
         isRotated: boolean = false,
     ): void {
         const base = texture.base!;
-        const textureScale = texture.scale ?? 1;
 
         const rawWidth = texture.rawWidth;
         const rawHeight = texture.rawHeight;
@@ -171,8 +170,8 @@ export class SpriteRegion extends Region {
         // base.width is full texture size, texture.width is alts texture size
         const textureId = this.useTexture(
             texture.glTexture!,
-            (paddingX / textureScale) / base.width,
-            (paddingY / textureScale) / base.height
+            paddingX / base.width,
+            paddingY / base.height
         );
 
         const buf = this.instanceBuffer;
@@ -182,8 +181,8 @@ export class SpriteRegion extends Region {
         const f32 = buf.float32!;
         const u32 = buf.uint32!;
 
-        const width = (isRotated ? rawHeight : rawWidth) * textureScale;
-        const height = (isRotated ? rawWidth : rawHeight) * textureScale;
+        const width = isRotated ? rawHeight : rawWidth;
+        const height = isRotated ? rawWidth : rawHeight;
 
         const drawWidth = width + 2 * paddingX;
         const drawHeight = height + 2 * paddingY;

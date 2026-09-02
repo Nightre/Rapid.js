@@ -335,8 +335,8 @@ class Texture {
         this.uvW = this.uvX + (w / this.base.width);
         this.uvH = this.uvY + (h / this.base.height);
 
-        this.rawWidth = w;
-        this.rawHeight = h;
+        this.rawWidth = w * this.scale;
+        this.rawHeight = h * this.scale;
 
         return this;
     }
@@ -636,7 +636,8 @@ export interface ITextStyle {
     stroke?: string | CanvasGradient | CanvasPattern;
     strokeThickness?: number;
     align?: "left" | "center" | "right";
-    baseline?: CanvasTextBaseline;
+    lineHeight?: number,
+    // baseline?: CanvasTextBaseline;
 }
 
 const defaultTextStyle: ITextStyle = {
@@ -646,7 +647,7 @@ const defaultTextStyle: ITextStyle = {
     fill: "#000000",
     strokeThickness: 1,
     align: "left",
-    baseline: "top",
+    lineHeight: 1
 };
 
 export interface ITextOptions extends ITextStyle, ITextureOptions {
@@ -712,34 +713,15 @@ class TextTexture extends Texture {
         this.update();
     }
 
-    private updateOffset(width: number, height: number): void {
+    private updateOffset(width: number, padding: number) {
         switch (this._style.align) {
             case "center":
-                this.offsetX = -width / 2;
-                break;
+                return width / 2;
             case "right":
-                this.offsetX = -width;
-                break;
+                return width;
             case "left":
             default:
-                this.offsetX = 0;
-                break;
-        }
-
-        switch (this._style.baseline) {
-            case "middle":
-                this.offsetY = -height / 2;
-                break;
-            case "bottom":
-                this.offsetY = -height;
-                break;
-            case "alphabetic":
-            case "hanging":
-            case "ideographic":
-            case "top":
-            default:
-                this.offsetY = 0;
-                break;
+                return padding;
         }
     }
 
@@ -748,34 +730,35 @@ class TextTexture extends Texture {
      */
     public update(): void {
         const ctx = this.ctx;
-        const fontSize = this._style.fontSize!;
-        const fontWeight = this._style.fontWeight!;
-        const fontFamily = this._style.fontFamily!;
+        const style = this.style
+        const fontSize = style.fontSize!;
+        const fontWeight = style.fontWeight!;
+        const fontFamily = style.fontFamily!;
+        const lineHeightRate = style.lineHeight!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         const dpr = this.render.dpr
         ctx.font = font;
+        ctx.textBaseline = "top";
 
         const lines = this._text.split('\n');
         let maxWidth = 0;
         let totalHeight = 0;
 
-        ctx.textBaseline = "alphabetic";
         const textMetrics = ctx.measureText(lines[0]);
-        
-        const lineHeight = textMetrics.fontBoundingBoxAscent
-        const lineGap = textMetrics.fontBoundingBoxDescent
+
+        const lineHeight = (textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent)
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);
             if (metrics.width > maxWidth) maxWidth = metrics.width;
-            totalHeight += lineHeight + lineGap;
+            totalHeight += lineHeight * lineHeightRate;
         }
+        totalHeight -= lineHeight * (lineHeightRate - 1)
 
-        totalHeight -= lineGap;
+        const padding = (this._style.strokeThickness || 0);
 
-        const padding = (this._style.strokeThickness || 0) * 2;
-        const logicalWidth = Math.ceil(maxWidth + padding) || 1;
-        const logicalHeight = Math.ceil(totalHeight + padding) || 1;
+        const logicalWidth = Math.ceil(maxWidth + padding * 2) || 1;
+        const logicalHeight = Math.ceil(totalHeight + padding * 2) || 1;
 
         const pixelWidth = logicalWidth * dpr;
         const pixelHeight = logicalHeight * dpr;
@@ -791,29 +774,30 @@ class TextTexture extends Texture {
 
         ctx.font = font;
         ctx.textBaseline = "top";
-        ctx.textAlign = "left";
-        this.updateOffset(logicalWidth, logicalHeight);
+        ctx.textAlign = this._style.align!;
 
-        let y = padding / 2;
+        const startX = this.updateOffset(logicalWidth, padding);
+
+        let y = padding;
         for (const line of lines) {
-            let x = padding / 2;
+            let x = startX;
 
-            if (this._style.stroke && this._style.strokeThickness! > 0) {
-                ctx.lineWidth = this._style.strokeThickness!;
-                ctx.strokeStyle = this._style.stroke as string;
+            if (style.stroke && style.strokeThickness! > 0) {
+                ctx.lineWidth = style.strokeThickness!;
+                ctx.strokeStyle = style.stroke as string;
                 ctx.strokeText(line, x, y);
             }
 
-            if (this._style.fill) {
-                ctx.fillStyle = this._style.fill as string;
+            if (style.fill) {
+                ctx.fillStyle = style.fill as string;
                 ctx.fillText(line, x, y);
             }
 
-            y += lineHeight + lineGap;
+            y += lineHeight * lineHeightRate;
         }
 
         this.base?.updateSource(this.render.gl, this.canvas, this.options);
-        this.setRegion(0, 0, this.canvas.width, this.canvas.height);
+        this.setRegion(0, 0, pixelWidth, pixelHeight);
     }
 }
 

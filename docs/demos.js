@@ -1,4 +1,4 @@
-import { Rapid, Color } from "rapid-render";
+import { Rapid, Color, Vec2 } from "rapid-render";
 import { highlightCodeBlock } from "./highlight.js";
 
 /**
@@ -105,6 +105,7 @@ export const renderDemoCode = (target, id) => {
  * coordinates identical for every demo: the canvas is a 480x300 board.
  */
 let rapid = null;
+let loadingLabel = null;
 
 const getRapid = (canvas) => {
   rapid ??= new Rapid({
@@ -121,6 +122,32 @@ const getRapid = (canvas) => {
 };
 
 /**
+ * @param {import("rapid-render").Rapid} rapid
+ */
+const renderLoading = (rapid) => {
+  const oldColor = rapid.backgroundColor
+  rapid.backgroundColor = Color.fromHex("#d5f0fc")
+  rapid.clear()
+  rapid.backgroundColor = oldColor
+
+  loadingLabel = rapid.texture.createTextTexture({
+    text: "Loading resources...",
+    fontSize: 30,
+    fontWeight: "bold",
+    fill: "#0b0d0e",
+    align: "center",
+  });
+
+  rapid.drawSprite({
+    texture: loadingLabel,
+    x: rapid.width / 2,
+    y: rapid.height / 2,
+    origin: 0.5
+  });
+  rapid.flush();
+};
+
+/**
  * Runs a demo. Returns a function that stops it.
  *
  * Stopping matters: a demo's render loop would otherwise keep drawing onto
@@ -128,7 +155,7 @@ const getRapid = (canvas) => {
  */
 export const mountDemo = (id) => {
   const canvas = document.querySelector("#game");
-  if (!canvas) return () => {};
+  if (!canvas) return () => { };
 
   const rapid = getRapid(canvas);
 
@@ -168,8 +195,12 @@ export const mountDemo = (id) => {
   const load = demoModules[modulePath(id)];
   if (!load) {
     console.error(`[demo] no module for "${id}"`);
-    return () => {};
+    return () => { };
   }
+
+  // Demo modules may await textures before their first clear. Paint this now
+  // so the shared canvas has useful feedback throughout that wait.
+  renderLoading(rapid);
 
   load()
     .then((module) => (stopped ? null : module.default(rapid, ctx)))
