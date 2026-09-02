@@ -637,7 +637,6 @@ export interface ITextStyle {
     strokeThickness?: number;
     align?: "left" | "center" | "right";
     lineHeight?: number,
-    // baseline?: CanvasTextBaseline;
 }
 
 const defaultTextStyle: ITextStyle = {

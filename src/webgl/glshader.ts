@@ -386,4 +386,8 @@ export class CustomGlShader {
 
         return shader;
     }
+
+    destroy() {
+        this.glshader.forEach((v) => v.destroy())
+    }
 }
