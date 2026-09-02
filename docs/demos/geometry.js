@@ -4,7 +4,6 @@ import { Color } from "rapid-render";
 export default function (rapid) {
   rapid.clear();
 
-  // Triangle
   rapid.drawGraphic({
     points: [
       { x: 60, y: 110 },
@@ -14,7 +13,6 @@ export default function (rapid) {
     color: new Color(52, 152, 219),
   });
 
-  // Quad, wound as a fan from the first point
   rapid.drawGraphic({
     points: [
       { x: 190, y: 45 },
@@ -26,7 +24,6 @@ export default function (rapid) {
     drawMode: rapid.gl.TRIANGLE_FAN,
   });
 
-  // Pentagon, generated on the unit circle
   const pentagon = [];
   for (let i = 0; i < 5; i++) {
     const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
@@ -41,7 +38,6 @@ export default function (rapid) {
     drawMode: rapid.gl.TRIANGLE_FAN,
   });
 
-  // A colour per vertex blends across the surface
   rapid.drawGraphic({
     points: [
       { x: 60, y: 250 },
@@ -63,7 +59,6 @@ export default function (rapid) {
     color: new Color(52, 73, 94),
   });
 
-  // Fewer segments makes the approximation visible
   rapid.drawCircle({ x: 360, y: 215, radius: 34, color: new Color(230, 126, 34) });
   rapid.drawCircle({
     x: 430,

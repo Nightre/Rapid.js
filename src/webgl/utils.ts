@@ -43,8 +43,6 @@ export const compileShader = (gl: WebGLContext, source: string, type: number) =>
         throw new Error("Unable to compile shader: " + errorLog + source);
     }
 
-    //console.log("compileShader \n", source)
-
     return shader;
 }
 

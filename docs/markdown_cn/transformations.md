@@ -150,30 +150,31 @@ ms.restore();
 
 ## updateMatrix: 只改一个节点，整棵子树跟着动
 
-如果你直接改了某个节点的 local 矩阵，它底下的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把整棵子树的 world 矩阵更新一遍。
+如果你直接改了某个节点的 local 矩阵，它的 world 与它子的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
 
 ```ts
-const ms = rapid.matrixStack;
+const stack = rapid.matrixStack;
 const matrix = rapid.matrix;
 
-const root = ms.save();
-ms.translate(200, 200);
+const root = stack.save();
+stack.translate(200, 200);
 
-const child = ms.save();
-ms.translate(80, 0);
-rapid.drawSprite({ texture: stick });
-ms.restore();
+const child = stack.save();
+stack.translate(80, 0);
+rapid.drawSprite({ texture: stick }); // (200 + 80, 200 + 0)
+stack.restore();
 
-ms.restore();
+stack.restore();
 
-// 后面只修改 child 的 local 矩阵
-matrix.rotateWithOffset(child.local, angle, 0, 16);
-ms.updateMatrix(child);
+// 后面只修改 root 的 local 矩阵
+matrix.identity(root.local);
+matrix.translate(root.local, 100, 100);
+stack.updateMatrix(root); // 这会自动更新 root.world 和 child.world
 
 rapid.drawSprite({
   texture: stick,
   customMatrix: child.world,
-});
+}); // (100 + 80, 100 + 0)
 ```
 
 `updateMatrix(child)` 只会重算 `child` 和它下面的子节点，不会影响兄弟节点。它做的事情就是重新计算：

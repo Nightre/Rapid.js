@@ -1,9 +1,6 @@
 import { CustomGlShader, TextureWrapMode } from "rapid-render";
 
-/**
- * @param {import("rapid-render").Rapid} rapid
- * @param {{ loop: (cb: (time: number) => void) => void }} ctx
- */
+/** @param {import("rapid-render").Rapid} rapid */
 export default async function (rapid, { loop }) {
   const [toycar, pattern] = await Promise.all([
     rapid.texture.load("./image/toycar.png"),

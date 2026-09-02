@@ -149,30 +149,31 @@ This pattern is ideal for long-lived hierarchical structures such as skeletons, 
 
 ## updateMatrix: Modify One Node, Subtree Updates Automatically
 
-If you directly modify a node's local matrix, world matrices of its children are not recalculated automatically. Calling `updateMatrix(child)` will recalculate world matrices for the entire subtree starting from that node.
+If you directly modify a node's local matrix, neither its world matrix nor the world matrices of its descendants are recalculated automatically. Calling `updateMatrix(child)` recalculates the affected world matrices starting from that node.
 
 ```ts
-const ms = rapid.matrixStack;
+const stack = rapid.matrixStack;
 const matrix = rapid.matrix;
 
-const root = ms.save();
-ms.translate(200, 200);
+const root = stack.save();
+stack.translate(200, 200);
 
-const child = ms.save();
-ms.translate(80, 0);
-rapid.drawSprite({ texture: stick });
-ms.restore();
+const child = stack.save();
+stack.translate(80, 0);
+rapid.drawSprite({ texture: stick }); // (200 + 80, 200 + 0)
+stack.restore();
 
-ms.restore();
+stack.restore();
 
-// Later, modify only child's local matrix
-matrix.rotateWithOffset(child.local, angle, 0, 16);
-ms.updateMatrix(child);
+// Later, modify only root's local matrix
+matrix.identity(root.local);
+matrix.translate(root.local, 100, 100);
+stack.updateMatrix(root); // This automatically updates root.world and child.world
 
 rapid.drawSprite({
   texture: stick,
   customMatrix: child.world,
-});
+}); // (100 + 80, 100 + 0)
 ```
 
 `updateMatrix(child)` only recalculates `child` and its descendant nodes without affecting sibling nodes. It performs the recalculation:

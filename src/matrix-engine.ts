@@ -33,7 +33,7 @@ export class MatrixStore {
     /** The raw floating-point data of all matrices. */
     public data: Float32Array;
 
-    public temporary:number = -1;
+    public temporary: number = -1;
 
     /**
      * Creates a new MatrixStore.
@@ -473,17 +473,17 @@ export class MatrixStack {
         this.stack.push(this.curWorldM)
         const parentWorldM = this.curWorldM;
 
-        this.step++;
-
         this.curLocalM = this.matrix.alloc(); // localM
         this.curWorldM = this.matrix.allocDirty(); // worldM
+
+        // update step info
         this.stepWorldM.push(this.curWorldM)
         this.stepParentM.push(parentWorldM)
-
-        this.matrix.copy(this.curWorldM, parentWorldM);
         this.stepAction.push(1)
 
-        return { world: this.curWorldM, local: this.curLocalM, step: this.step }
+        this.matrix.copy(this.curWorldM, parentWorldM);
+
+        return { world: this.curWorldM, local: this.curLocalM, step: this.step++ }
     }
 
     /**
@@ -494,10 +494,16 @@ export class MatrixStack {
         if (this.stack.length == 0) {
             return;
         } else {
+
             this.curWorldM = this.stack.pop()
             this.curLocalM = this.curWorldM - 1
 
-            this.stepAction.push(0)
+            // update step info
+            this.stepParentM.push(this.stack.get(this.stack.length - 1)) // get stack top
+            this.stepWorldM.push(this.curWorldM)
+            this.stepAction.push(0);
+
+            this.step ++;
         }
     }
 
@@ -506,33 +512,24 @@ export class MatrixStack {
      * @param step - The initial step to update matrices from.
      */
     updateMatrix(step: number | { step: number }) {
-        // step is 1-indexed; the node's data is at index (step - 1) in stepWorldM/stepAction
-        // Start from the node itself so its own world matrix gets recalculated
-        const nodeIndex = (typeof step == "number" ? step : step.step) - 1
-        const rootParent = this.stepParentM.get(nodeIndex)
+        const currentIndex = (typeof step == "number" ? step : step.step)
 
         let depth = 0
-        let index = nodeIndex
-
-        const parentStack = this.parentStack
-        parentStack.reset()
-        parentStack.push(rootParent)
-        while (index < this.stepAction.length) {
+        let index = currentIndex
+        while (index < this.step) {
             const action = this.stepAction.get(index)
 
-            if (action === 1) {
+            if (action === 1) { // save 
                 const worldMatrix = this.stepWorldM.get(index)
                 const localMatrix = worldMatrix - 1
-                const parent = parentStack.top()
+                const parentMatrix = this.stepParentM.get(index)
 
-                this.matrix.multiplyOut(worldMatrix, parent, localMatrix)
-
-                parentStack.push(worldMatrix)
+                this.matrix.multiplyOut(worldMatrix, parentMatrix, localMatrix)
                 depth++
-            } else {
-                parentStack.pop()
+            } else { // restore
                 depth--
                 if (depth === 0) {
+                    // 作用域结束
                     break
                 }
             }
@@ -692,7 +689,7 @@ export class MatrixStack {
      * Applies a transform options object to the current matrix state.
      * Optionally saves the matrix first
      */
-    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0, customMatrix:number=-1) {
+    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0, customMatrix: number = -1) {
         let x = transform.x ?? 0;
         let y = transform.y ?? 0;
 

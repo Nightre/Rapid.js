@@ -1,15 +1,9 @@
 import { Color, Vec2 } from "rapid-render";
 
-/**
- * @param {import("rapid-render").Rapid} rapid
- * @param {{ canvas: HTMLCanvasElement, loop: (cb: (time: number) => void) => void }} ctx
- */
+/** @param {import("rapid-render").Rapid} rapid */
 export default async function (rapid, { canvas, loop }) {
   const food = await rapid.texture.load("./image/food.png");
 
-  // Browser events report CSS pixels relative to the viewport. Two steps get
-  // them into game space: subtract the canvas offset, then hand the result to
-  // cssToLogic, which accounts for device pixel ratio and canvas scaling.
   let pointer = new Vec2(240, 150);
 
   const onPointerMove = (event) => {
@@ -26,14 +20,13 @@ export default async function (rapid, { canvas, loop }) {
   loop(() => {
     rapid.clear();
 
-    // Crosshair through the pointer, in game coordinates.
     rapid.drawLine({
-      points: [new Vec2(0, pointer.y), new Vec2(rapid.width, pointer.y)],
+      points: Vec2.FromArray([[0, pointer.y], [rapid.width, pointer.y]]),
       width: 1,
       color: new Color(180, 205, 220),
     });
     rapid.drawLine({
-      points: [new Vec2(pointer.x, 0), new Vec2(pointer.x, rapid.height)],
+      points: Vec2.FromArray([[pointer.x, 0], [pointer.x, rapid.height]]),
       width: 1,
       color: new Color(180, 205, 220),
     });
@@ -50,6 +43,5 @@ export default async function (rapid, { canvas, loop }) {
     rapid.flush();
   });
 
-  // Returned cleanup runs when the reader switches to another demo.
   return () => canvas.removeEventListener("pointermove", onPointerMove);
 }

@@ -6,14 +6,11 @@ export default async function (rapid) {
 
   rapid.clear();
 
-  // withMask draws the first callback into the stencil buffer, then clips
-  // everything the second callback draws to that shape.
   rapid.withMask(
     () => rapid.drawCircle({ x: 110, y: 150, radius: 52 }),
     () => rapid.drawSprite({ texture: food, x: 110, y: 150, origin: 0.5 }),
   );
 
-  // Any geometry works as a mask, including a rotated rect.
   rapid.withMask(
     () => {
       rapid.drawRect({
@@ -38,7 +35,6 @@ export default async function (rapid) {
     },
   );
 
-  // The mask can be several disjoint shapes at once.
   rapid.withMask(
     () => {
       for (let i = 0; i < 7; i++) {

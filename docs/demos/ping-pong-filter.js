@@ -1,9 +1,6 @@
 import { CustomGlShader } from "rapid-render";
 
-/**
- * @param {import("rapid-render").Rapid} rapid
- * @param {{ loop: (cb: (time: number) => void) => void }} ctx
- */
+/** @param {import("rapid-render").Rapid} rapid */
 export default async function (rapid, { loop }) {
   const toycar = await rapid.texture.load("./image/toycar.png");
 
@@ -12,8 +9,6 @@ void vertex(inout vec4 position, vec2 uv) {
 }
 `;
 
-  // One separable blur pass. uDir picks the axis, so the same shader runs
-  // twice: once horizontally, once vertically.
   const blurSource = `
 uniform vec2 uDir;
 uniform vec2 uTexel;
@@ -59,14 +54,10 @@ void fragment(inout vec4 color) {
   loop((time) => {
     tint.setUniforms({ uTime: time });
 
-    // applyFilters runs the chain across two internal render textures,
-    // ping-ponging between them: each shader reads what the previous one
-    // wrote. The result is a texture like any other.
     const filtered = rapid.applyFilters(toycar, [blurX, blurY, tint]);
 
     rapid.clear();
 
-    // Original on the left, filtered on the right.
     rapid.drawSprite({ texture: toycar, x: 150, y: 150, scale: 2, origin: 0.5 });
     rapid.drawSprite({ texture: filtered, x: 330, y: 150, scale: 2, origin: 0.5 });
 
