@@ -22,8 +22,6 @@
 
 Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight at just **67 kB** (**~19.5 kB gzipped**) It handles the rendering layer while leaving your game architecture, update loop, and state management fully in your hands.
 
-> The documentation and demos are still being written.
-
 ## Highlights
 
 - **Rendering speed**  
