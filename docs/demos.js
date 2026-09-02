@@ -47,7 +47,7 @@ const demoTitles = {
   "render-texture": "Render Textures",
   "ping-pong-filter": "Ping-Pong Filter",
   masks: "Masks & Clipping",
-  particles: "Particles",
+  particles: "Particle Emitter (Helper Class)",
   "draw-particles": "Draw Particles (Tilemap)",
 };
 
