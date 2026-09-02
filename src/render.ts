@@ -101,19 +101,19 @@ export enum TextureFilterMode {
 }
 
 export enum CanvasScaleMode {
-  /**
-   * Scales the canvas by increasing the WebGL backbuffer size.
-   * The logical game size stays the same, but rendering happens at the final display resolution,
-   * so rotated sprites, lines, and geometry get more rasterized pixels and look smoother.
-   */
-  CanvasItem,
-  /**
-   * Scales only the final canvas element on the page.
-   * The WebGL backbuffer stays at the logical game size, then the browser stretches that bitmap
-   * to the CSS display size. This preserves low-resolution/pixel-art rendering and does not add
-   * more fragments while scaling up.
-   */
-  Viewport,
+    /**
+     * Scales the canvas by increasing the WebGL backbuffer size.
+     * The logical game size stays the same, but rendering happens at the final display resolution,
+     * so rotated sprites, lines, and geometry get more rasterized pixels and look smoother.
+     */
+    CanvasItem,
+    /**
+     * Scales only the final canvas element on the page.
+     * The WebGL backbuffer stays at the logical game size, then the browser stretches that bitmap
+     * to the CSS display size. This preserves low-resolution/pixel-art rendering and does not add
+     * more fragments while scaling up.
+     */
+    Viewport,
 }
 
 /**
@@ -382,9 +382,9 @@ export class Rapid {
     addGraphicVertex(
         x: number, y: number,
         u: number = 0, v: number = 0,
-        color: number = 0xFFFFFFFF,
+        color: Color | number,
     ): void {
-        this.graphicRegion.addVertex(x, y, u, v, color);
+        this.graphicRegion.addVertex(x, y, u, v, typeof color == "number" ? color : this.getColorUint32(color));
     }
 
     /**
@@ -437,7 +437,7 @@ export class Rapid {
             default:
                 throw new Error("scaleMode can only be CanvasScaleMode.Viewport or CanvasScaleMode.CanvasItem")
         }
-        
+
         this.updateProjection(0, this.logicWidth, this.logicHeight, 0);
     }
 
@@ -518,13 +518,13 @@ export class Rapid {
         // drawSprite uses the region UV, so only the region pixels are rendered into the RT.
         // The output RT contains the "baked" region content — no region metadata needed.
 
-        
+
         const width = source.rawWidth + maxPadding * 2;
         const height = source.rawHeight + maxPadding * 2;
 
         // Ensure both ping-pong RTs exist and match the source size (grow-only: no GPU
         // reallocation unless size exceeds the previous maximum)
-        
+
         for (let i = 0; i < 2; i++) {
             if (!this._filterRT[i]) {
                 this._filterRT[i] = this.texture.createRenderTexture({ width, height });
@@ -551,7 +551,7 @@ export class Rapid {
             // We can't let `drawsprite` handle the padding offset because `renderTexture` has a limited size.
             // Render from the top left corner the image will render outside the `renderTexture`.
             // We need to render the image in the center of the `renderTexture`.
-            this.drawSprite({ 
+            this.drawSprite({
                 texture: inputTex,
                 shader: shaders[i],
                 offsetX: i == 0 ? paddingOffset : 0, // padding back
@@ -908,7 +908,7 @@ export class Rapid {
         return p.mul(this.dpr)
     }
 
-    cssToLogic(p: Vec2){
+    cssToLogic(p: Vec2) {
         const devicePixel = this.cssToDevicePixel(p);
         const logicPoint = this.physicsToLogic(devicePixel);
         return logicPoint
