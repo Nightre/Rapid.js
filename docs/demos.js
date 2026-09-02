@@ -100,7 +100,6 @@ const getRapid = (canvas) => {
     physicsHeight: 300,
     backgroundColor: new Color(247, 253, 255),
     antialias: false,
-    roundPixels: true,
   });
   return rapid;
 };
