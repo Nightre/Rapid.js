@@ -31,6 +31,7 @@ export const demoOrder = [
   "render-texture",
   "ping-pong-filter",
   "masks",
+  "draw-particles",
   "particles",
 ];
 
@@ -47,6 +48,7 @@ const demoTitles = {
   "ping-pong-filter": "Ping-Pong Filter",
   masks: "Masks & Clipping",
   particles: "Particles",
+  "draw-particles": "Draw Particles (Tilemap)",
 };
 
 // Vite resolves both of these at build time: the first to lazy module

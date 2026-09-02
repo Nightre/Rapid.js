@@ -1,6 +1,6 @@
 # 粒子绘制
 
-`drawParticle` 和 `drawParticles` 是 Rapid.js 直接的粒子绘制 API。适合你已经自己管理粒子状态，只想让 Rapid.js 用很小的开销把它们画出来。
+`drawParticles` 是 Rapid.js 直接的粒子绘制 API。适合你已经自己管理粒子状态，只想让 Rapid.js 用很小的开销把它们画出来。
 
 ## 适用场景：
 
@@ -15,27 +15,7 @@
 
 它和 PixiJS 的 `ParticleContainer` 很像：你把一组紧凑的粒子属性交给渲染器，渲染器用同一张纹理高效地画出大量 sprite。
 
-## drawParticle
-
-`drawParticle` 用更紧凑的参数画一个粒子式 sprite
-
-```ts
-rapid.drawParticle({
-  texture: spark,
-  x: 160,
-  y: 120,
-  rotation: Math.PI * 0.25,
-  scaleX: 1,
-  scaleY: 1,
-  originX: 0.5,
-  originY: 0.5,
-  color: new Color(255, 220, 120),
-});
-```
-
 ## drawParticles
-
-`drawParticles` 是高吞吐量路径。不要每个粒子调用一次 `drawParticle`，而是把粒子的属性数组一次性交给 Rapid.js。
 
 ```ts
 const count = 10000;
@@ -59,11 +39,15 @@ function frame() {
     x,
     y,
     rotation,
-    color,
-    count,
-    scaleX: 1,
-    scaleY: 1,
-  });
+    color, // 传入 ArrayLike
+    scaleX: 1, // 传入标量
+    scaleY: 1, // 标量或 ArrayLike 都可以 drawParticles 会自动识别
+    // 可以指定每个粒子的独立uv，这在制作瓦片地图时十分有用
+    // u0: [...]
+    // v0: [...]
+    // u1: [...]
+    // v1: [...]
+  }); 
 
   rapid.flush();
   requestAnimationFrame(frame);

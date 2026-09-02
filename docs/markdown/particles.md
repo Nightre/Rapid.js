@@ -1,6 +1,7 @@
-# Particle Emitter
+# Particle Helper: Particle Emitter
 
-Rapid.js includes a lightweight built-in particle system powered by `ParticleEmitter`. You describe particle visual attributes and behavior over time, and the emitter manages creation, update, recycling, and rendering of particles.
+Rapid.js includes a lightweight particle helper powered by `ParticleEmitter`. You describe particle visual attributes and behavior over time, and the emitter manages creation, update, recycling, and rendering of particles.
+`ParticleEmitter` calls `drawParticles` internally and is a helper built on top of it.
 
 ## Quick Start
 
