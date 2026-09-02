@@ -121,7 +121,7 @@ export default async function (rapid, { loop }) {
         rapid.matrix.identity(orbit.local);
         rapid.matrix.rotate(orbit.local, time + Math.PI/2); // Rotate it a little more.
         rapid.matrix.translate(orbit.local, 48, 0);
-        // `updateMatrix` let the modified `orbit.local` Matrix affect all the matrices in the `matrixTree` that it influences.
+        // `updateMatrix` let the modified `orbit.local` Matrix affect all the matrices in the matrix tree that it influences.
         stack.updateMatrix(orbit);
 
         // The orbit's local matrix affects both the orbit's world matrix and the child's world matrix.
