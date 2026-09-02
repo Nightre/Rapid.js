@@ -8,10 +8,12 @@
 
 <p align="center">
   <a href="https://nightre.github.io/Rapid.js/">Website</a>
-  &middot;
+  |
   <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
-  &middot;
+  |
   <a href="https://nightre.github.io/Rapid.js/api/">API Reference</a>
+  |
+  <a href="https://www.npmjs.com/package/rapid-render">NPM</a>
 </p>
 
 ---
