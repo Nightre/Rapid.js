@@ -63,6 +63,8 @@ rapid.drawRect({
 rapid.flush();
 ```
 
+Next step: <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
+
 ## Benchmark
 
 Performance Comparison: Rapid vs. Other Renderers and Game Engines
