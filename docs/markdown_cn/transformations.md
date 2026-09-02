@@ -150,7 +150,7 @@ ms.restore();
 
 ## updateMatrix: 只改一个节点，整棵子树跟着动
 
-如果你直接改了某个节点的 local 矩阵，它的 world 与它子的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
+如果你直接改了某个节点的 local 矩阵，它的 world 与它下游的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
 
 ```ts
 const stack = rapid.matrixStack;
