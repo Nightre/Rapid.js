@@ -645,7 +645,7 @@ const defaultTextStyle: ITextStyle = {
     fontSize: 24,
     fontWeight: "normal",
     fill: "#000000",
-    strokeThickness: 1,
+    strokeThickness: 0,
     align: "left",
     lineHeight: 1
 };
@@ -747,7 +747,7 @@ class TextTexture extends Texture {
         const textMetrics = ctx.measureText(lines[0] || 'M');
 
         const lineHeight = (
-            (textMetrics.fontBoundingBoxAscent  || fontSize) +
+            (textMetrics.fontBoundingBoxAscent || fontSize) +
             (textMetrics.fontBoundingBoxDescent || fontSize * 0.2)
         )
 
@@ -781,22 +781,25 @@ class TextTexture extends Texture {
 
         const startX = this.updateOffset(logicalWidth, padding);
 
+        const strokeThickness = style.strokeThickness!
+        const hasStroke = strokeThickness > 0;
+        if (hasStroke) {
+            ctx.lineWidth = strokeThickness;
+            ctx.strokeStyle = style.stroke as string;
+            ctx.lineJoin = "round";
+        }
+        if (style.fill) {
+            ctx.fillStyle = style.fill as string;
+        }
+
         let y = padding;
         for (const line of lines) {
-            let x = startX;
-
-            if (style.stroke && style.strokeThickness! > 0) {
-                ctx.lineWidth = style.strokeThickness!;
-                ctx.strokeStyle = style.stroke as string;
-                ctx.lineJoin = "round";
-                ctx.strokeText(line, x, y);
+            if (hasStroke) {
+                ctx.strokeText(line, startX, y);
             }
-
             if (style.fill) {
-                ctx.fillStyle = style.fill as string;
-                ctx.fillText(line, x, y);
+                ctx.fillText(line, startX, y);
             }
-
             y += lineHeight * lineHeightRate;
         }
 
