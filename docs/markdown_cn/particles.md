@@ -1,6 +1,7 @@
-# 粒子发射器 Particle Emitter
+# 粒子辅助函数 Particle Emitter
 
-Rapid.js 内置了一个轻量的粒子系统。核心是 `ParticleEmitter`：你描述粒子的外观和随时间的变化，发射器负责生成、更新、回收和绘制这些粒子。
+Rapid.js 内置了一个轻量的粒子辅助系统。核心是 `ParticleEmitter`：你描述粒子的外观和随时间的变化，发射器负责生成、更新、回收和绘制这些粒子。
+`ParticleEmitter`内部调用`drawParticles`，是`drawParticles`的一个辅助工具
 
 ## 快速开始
 

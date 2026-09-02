@@ -1,6 +1,6 @@
 # Drawing Particles
 
-`drawParticle` and `drawParticles` are the direct particle rendering APIs in Rapid.js. They are ideal when you are already managing particle states yourself and simply want Rapid.js to draw them with minimal overhead.
+`drawParticles` is Rapid.js's direct particle rendering API. It is ideal when you already manage particle state yourself and only need Rapid.js to draw the particles with minimal overhead.
 
 ## Use Cases:
 
@@ -15,27 +15,7 @@ If you want Rapid.js to handle the creation, updating, recycling, and rendering 
 
 It is very similar to PixiJS's `ParticleContainer`: you hand over a compact set of particle properties to the renderer, and the renderer efficiently draws a massive amount of sprites using a single texture.
 
-## drawParticle
-
-`drawParticle` draws a particle-style sprite using more compact parameters.
-
-```ts
-rapid.drawParticle({
-  texture: spark,
-  x: 160,
-  y: 120,
-  rotation: Math.PI * 0.25,
-  scaleX: 1,
-  scaleY: 1,
-  originX: 0.5,
-  originY: 0.5,
-  color: new Color(255, 220, 120),
-});
-```
-
 ## drawParticles
-
-`drawParticles` is the high-throughput path. Instead of calling `drawParticle` once for every single particle, you pass the arrays of particle properties to Rapid.js all at once.
 
 ```ts
 const count = 10000;
@@ -59,10 +39,15 @@ function frame() {
     x,
     y,
     rotation,
-    color,
-    count,
-    scaleX: 1,
-    scaleY: 1,
+    color, // Pass an ArrayLike value
+    scaleX: 1, // Pass a scalar value
+    scaleY: 1, // Scalars and ArrayLike values are both detected automatically
+    // Each particle can have independent UV coordinates. This is especially
+    // useful when drawing tilemaps.
+    // u0: [...]
+    // v0: [...]
+    // u1: [...]
+    // v1: [...]
   });
 
   rapid.flush();

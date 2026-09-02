@@ -883,7 +883,7 @@ export class Rapid {
         this.gl.disable(this.gl.SCISSOR_TEST);
     }
 
-    renderCamera(transform: ITransformOptions) {
+    applyCamera(transform: ITransformOptions) {
         this.matrixStack.applyTransform(transform)
 
         const m = this.matrixStack.curWorldM
