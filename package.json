@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "npm run build && node --test",
     "build:docs": "vite build --config vite.docs.config.ts",
     "docs": "typedoc",
     "example:dev": "vite --config example/vite.config.ts",
