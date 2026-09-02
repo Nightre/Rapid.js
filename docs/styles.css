@@ -344,13 +344,10 @@ h1 {
 
 .rapid-canvas {
   display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
+
   background: #f7fdff;
   border: 2px solid var(--rapid-line);
   border-radius: 8px;
-  box-shadow: 0 12px 0 #d9f1e1;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

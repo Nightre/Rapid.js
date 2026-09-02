@@ -56,7 +56,7 @@ export interface IParticleAnimation {
 export interface IParticleOptions {
     /** Texture(s) to pick from. Pass a weighted tuple `[Texture, weight][]` for weighted random. */
     texture: Texture;
-    shader: CustomGlShader
+    shader?: CustomGlShader
     /** Particle lifetime in seconds, or a [min, max] range. */
     life: number | [number, number];
     /** Animation / per-attribute configuration. */
