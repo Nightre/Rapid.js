@@ -5,35 +5,35 @@ export default async function (rapid, { loop }) {
   const toycar = await rapid.texture.load("./image/toycar.png");
 
   const vertexSource = `
-void vertex(inout vec4 position, vec2 uv) {
-}
-`;
+    void vertex(inout vec4 position, vec2 uv) {
+    }
+  `;
 
   const blurSource = `
-uniform vec2 uDir;
-uniform vec2 uTexel;
+    uniform vec2 uDir;
+    uniform vec2 uTexel;
 
-void fragment(inout vec4 color) {
-  vec4 sum = vec4(0.0);
-  sum += sampleClampTexture(vRegion - uDir * uTexel * 3.0) * 0.10;
-  sum += sampleClampTexture(vRegion - uDir * uTexel * 2.0) * 0.15;
-  sum += sampleClampTexture(vRegion - uDir * uTexel) * 0.20;
-  sum += color * 0.10;
-  sum += sampleClampTexture(vRegion + uDir * uTexel) * 0.20;
-  sum += sampleClampTexture(vRegion + uDir * uTexel * 2.0) * 0.15;
-  sum += sampleClampTexture(vRegion + uDir * uTexel * 3.0) * 0.10;
-  color = sum;
-}
-`;
+    void fragment(inout vec4 color) {
+      vec4 sum = vec4(0.0);
+      sum += sampleClampTexture(vRegion - uDir * uTexel * 3.0) * 0.10;
+      sum += sampleClampTexture(vRegion - uDir * uTexel * 2.0) * 0.15;
+      sum += sampleClampTexture(vRegion - uDir * uTexel) * 0.20;
+      sum += color * 0.10;
+      sum += sampleClampTexture(vRegion + uDir * uTexel) * 0.20;
+      sum += sampleClampTexture(vRegion + uDir * uTexel * 2.0) * 0.15;
+      sum += sampleClampTexture(vRegion + uDir * uTexel * 3.0) * 0.10;
+      color = sum;
+    }
+  `;
 
   const tintSource = `
-uniform float uTime;
+    uniform float uTime;
 
-void fragment(inout vec4 color) {
-  float glow = 0.6 + 0.4 * sin(uTime * 3.0);
-  color.rgb *= vec3(1.0, glow, 0.6 + 0.4 * glow);
-}
-`;
+    void fragment(inout vec4 color) {
+      float glow = 0.6 + 0.4 * sin(uTime * 3.0);
+      color.rgb *= vec3(1.0, glow, 0.6 + 0.4 * glow);
+    }
+  `;
 
   const texel = [1 / toycar.base.width, 1 / toycar.base.height];
 

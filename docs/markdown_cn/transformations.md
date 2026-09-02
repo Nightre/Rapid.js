@@ -148,9 +148,11 @@ ms.restore();
 
 这种写法适合骨骼、关节、机械臂这类长期存在的层级结构。
 
-## updateMatrix: 只改一个节点，整棵子树跟着动
+## updateMatrixSubtree: 只改一个节点，整棵子树跟着动
 
-如果你直接改了某个节点的 local 矩阵，它的 world 与它下游的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrix(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
+有时候需要在一帧内重复修改创建好的matrixstack。但是重建整个matrixstack开销太大。此时就需要`updateMatrixSubtree`来局部更新受影响的matrixstack。
+
+如果你直接改了某个节点的 local 矩阵，它的 world 与它下游的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrixSubtree(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
 
 ```ts
 const stack = rapid.matrixStack;
@@ -169,7 +171,7 @@ stack.restore();
 // 后面只修改 root 的 local 矩阵
 matrix.identity(root.local);
 matrix.translate(root.local, 100, 100);
-stack.updateMatrix(root); // 这会自动更新 root.world 和 child.world
+stack.updateMatrixSubtree(root); // 这会自动更新 root.world 和 child.world
 
 rapid.drawSprite({
   texture: stick,
@@ -177,7 +179,7 @@ rapid.drawSprite({
 }); // (100 + 80, 100 + 0)
 ```
 
-`updateMatrix(child)` 只会重算 `child` 和它下面的子节点，不会影响兄弟节点。它做的事情就是重新计算：
+`updateMatrixSubtree(child)` 只会重算 `child` 和它下面的子节点，不会影响兄弟节点。它做的事情就是重新计算：
 
 ```ts
 world = parent.world * local;
@@ -194,7 +196,7 @@ rapid.drawSprite({
 });
 ```
 
-它通常和 `MatrixStore`、`updateMatrix` 一起使用。
+它通常和 `MatrixStore`、`updateMatrixSubtree` 一起使用。
 
 ## Vec2
 

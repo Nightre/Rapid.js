@@ -147,9 +147,11 @@ ms.restore();
 
 This pattern is ideal for long-lived hierarchical structures such as skeletons, joints, and robotic arms.
 
-## updateMatrix: Modify One Node, Subtree Updates Automatically
+## updateMatrixSubtree: Modify One Node, Update Its Subtree
 
-If you directly modify a node's local matrix, neither its world matrix nor the world matrices of its descendants are recalculated automatically. Calling `updateMatrix(child)` recalculates the affected world matrices starting from that node.
+Sometimes you need to modify an already-built matrix stack repeatedly within the same frame. Rebuilding the entire matrix stack would be too expensive, so `updateMatrixSubtree` updates only the affected subtree.
+
+If you directly modify a node's local matrix, neither its world matrix nor the world matrices of its descendants are recalculated automatically. Calling `updateMatrixSubtree(child)` recalculates the affected world matrices starting from that node.
 
 ```ts
 const stack = rapid.matrixStack;
@@ -168,7 +170,7 @@ stack.restore();
 // Later, modify only root's local matrix
 matrix.identity(root.local);
 matrix.translate(root.local, 100, 100);
-stack.updateMatrix(root); // This automatically updates root.world and child.world
+stack.updateMatrixSubtree(root); // This automatically updates root.world and child.world
 
 rapid.drawSprite({
   texture: stick,
@@ -176,7 +178,7 @@ rapid.drawSprite({
 }); // (100 + 80, 100 + 0)
 ```
 
-`updateMatrix(child)` only recalculates `child` and its descendant nodes without affecting sibling nodes. It performs the recalculation:
+`updateMatrixSubtree(child)` only recalculates `child` and its descendant nodes without affecting sibling nodes. It performs the recalculation:
 
 ```ts
 world = parent.world * local;
@@ -193,7 +195,7 @@ rapid.drawSprite({
 });
 ```
 
-It is commonly used together with `MatrixStore` and `updateMatrix`.
+It is commonly used together with `MatrixStore` and `updateMatrixSubtree`.
 
 ## Vec2
 

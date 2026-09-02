@@ -5,7 +5,6 @@ export default async function (rapid, { loop }) {
     const particleTex = await rapid.texture.load("./image/toycar.png");
     const ms = rapid.matrixStack
 
-
     const emitter = new ParticleEmitter(rapid, {
         texture: particleTex,
         life: [1, 2],
@@ -24,7 +23,6 @@ export default async function (rapid, { loop }) {
                 start: new Color(255, 255, 255, 255),
                 end: new Color(255, 50, 0, 0)
             },
-            
         },
         localSpace : false
     });

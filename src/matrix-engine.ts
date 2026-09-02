@@ -443,7 +443,7 @@ export class MatrixStack {
     stepWorldM = new DynamicArrayBuffer(ArrayType.Uint32)
     /** Records actions (push/pop) taken during the traversal. */
     stepAction = new DynamicArrayBuffer(ArrayType.Uint32)
-    /** Records the parent world matrix for each step (used by updateMatrix). */
+    /** Records the parent world matrix for each step (used by updateMatrixSubtree). */
     stepParentM = new DynamicArrayBuffer(ArrayType.Uint32)
 
     /** Buffer used during hierarchy traversal updates. */
@@ -511,7 +511,7 @@ export class MatrixStack {
      * Evaluates and updates matrices from the given step. Used primarily for deferred transformation.
      * @param step - The initial step to update matrices from.
      */
-    updateMatrix(step: number | { step: number }) {
+    updateMatrixSubtree(step: number | { step: number }) {
         const currentIndex = (typeof step == "number" ? step : step.step)
 
         let depth = 0

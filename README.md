@@ -33,7 +33,7 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightwe
   Add sprite and geometry effects through shader hooks while still using Rapid's normal renderer, transforms, textures, and draw APIs.
 
 - **Flexible transforms**  
-  Compose motion, hierarchy, camera behavior, and local drawing with multiple transform styles backed by a fast matrix engine.
+  Fast, flexible, matrix-powered transforms for motion and hierarchies. Retain the matrix tree after traversal; local changes update only affected subtrees. No rebuild required.
 
 - **A complete 2D toolkit**  
   Draw sprites, lines, masks, particles, render textures, text, and custom geometry from one compact WebGL renderer.

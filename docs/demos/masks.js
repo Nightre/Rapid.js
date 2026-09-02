@@ -1,55 +1,59 @@
-import { Color } from "rapid-render";
+import { MaskType } from "rapid-render";
 
 /** @param {import("rapid-render").Rapid} rapid */
 export default async function (rapid) {
-  const food = await rapid.texture.load("./image/food.png");
+    const [house, maskTexture] = await Promise.all([
+        rapid.texture.load("./image/house.png"),
+        rapid.texture.load("./image/mask-texture.png"),
+    ]);
 
-  rapid.clear();
-
-  rapid.withMask(
-    () => rapid.drawCircle({ x: 110, y: 150, radius: 52 }),
-    () => rapid.drawSprite({ texture: food, x: 110, y: 150, origin: 0.5 }),
-  );
-
-  rapid.withMask(
-    () => {
-      rapid.drawRect({
-        x: 240,
-        y: 150,
-        width: 96,
-        height: 96,
-        rotation: Math.PI / 4,
-        origin: 0.5,
-      });
-    },
-    () => {
-      for (let i = 0; i < 11; i++) {
-        rapid.drawRect({
-          x: 180,
-          y: 96 + i * 11,
-          width: 120,
-          height: 6,
-          color: new Color(84, 184, 234),
+    const makeLabel = (text) =>
+        rapid.texture.createTextTexture({
+            text,
+            fontSize: 14,
+            fontWeight: "bold",
+            fill: "#526272",
+            align: "center",
         });
-      }
-    },
-  );
 
-  rapid.withMask(
-    () => {
-      for (let i = 0; i < 7; i++) {
-        rapid.drawRect({ x: 340 + i * 15, y: 98, width: 8, height: 104 });
-      }
-    },
-    () => {
-      rapid.drawCircle({
-        x: 390,
-        y: 150,
-        radius: 52,
-        color: new Color(255, 143, 112),
-      });
-    },
-  );
+    const labels = [
+        makeLabel("Texture mask"),
+        makeLabel("EQUAL"),
+        makeLabel("NOT_EQUAL"),
+    ];
+    const x = [80, 240, 400];
 
-  rapid.flush();
+    rapid.clear();
+
+    for (let i = 0; i < labels.length; i++) {
+        rapid.drawSprite({ texture: labels[i], x: x[i], y: 26, origin: 0.5 });
+    }
+
+    //==== Texture mask with withMask ====//
+
+    rapid.withMask(
+        () => rapid.drawMaskImage({ texture: maskTexture, x: x[0], y: 150, scale: 1.5, origin: 0.5 }),
+        () => rapid.drawSprite({ texture: house, x: x[0], y: 150, origin: 0.5 }),
+    );
+
+    //==== MaskType.EQUAL with withMask ====//
+
+    rapid.withMask(
+        () => rapid.drawCircle({ x: x[1], y: 150, radius: 38 }),
+        () => rapid.drawSprite({ texture: house, x: x[1], y: 150, origin: 0.5 }),
+        MaskType.EQUAL,
+    );
+
+    //==== MaskType.NOT_EQUAL with manual mask control ====//
+
+    rapid.clearMask();
+    rapid.startDrawMask();
+    rapid.drawCircle({ x: x[2], y: 150, radius: 38 });
+    rapid.endDrawMask();
+
+    rapid.enterMask(MaskType.NOT_EQUAL);
+    rapid.drawSprite({ texture: house, x: x[2], y: 150, origin: 0.5 });
+    rapid.exitMask();
+
+    rapid.flush();
 }

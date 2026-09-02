@@ -1,72 +1,64 @@
-import { Color } from "rapid-render";
+import { Color, Vec2 } from "rapid-render";
 
 /** @param {import("rapid-render").Rapid} rapid */
-export default function (rapid) {
-  rapid.clear();
+export default async function (rapid) {
+    const texture = await rapid.texture.load("./image/polygon-texture.png");
+    rapid.clear();
 
-  rapid.drawGraphic({
-    points: [
-      { x: 60, y: 110 },
-      { x: 140, y: 110 },
-      { x: 100, y: 40 },
-    ],
-    color: new Color(52, 152, 219),
-  });
-
-  rapid.drawGraphic({
-    points: [
-      { x: 190, y: 45 },
-      { x: 290, y: 45 },
-      { x: 290, y: 110 },
-      { x: 190, y: 110 },
-    ],
-    color: new Color(46, 204, 113),
-    drawMode: rapid.gl.TRIANGLE_FAN,
-  });
-
-  const pentagon = [];
-  for (let i = 0; i < 5; i++) {
-    const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-    pentagon.push({
-      x: 390 + Math.cos(angle) * 40,
-      y: 78 + Math.sin(angle) * 40,
+    rapid.drawGraphic({
+        points: Vec2.FromArray([[60, 110], [140, 110], [100, 40]]),
+        color: new Color(52, 152, 219),
     });
-  }
-  rapid.drawGraphic({
-    points: pentagon,
-    color: new Color(155, 89, 182),
-    drawMode: rapid.gl.TRIANGLE_FAN,
-  });
 
-  rapid.drawGraphic({
-    points: [
-      { x: 60, y: 250 },
-      { x: 140, y: 250 },
-      { x: 100, y: 180 },
-    ],
-    color: [
-      new Color(231, 76, 60),
-      new Color(241, 196, 15),
-      new Color(52, 152, 219),
-    ],
-  });
+    rapid.drawGraphic({
+        points: Vec2.FromArray([[190, 45], [290, 45], [290, 110], [190, 110]]),
+        color: new Color(46, 204, 113),
+        drawMode: rapid.gl.TRIANGLE_FAN,
+    });
 
-  rapid.drawRect({
-    x: 190,
-    y: 185,
-    width: 100,
-    height: 65,
-    color: new Color(52, 73, 94),
-  });
+    const pentagon = [];
+    const pentagonUV = [];
+    for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        const x = Math.cos(angle);
+        const y = Math.sin(angle);
 
-  rapid.drawCircle({ x: 360, y: 215, radius: 34, color: new Color(230, 126, 34) });
-  rapid.drawCircle({
-    x: 430,
-    y: 215,
-    radius: 34,
-    segments: 6,
-    color: new Color(41, 128, 185),
-  });
+        pentagon.push([390 + x * 40, 78 + y * 40]);
+        pentagonUV.push([(x + 1) * 0.5, (y + 1) * 0.5]);
+    }
+    
+    rapid.drawGraphic({
+        points: Vec2.FromArray(pentagon),
+        uv: Vec2.FromArray(pentagonUV),
+        texture: texture,
+        drawMode: rapid.gl.TRIANGLE_FAN,
+    });
 
-  rapid.flush();
+    rapid.drawGraphic({
+        points: Vec2.FromArray([[60, 250], [140, 250], [100, 180]]),
+        color: [
+            new Color(231, 76, 60),
+            new Color(241, 196, 15),
+            new Color(52, 152, 219),
+        ],
+    });
+
+    rapid.drawRect({
+        x: 190,
+        y: 185,
+        width: 100,
+        height: 65,
+        color: new Color(52, 73, 94),
+    });
+
+    rapid.drawCircle({ x: 360, y: 215, radius: 34, color: new Color(230, 126, 34) });
+    rapid.drawCircle({
+        x: 430,
+        y: 215,
+        radius: 34,
+        segments: 6,
+        color: new Color(41, 128, 185),
+    });
+
+    rapid.flush();
 }

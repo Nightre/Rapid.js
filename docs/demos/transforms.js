@@ -19,7 +19,7 @@ export default async function (rapid, { loop }) {
     const labels = [
         makeLabel("Transform options"),
         makeLabel("Matrix stack tree"),
-        makeLabel("updateMatrix"),
+        makeLabel("updateMatrixSubtree()"),
         makeLabel("Custom matrices"),
     ];
     const divider = new Color(205, 225, 235);
@@ -95,7 +95,7 @@ export default async function (rapid, { loop }) {
         stack.restore(); // back to B
         stack.restore(); // back to A
 
-        //==== updateMatrix ====//
+        //==== updateMatrixSubtree ====//
 
         const hub = stack.save(); // get now matrix
         stack.translate(105, 232);
@@ -121,8 +121,8 @@ export default async function (rapid, { loop }) {
         rapid.matrix.identity(orbit.local);
         rapid.matrix.rotate(orbit.local, time + Math.PI/2); // Rotate it a little more.
         rapid.matrix.translate(orbit.local, 48, 0);
-        // `updateMatrix` let the modified `orbit.local` Matrix affect all the matrices in the matrix tree that it influences.
-        stack.updateMatrix(orbit);
+        // `updateMatrixSubtree` lets the modified `orbit.local` matrix affect all downstream matrices in its subtree.
+        stack.updateMatrixSubtree(orbit);
 
         // The orbit's local matrix affects both the orbit's world matrix and the child's world matrix.
         // Render the circles affected by the local matrix (they are a brighter red).
