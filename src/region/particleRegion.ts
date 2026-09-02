@@ -114,6 +114,10 @@ export class ParticleRegion extends SpriteRegion {
         if (uniScaleY) {
             rawHeight *= scaleY
         }
+        if (uniUV) {
+            rawHeight *= v1 as number - (v0 as number)
+            rawWidth  *= u1 as number - (u0 as number)
+        }
 
         let rotationOffset = isRotated ? Math.PI / 2 : 0;
         if (uniRotation) {
@@ -155,10 +159,26 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 4] = uniRotation ? rotationOffset : rotation[sourceIndex] + rotationOffset;
 
                 // aUVRect
-                f32[index + 5] = uniUV ? u0 as number : (u0 as ArrayLike<number>)[sourceIndex];
-                f32[index + 6] = uniUV ? v0 as number : (v0 as ArrayLike<number>)[sourceIndex];
-                f32[index + 7] = uniUV ? u1 as number : (u1 as ArrayLike<number>)[sourceIndex];
-                f32[index + 8] = uniUV ? v1 as number : (v1 as ArrayLike<number>)[sourceIndex];
+                if (uniUV) {
+                    f32[index + 5] = u0 as number;
+                    f32[index + 6] = v0 as number;
+                    f32[index + 7] = u1 as number;
+                    f32[index + 8] = v1 as number;
+                } else {    
+                    const curU0 = (u0 as ArrayLike<number>)[sourceIndex]
+                    const curV0 = (v0 as ArrayLike<number>)[sourceIndex]
+                    const curU1 = (u1 as ArrayLike<number>)[sourceIndex]
+                    const curV1 = (v1 as ArrayLike<number>)[sourceIndex]
+
+                    f32[index + 5] = curU0;
+                    f32[index + 6] = curV0;
+                    f32[index + 7] = curU1;
+                    f32[index + 8] = curV1;
+
+                    // aScale
+                    f32[index + 2] *= curV1 - curV0
+                    f32[index + 3] *= curU1 - curU0
+                }
 
                 // aColor
                 if (uniColor) {

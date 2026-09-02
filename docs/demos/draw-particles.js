@@ -1,4 +1,5 @@
 const NOISE_CDN = "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.3/+esm";
+const TILE_SEAM_EPSILON = 0.0025; 
 
 /** @param {import("rapid-render").Rapid} rapid */
 export default async function (rapid, { canvas, loop }) {
@@ -43,8 +44,6 @@ export default async function (rapid, { canvas, loop }) {
     let count = 0;
     let x;
     let y;
-    let scaleX;
-    let scaleY;
     let u0;
     let v0;
     let u1;
@@ -56,8 +55,6 @@ export default async function (rapid, { canvas, loop }) {
         capacity = 2 ** Math.ceil(Math.log2(required));
         x = new Float32Array(capacity);
         y = new Float32Array(capacity);
-        scaleX = new Float32Array(capacity).fill(0.5);
-        scaleY = new Float32Array(capacity).fill(0.5);
         u0 = new Float32Array(capacity);
         v0 = new Float32Array(capacity);
         u1 = new Float32Array(capacity);
@@ -66,8 +63,8 @@ export default async function (rapid, { canvas, loop }) {
 
     const camera = {
         x: -rapid.width / (2 * 0.35),
-        y: -rapid.height * 0.38 / 0.35,
-        zoom: 0.35,
+        y: 0,
+        zoom: 1,
     };
 
     const clampCamera = () => {
@@ -198,8 +195,8 @@ export default async function (rapid, { canvas, loop }) {
             texture: tileset,
             x,
             y,
-            scaleX,
-            scaleY,
+            scaleX: 1 + TILE_SEAM_EPSILON,
+            scaleY: 1 + TILE_SEAM_EPSILON,
             u0,
             v0,
             u1,
@@ -211,6 +208,8 @@ export default async function (rapid, { canvas, loop }) {
         rapid.matrixStack.restore();
 
         rapid.drawSprite({ texture: label, x: rapid.width / 2, y: 17, origin: 0.5 });
+        rapid.drawSprite({ texture: tileset, x: 5, y: 5 });
+
         rapid.flush();
         viewDirty = false;
     });
