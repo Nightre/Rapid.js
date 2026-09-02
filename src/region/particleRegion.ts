@@ -81,7 +81,10 @@ export class ParticleRegion extends SpriteRegion {
         count: number,
         scaleX: ArrayLike<number> | number = 1,
         scaleY: ArrayLike<number> | number = 1,
-        u0: number = 0, v0: number = 0, u1: number = 1, v1: number = 1,
+        u0: ArrayLike<number> | number = 0,
+        v0: ArrayLike<number> | number = 0,
+        u1: ArrayLike<number> | number = 1,
+        v1: ArrayLike<number> | number = 1,
         flipX: boolean = false,
         flipY: boolean = false,
         isRotated: boolean = false,
@@ -99,6 +102,7 @@ export class ParticleRegion extends SpriteRegion {
         const uniScaleY = typeof scaleY == "number"
         const uniRotation = typeof rotation == "number"
         const uniColor = typeof color == "number"
+        const uniUV = typeof u0 == "number"
         const numberColor = !uniColor && typeof color[0] == "number"
 
         let rawWidth = texture.rawWidth * (flipX ? -1 : 1);
@@ -151,10 +155,10 @@ export class ParticleRegion extends SpriteRegion {
                 f32[index + 4] = uniRotation ? rotationOffset : rotation[sourceIndex] + rotationOffset;
 
                 // aUVRect
-                f32[index + 5] = u0;
-                f32[index + 6] = v0;
-                f32[index + 7] = u1;
-                f32[index + 8] = v1;
+                f32[index + 5] = uniUV ? u0 as number : (u0 as ArrayLike<number>)[sourceIndex];
+                f32[index + 6] = uniUV ? v0 as number : (v0 as ArrayLike<number>)[sourceIndex];
+                f32[index + 7] = uniUV ? u1 as number : (u1 as ArrayLike<number>)[sourceIndex];
+                f32[index + 8] = uniUV ? v1 as number : (v1 as ArrayLike<number>)[sourceIndex];
 
                 // aColor
                 if (uniColor) {

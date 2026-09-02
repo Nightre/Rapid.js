@@ -9,7 +9,7 @@ import type { Rapid } from "./render";
 export type DrawShader = GLShader | CustomGlShader;
 export type DrawPoint = Vec2 | { x: number; y: number };
 
-export interface IDrawOptions extends ITransformOptions,IDisplayOptions {
+export interface IDrawOptions extends ITransformOptions, IDisplayOptions {
 }
 
 export interface IDisplayOptions {
@@ -31,6 +31,11 @@ export interface IDrawParticleBatchOptions extends IDisplayOptions {
     flipX?: boolean;
     flipY?: boolean;
     reverseOrder?: boolean;
+
+    u0?: ArrayLike<number> | number;
+    v0?: ArrayLike<number> | number;
+    u1?: ArrayLike<number> | number;
+    v1?: ArrayLike<number> | number;
 }
 
 export interface ISpriteOptions extends IDrawOptions {
@@ -165,10 +170,10 @@ export const drawParticles = (rapid: Rapid, options: IDrawParticleBatchOptions):
         count,
         options.scaleX,
         options.scaleY,
-        texture.uvX,
-        texture.uvY,
-        texture.uvW,
-        texture.uvH,
+        options.u0 ?? texture.uvX,
+        options.v0 ?? texture.uvY,
+        options.u1 ?? texture.uvW,
+        options.v1 ?? texture.uvH,
         options.flipX,
         options.flipY,
         texture.isRotated,
