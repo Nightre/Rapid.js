@@ -744,9 +744,12 @@ class TextTexture extends Texture {
         let maxWidth = 0;
         let totalHeight = 0;
 
-        const textMetrics = ctx.measureText(lines[0]);
+        const textMetrics = ctx.measureText(lines[0] || 'M');
 
-        const lineHeight = (textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent)
+        const lineHeight = (
+            (textMetrics.fontBoundingBoxAscent  || fontSize) +
+            (textMetrics.fontBoundingBoxDescent || fontSize * 0.2)
+        )
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);
@@ -760,8 +763,8 @@ class TextTexture extends Texture {
         const logicalWidth = Math.ceil(maxWidth + padding * 2) || 1;
         const logicalHeight = Math.ceil(totalHeight + padding * 2) || 1;
 
-        const pixelWidth = logicalWidth * dpr;
-        const pixelHeight = logicalHeight * dpr;
+        const pixelWidth = Math.ceil(logicalWidth * dpr);
+        const pixelHeight = Math.ceil(logicalHeight * dpr);
 
         // Only resize if actually changed, because resizing clears canvas
         if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
@@ -785,6 +788,7 @@ class TextTexture extends Texture {
             if (style.stroke && style.strokeThickness! > 0) {
                 ctx.lineWidth = style.strokeThickness!;
                 ctx.strokeStyle = style.stroke as string;
+                ctx.lineJoin = "round";
                 ctx.strokeText(line, x, y);
             }
 
