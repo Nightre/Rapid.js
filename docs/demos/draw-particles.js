@@ -15,6 +15,10 @@ export default async function (rapid, { canvas, loop }) {
     const WORLD_MIN = -HALF_WORLD * TILE_SIZE;
     const WORLD_MAX = HALF_WORLD * TILE_SIZE;
     const WATER_LINE = 8;
+    const CHUNK_TILES = 64;
+    const CHUNK_SIZE = CHUNK_TILES * TILE_SIZE;
+    const MIN_CHUNK = Math.floor(-HALF_WORLD / CHUNK_TILES);
+    const MAX_CHUNK = Math.floor((HALF_WORLD - 1) / CHUNK_TILES);
 
     // Pixel-space rectangles: 0 grass, 1 dirt, 2 brick, 3 water.
     // 1 gap
@@ -40,25 +44,79 @@ export default async function (rapid, { canvas, loop }) {
         return -1;
     };
 
-    let capacity = 0;
-    let count = 0;
-    let x;
-    let y;
-    let u0;
-    let v0;
-    let u1;
-    let v1;
+    const chunkCache = new Map();
+    const visibleChunks = [];
+    let visibleChunkRange = "";
+    let visibleTileCount = 0;
 
-    // Typed arrays only grow. Zooming or dragging reuses the existing buffers.
-    const ensureCapacity = (required) => {
-        if (required <= capacity) return;
-        capacity = 2 ** Math.ceil(Math.log2(required));
-        x = new Float32Array(capacity);
-        y = new Float32Array(capacity);
-        u0 = new Float32Array(capacity);
-        v0 = new Float32Array(capacity);
-        u1 = new Float32Array(capacity);
-        v1 = new Float32Array(capacity);
+    const createChunk = (chunkColumn, chunkRow) => {
+        const firstColumn = Math.max(-HALF_WORLD, chunkColumn * CHUNK_TILES);
+        const lastColumn = Math.min(
+            HALF_WORLD - 1,
+            (chunkColumn + 1) * CHUNK_TILES - 1,
+        );
+        const firstRow = Math.max(-HALF_WORLD, chunkRow * CHUNK_TILES);
+        const lastRow = Math.min(
+            HALF_WORLD - 1,
+            (chunkRow + 1) * CHUNK_TILES - 1,
+        );
+        const capacity =
+            (lastColumn - firstColumn + 1) * (lastRow - firstRow + 1);
+        const x = new Float32Array(capacity);
+        const y = new Float32Array(capacity);
+        const u0 = new Float32Array(capacity);
+        const v0 = new Float32Array(capacity);
+        const u1 = new Float32Array(capacity);
+        const v1 = new Float32Array(capacity);
+        let count = 0;
+
+        for (let column = firstColumn; column <= lastColumn; column++) {
+            const surface = surfaceAt(column);
+
+            for (let row = firstRow; row <= lastRow; row++) {
+                const tile = tileAt(column, row, surface);
+                if (tile === -1) continue;
+
+                const uv = tileUV[tile];
+                x[count] = column * TILE_SIZE + TILE_SIZE / 2;
+                y[count] = row * TILE_SIZE + TILE_SIZE / 2;
+                u0[count] = uv[0] / tileset.width;
+                v0[count] = uv[1] / tileset.height;
+                u1[count] = uv[2] / tileset.width;
+                v1[count] = uv[3] / tileset.height;
+                count++;
+            }
+        }
+
+        return {
+            texture: tileset,
+            x,
+            y,
+            scaleX: 1 + TILE_SEAM_EPSILON,
+            scaleY: 1 + TILE_SEAM_EPSILON,
+            u0,
+            v0,
+            u1,
+            v1,
+            count,
+            originX: 0.5,
+            originY: 0.5,
+        };
+    };
+
+    const getChunk = (chunkColumn, chunkRow) => {
+        const key = `${chunkColumn},${chunkRow}`;
+        let chunk = chunkCache.get(key);
+
+        if (chunk) {
+            chunkCache.delete(key);
+            chunkCache.set(key, chunk);
+            return chunk;
+        }
+
+        chunk = createChunk(chunkColumn, chunkRow);
+        chunkCache.set(key, chunk);
+        return chunk;
     };
 
     const camera = {
@@ -78,37 +136,57 @@ export default async function (rapid, { canvas, loop }) {
         ));
     };
 
-    const rebuildVisibleTiles = () => {
-        const firstColumn = Math.max(-HALF_WORLD, Math.floor(camera.x / TILE_SIZE) - 1);
-        const lastColumn = Math.min(
-            HALF_WORLD - 1,
-            Math.ceil((camera.x + rapid.width / camera.zoom) / TILE_SIZE) + 1,
+    const updateVisibleChunks = () => {
+        const right = camera.x + rapid.width / camera.zoom;
+        const bottom = camera.y + rapid.height / camera.zoom;
+        const firstChunkColumn = Math.max(
+            MIN_CHUNK,
+            Math.floor(camera.x / CHUNK_SIZE),
         );
-        const firstRow = Math.max(-HALF_WORLD, Math.floor(camera.y / TILE_SIZE) - 1);
-        const lastRow = Math.min(
-            HALF_WORLD - 1,
-            Math.ceil((camera.y + rapid.height / camera.zoom) / TILE_SIZE) + 1,
+        const lastChunkColumn = Math.min(
+            MAX_CHUNK,
+            Math.floor((right - 0.0001) / CHUNK_SIZE),
         );
+        const firstChunkRow = Math.max(
+            MIN_CHUNK,
+            Math.floor(camera.y / CHUNK_SIZE),
+        );
+        const lastChunkRow = Math.min(
+            MAX_CHUNK,
+            Math.floor((bottom - 0.0001) / CHUNK_SIZE),
+        );
+        const range = `${firstChunkColumn},${firstChunkRow},${lastChunkColumn},${lastChunkRow}`;
 
-        ensureCapacity((lastColumn - firstColumn + 1) * (lastRow - firstRow + 1));
-        count = 0;
+        // Moving inside the same chunks only changes the camera matrix.
+        if (range === visibleChunkRange) return false;
 
-        for (let column = firstColumn; column <= lastColumn; column++) {
-            const surface = surfaceAt(column);
-            for (let row = firstRow; row <= lastRow; row++) {
-                const tile = tileAt(column, row, surface);
-                if (tile === -1) continue;
+        visibleChunkRange = range;
+        visibleChunks.length = 0;
+        visibleTileCount = 0;
+        let touchedChunkCount = 0;
 
-                const uv = tileUV[tile];
-                x[count] = column * TILE_SIZE + TILE_SIZE / 2;
-                y[count] = row * TILE_SIZE + TILE_SIZE / 2;
-                u0[count] = uv[0] / tileset.width;
-                v0[count] = uv[1] / tileset.height;
-                u1[count] = uv[2] / tileset.width;
-                v1[count] = uv[3] / tileset.height;
-                count++;
+        for (let chunkRow = firstChunkRow; chunkRow <= lastChunkRow; chunkRow++) {
+            for (
+                let chunkColumn = firstChunkColumn;
+                chunkColumn <= lastChunkColumn;
+                chunkColumn++
+            ) {
+                const chunk = getChunk(chunkColumn, chunkRow);
+                touchedChunkCount++;
+
+                if (chunk.count === 0) continue;
+                visibleChunks.push(chunk);
+                visibleTileCount += chunk.count;
             }
         }
+
+        // Keep nearby/recent blocks, but do not let an enormous world grow memory forever.
+        const cacheLimit = Math.max(128, touchedChunkCount * 3);
+        while (chunkCache.size > cacheLimit) {
+            chunkCache.delete(chunkCache.keys().next().value);
+        }
+
+        return true;
     };
 
     let dragging = false;
@@ -152,7 +230,7 @@ export default async function (rapid, { canvas, loop }) {
         const worldX = camera.x + pointerX / camera.zoom;
         const worldY = camera.y + pointerY / camera.zoom;
 
-        camera.zoom = Math.max(0.03, Math.min(1.6,
+        camera.zoom = Math.max(0.02, Math.min(1.6,
             camera.zoom * Math.exp(-event.deltaY * 0.001),
         ));
         camera.x = Math.round(worldX - pointerX / camera.zoom);
@@ -181,8 +259,9 @@ export default async function (rapid, { canvas, loop }) {
 
     loop(() => {
         if (!viewDirty) return;
-        rebuildVisibleTiles();
-        label.text = `${count.toLocaleString()} visible tiles (drag to move, scroll to zoom)`;
+        if (updateVisibleChunks()) {
+            label.text = `${visibleTileCount.toLocaleString()} tiles in visible (drag to move, scroll to zoom)`;
+        }
 
         rapid.clear();
         rapid.matrixStack.save();
@@ -191,20 +270,9 @@ export default async function (rapid, { canvas, loop }) {
             y: camera.y,
             scale: 1 / camera.zoom,
         });
-        rapid.drawParticles({
-            texture: tileset,
-            x,
-            y,
-            scaleX: 1 + TILE_SEAM_EPSILON,
-            scaleY: 1 + TILE_SEAM_EPSILON,
-            u0,
-            v0,
-            u1,
-            v1,
-            count,
-            originX: 0.5,
-            originY: 0.5,
-        });
+        for (let i = 0; i < visibleChunks.length; i++) {
+            rapid.drawParticles(visibleChunks[i]);
+        }
         rapid.matrixStack.restore();
 
         rapid.drawSprite({ texture: label, x: rapid.width / 2, y: 17, origin: 0.5 });
