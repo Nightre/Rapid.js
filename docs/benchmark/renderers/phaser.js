@@ -8,6 +8,7 @@ async function run(runtime) {
         textureImages,
         sampleExternalLoop,
         updateSprites,
+        updatePhaserParticles,
         loadGlobalScript,
         createSprites,
     } = runtime;
@@ -45,28 +46,23 @@ async function run(runtime) {
                 }
             },
             update(_time, deltaMs) {
-                updateSprites(sprites, Math.min(deltaMs / 1000, 0.05));
+                const delta = Math.min(deltaMs / 1000, 0.05);
 
                 if (this.benchmarkLayer) {
-                    const member = this.benchmarkMemberUpdate;
+                    updatePhaserParticles(
+                        sprites,
+                        this.benchmarkLayer,
+                        this.benchmarkMemberUpdate,
+                        delta,
+                    ); // defined in sprites.js
+                } else {
+                    updateSprites(sprites, delta); // defined in sprites.js
                     for (let i = 0; i < sprites.count; i++) {
-                        member.x = sprites.x[i];
-                        member.y = sprites.y[i];
-                        member.rotation = sprites.rotation[i];
-                        member.tintTopLeft = sprites.color[i].color;
-                        member.tintTopRight = sprites.color[i].color;
-                        member.tintBottomLeft = sprites.color[i].color;
-                        member.tintBottomRight = sprites.color[i].color;
-                        this.benchmarkLayer.editMember(i, member);
+                        const sprite = this.children.list[i];
+                        sprite.x = sprites.x[i];
+                        sprite.y = sprites.y[i];
+                        sprite.rotation = sprites.rotation[i];
                     }
-                    return;
-                }
-
-                for (let i = 0; i < sprites.count; i++) {
-                    const sprite = this.children.list[i];
-                    sprite.x = sprites.x[i];
-                    sprite.y = sprites.y[i];
-                    sprite.rotation = sprites.rotation[i];
                 }
             },
         },
@@ -90,6 +86,8 @@ function populateScene(scene, Phaser, mode, textureImages, sprites) {
         }
 
         scene.textures.addImage("bench-sprite-single", textureImages[0]);
+        scene.textures
+            .get("bench-sprite-single")
         const layer = new Phaser.GameObjects.SpriteGPULayer(
             scene,
             "bench-sprite-single",
@@ -116,7 +114,10 @@ function populateScene(scene, Phaser, mode, textureImages, sprites) {
     }
 
     textureImages.forEach((image, index) => {
-        scene.textures.addImage(`bench-sprite-${index}`, image);
+        const key = `bench-sprite-${index}`;
+        scene.textures.addImage(key, image);
+        scene.textures
+            .get(key)
     });
     for (let i = 0; i < sprites.count; i++) {
         const sprite = scene.add.image(

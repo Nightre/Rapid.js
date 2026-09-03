@@ -79,6 +79,92 @@ export function updateSprites(sprites, delta, { width, height, spriteSize }) {
     }
 }
 
+export function updatePixiParticles(
+    sprites,
+    renderSprites,
+    delta,
+    { width, height, spriteSize },
+) {
+    const minX = spriteSize * 0.5;
+    const minY = spriteSize * 0.5;
+    const maxX = width - minX;
+    const maxY = height - minY;
+
+    for (let i = 0; i < sprites.count; i++) {
+        const particle = renderSprites[i];
+        let x = particle.x + sprites.vx[i] * delta;
+        let y = particle.y + sprites.vy[i] * delta;
+
+        if (x <= minX) {
+            x = minX;
+            sprites.vx[i] = Math.abs(sprites.vx[i]);
+        } else if (x >= maxX) {
+            x = maxX;
+            sprites.vx[i] = -Math.abs(sprites.vx[i]);
+        }
+
+        if (y <= minY) {
+            y = minY;
+            sprites.vy[i] = Math.abs(sprites.vy[i]);
+        } else if (y >= maxY) {
+            y = maxY;
+            sprites.vy[i] = -Math.abs(sprites.vy[i]);
+        }
+
+        particle.x = x;
+        particle.y = y;
+        particle.rotation += sprites.spin[i] * delta;
+    }
+}
+
+export function updatePhaserParticles(
+    sprites,
+    layer,
+    member,
+    delta,
+    { width, height, spriteSize },
+) {
+    const minX = spriteSize * 0.5;
+    const minY = spriteSize * 0.5;
+    const maxX = width - minX;
+    const maxY = height - minY;
+
+    for (let i = 0; i < sprites.count; i++) {
+        let x = sprites.x[i] + sprites.vx[i] * delta;
+        let y = sprites.y[i] + sprites.vy[i] * delta;
+
+        if (x <= minX) {
+            x = minX;
+            sprites.vx[i] = Math.abs(sprites.vx[i]);
+        } else if (x >= maxX) {
+            x = maxX;
+            sprites.vx[i] = -Math.abs(sprites.vx[i]);
+        }
+
+        if (y <= minY) {
+            y = minY;
+            sprites.vy[i] = Math.abs(sprites.vy[i]);
+        } else if (y >= maxY) {
+            y = maxY;
+            sprites.vy[i] = -Math.abs(sprites.vy[i]);
+        }
+
+        const rotation = sprites.rotation[i] + sprites.spin[i] * delta;
+        const tint = sprites.color[i].color;
+        sprites.x[i] = x;
+        sprites.y[i] = y;
+        sprites.rotation[i] = rotation;
+        member.x = x;
+        member.y = y;
+        member.rotation = rotation;
+        member.tintTopLeft = tint;
+        member.tintTopRight = tint;
+        member.tintBottomLeft = tint;
+        member.tintBottomRight = tint;
+        layer.editMember(i, member);
+    }
+}
+
 function createRandom(initialSeed) {
     let seed = initialSeed;
     return () => {

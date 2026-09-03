@@ -8,6 +8,7 @@ async function run(runtime) {
         textureImages,
         sampleLoop,
         updateSprites,
+        updatePixiParticles,
         loadGlobalScript,
         createSprites,
     } = runtime;
@@ -21,17 +22,15 @@ async function run(runtime) {
     const sprites = createSprites(createColor);
     const app = await createApplication(PIXI, canvas, width, height, background);
     const textures = textureImages.map((image) => PIXI.Texture.from(image));
+    for (const texture of textures) texture.source.scaleMode = "nearest";
     let container;
     let renderSprites;
 
     if (mode === "single") {
         container = new PIXI.ParticleContainer({
             dynamicProperties: {
-                position: true,
-                rotation: true,
-                scale: false,
-                alpha: false,
-                tint: true,
+                position: true, // Update positions each frame
+                rotation: true, // Update rotations each frame
             },
         });
         app.stage.addChild(container);
@@ -67,12 +66,16 @@ async function run(runtime) {
 
     try {
         return await sampleLoop((delta) => {
-            updateSprites(sprites, delta);
-            for (let i = 0; i < sprites.count; i++) {
-                const sprite = renderSprites[i];
-                sprite.x = sprites.x[i];
-                sprite.y = sprites.y[i];
-                sprite.rotation = sprites.rotation[i];
+            if (mode === "single") {
+                updatePixiParticles(sprites, renderSprites, delta); // defined in sprites.js
+            } else {
+                updateSprites(sprites, delta); // defined in sprites.js
+                for (let i = 0; i < sprites.count; i++) {
+                    const sprite = renderSprites[i];
+                    sprite.x = sprites.x[i];
+                    sprite.y = sprites.y[i];
+                    sprite.rotation = sprites.rotation[i];
+                }
             }
             app.renderer.render(app.stage);
         });

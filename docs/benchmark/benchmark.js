@@ -14,7 +14,12 @@ import {
 import { loadGlobalScript, loadImage, loadModule } from "./resources.js";
 import { validateMeasurement } from "./metrics.js";
 import { createSampler } from "./sampler.js";
-import { createSprites, updateSprites } from "./sprites.js";
+import {
+    createSprites,
+    updatePhaserParticles,
+    updatePixiParticles,
+    updateSprites,
+} from "./sprites.js";
 import * as view from "./view.js";
 
 let currentMode = getMode(view.getSelectedModeKey());
@@ -31,6 +36,12 @@ const sampler = createSampler({
 const textureImages = await Promise.all(BENCHMARK.textureUrls.map(loadImage));
 const updateBenchmarkSprites = (sprites, delta) => {
     updateSprites(sprites, delta, BENCHMARK);
+};
+const updateBenchmarkPixiSpritesDirectly = (sprites, renderSprites, delta) => {
+    updatePixiParticles(sprites, renderSprites, delta, BENCHMARK);
+};
+const updateBenchmarkPhaserSprites = (sprites, layer, member, delta) => {
+    updatePhaserParticles(sprites, layer, member, delta, BENCHMARK);
 };
 const libraries = Object.freeze({
     CanvasScaleMode,
@@ -171,6 +182,8 @@ function createRendererRuntime(mode, canvas, count, signal) {
             { signal },
         ),
         updateSprites: updateBenchmarkSprites,
+        updatePixiParticles: updateBenchmarkPixiSpritesDirectly,
+        updatePhaserParticles: updateBenchmarkPhaserSprites,
         loadGlobalScript,
         loadModule,
         libraries,

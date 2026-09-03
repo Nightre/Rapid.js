@@ -3,6 +3,18 @@ import { fileURLToPath } from 'node:url'
 import dts from 'vite-plugin-dts';
 import { benchmarkRendererSources } from './vite.benchmark-renderers'
 
+function removeIndentPlugin() {
+  return {
+    name: 'remove-four-spaces',
+    renderChunk(code: string) {
+      return {
+        code: code.replace(/^[ ]{4,}/gm, ''),
+        map: null
+      }
+    }
+  }
+}
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -26,5 +38,6 @@ export default defineConfig({
       requestPrefix: '/docs/benchmark/renderers/',
     }),
     dts(),
+    removeIndentPlugin()
   ],
 })

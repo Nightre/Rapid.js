@@ -1,4 +1,5 @@
 const definitions = [
+
     {
         id: "rapid",
         name: "Rapid.js",
@@ -9,7 +10,7 @@ const definitions = [
     },
     {
         id: "pixijs",
-        name: "PixiJS",
+        name: "PixiJS v8",
         singleName: "PixiJS (ParticleContainer)",
         color: "#00c49f",
         file: "pixijs.js",
@@ -17,7 +18,7 @@ const definitions = [
     },
     {
         id: "phaser",
-        name: "Phaser",
+        name: "Phaser 4",
         singleName: "Phaser (SpriteGPULayer)",
         color: "#ffb703",
         file: "phaser.js",
