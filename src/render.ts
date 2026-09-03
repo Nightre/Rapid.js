@@ -24,7 +24,7 @@ import {
     getColorUint32,
 } from "./draw";
 import { Vec2 } from "./math";
-import { AtlasSprtieRegion } from "./region/atlasSpriteRegion";
+import { AtlasSpriteRegion } from "./region/atlasSpriteRegion";
 import { ParticleRegion } from "./region/particleRegion";
 
 /**
@@ -163,7 +163,7 @@ export class Rapid {
     /** Region dedicated to arbitrary geometry and shapes rendering. */
     graphicRegion: GraphicRegion;
 
-    atlasSpriteRegion: AtlasSprtieRegion;
+    atlasSpriteRegion: AtlasSpriteRegion;
 
     particleRegion: ParticleRegion;
 
@@ -218,7 +218,7 @@ export class Rapid {
 
         this.spriteRegion = new SpriteRegion(this);
         this.graphicRegion = new GraphicRegion(this);
-        this.atlasSpriteRegion = new AtlasSprtieRegion(this);
+        this.atlasSpriteRegion = new AtlasSpriteRegion(this);
         this.particleRegion = new ParticleRegion(this);
 
         const cssW = this.canvas.clientWidth || this.canvas.width;

@@ -5,7 +5,7 @@ import AtlasFsShaderSource from "../shader/sprite_atlas.frag?raw";
 import { Rapid } from "../render";
 import { CustomGlShader } from "../webgl/glshader";
 
-export class AtlasSprtieRegion extends SpriteRegion {
+export class AtlasSpriteRegion extends SpriteRegion {
     KEY = "AtlasSprite"
     constructor(rapid:Rapid) {
         super(rapid)
