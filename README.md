@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A stateless, high-performance WebGL 2D renderer for browser games.
+  A Immediate-mode, high-performance WebGL 2D renderer for browser games.
 </p>
 
 <p align="center">
