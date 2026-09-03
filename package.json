@@ -1,7 +1,7 @@
 {
   "name": "rapid-render",
   "private": false,
-  "version": "1.0.12",
+  "version": "1.0.13",
   "type": "module",
   "description": "A high-performance lightweight WebGL 2D renderer for browser games.",
   "repository": "https://github.com/Nightre/Rapid.js",
@@ -25,13 +25,13 @@
     "index.d.ts"
   ],
   "license": "MIT",
-  "main": "./dist/rapid.umd.cjs",
-  "module": "./dist/rapid.js",
+  "main": "./dist/rapid-render.umd.cjs",
+  "module": "./dist/rapid-render.js",
   "types": "./dist/index.d.ts",
   "exports": {
     "types": "./dist/index.d.ts",
-    "import": "./dist/rapid.js",
-    "require": "./dist/rapid.umd.cjs"
+    "import": "./dist/rapid-render.js",
+    "require": "./dist/rapid-render.umd.cjs"
   },
   "scripts": {
     "dev": "vite",
