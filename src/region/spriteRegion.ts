@@ -11,11 +11,11 @@ import { Texture } from "../texture";
 
 // Per-instance buffer stride: 12 floats + 2 uint32 = 48 bytes
 // layout:
-//   aMatrixRow0  vec3        float32×3  offset  0  (a, c, tx)
-//   aMatrixRow1  vec3        float32×3  offset 12  (b, d, ty)
-//   aUVRect      vec4        float32×4  offset 24  (u0, v0, u1, v1)
-//   aColor       vec4 u8×4   uint32×1   offset 40  (r,g,b,a 0-255, normalized)
-//   aTextureId   float u8×1  uint32×1   offset 44  (texture unit index)
+//   aMatrixRow0  vec3        float32×3  offset  12 (a, c, tx)
+//   aMatrixRow1  vec3        float32×3  offset  24 (b, d, ty)
+//   aUVRect      vec4        float32×4  offset  40 (u0, v0, u1, v1)
+//   aColor       vec4 u8×4   uint32×1   offset  44 (r,g,b,a 0-255, normalized)
+//   aTextureId   float u8×1  uint32×1   offset  48 (texture unit index)
 const INSTANCE_STRIDE = 48;
 
 // Static quad vertices: 4 × vec2 for TRIANGLE_STRIP

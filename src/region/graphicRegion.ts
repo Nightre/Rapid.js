@@ -11,9 +11,9 @@ import MaskVsShaderSource from "../shader/mask.vert?raw";
 import MaskFsShaderSource from "../shader/mask.frag?raw";
 
 // Per-vertex layout (stride = 20 bytes): 8 + 4 + 8
-//   aPosition  vec2   float32×2  offset  0
-//   aColor     vec4   u8×4       offset  8
-//   aUV        vec2   float32×2  offset 12
+//   aPosition  vec2   float32×2  offset  8
+//   aColor     vec4   u8×4       offset  12
+//   aUV        vec2   float32×2  offset  20
 const VERTEX_STRIDE = 20;
 
 export class GraphicRegion extends Region {

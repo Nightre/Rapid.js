@@ -10,12 +10,12 @@ import { Color } from "../color";
 
 // Per-instance buffer stride: 11 floats + 1 packed color = 48 bytes
 // layout:
-//   aPosition    vec2        float32×2  offset  0  (x, y)
-//   aScale       vec2        float32×2  offset  8  (scaleX, scaleY)
-//   aRotation    float       float32×1  offset 16  (angle in radians)
-//   aUVRect      vec4        float32×4  offset 20  (u0, v0, u1, v1)
-//   aColor       vec4        uint8×4    offset 36  (r, g, b, a, 0–255)
-//   aOrigin      vec2        float32×2  offset 40  (normalized pivot)
+//   aPosition    vec2        float32×2  offset  8  (x, y)
+//   aScale       vec2        float32×2  offset 16  (scaleX, scaleY)
+//   aRotation    float       float32×1  offset 20  (angle in radians)
+//   aUVRect      vec4        float32×4  offset 36  (u0, v0, u1, v1)
+//   aColor       vec4        uint8×4    offset 40  (r, g, b, a, 0–255)
+//   aOrigin      vec2        float32×2  offset 48  (normalized pivot)
 const INSTANCE_STRIDE = 48;
 const INSTANCE_ELEMS = INSTANCE_STRIDE / 4;
 
@@ -23,6 +23,7 @@ export class ParticleRegion extends SpriteRegion {
     KEY = "ParticleSprite"
     texture?: Texture
     customMatrix?: number
+    particleLoopCache = new Map<string, Function>();
 
     constructor(rapid: Rapid) {
         super(rapid)
@@ -95,8 +96,9 @@ export class ParticleRegion extends SpriteRegion {
         customMatrix?: number
     ): void {
         if (!texture.glTexture || count <= 0) return;
-
-        let offset = 0;
+        if (this.texture && texture !== this.texture) {
+            this.flush();
+        }
 
         const uniScaleX = typeof scaleX == "number"
         const uniScaleY = typeof scaleY == "number"
@@ -115,95 +117,120 @@ export class ParticleRegion extends SpriteRegion {
             rawHeight *= scaleY
         }
         if (uniUV) {
+            rawWidth *= u1 as number - (u0 as number)
             rawHeight *= v1 as number - (v0 as number)
-            rawWidth  *= u1 as number - (u0 as number)
         }
 
         let rotationOffset = isRotated ? Math.PI / 2 : 0;
         if (uniRotation) {
             rotationOffset += rotation
         }
+        const staticColor = color ?? 0xFFFFFFFF
+        const loopFunction = this.getParticleLoop(
+            uniScaleX,
+            uniScaleY,
+            uniRotation,
+            uniUV,
+            uniColor,
+            numberColor,
+            reverseOrder,
+            premultipliedAlpha,
+        )
 
-        while (offset < count) {
-            if (this.texture && texture !== this.texture) {
-                this.flush();
-            }
-
-            if (!this.texture) {
-                this.texture = texture;
-                this.useTexture(texture.glTexture, 0, 0);
-            }
-
-            const batchCount = count - offset;
-            const buf = this.instanceBuffer;
-            let index = buf.usedElemNum;
-
-            buf.resize(batchCount * INSTANCE_ELEMS);
-            const f32 = buf.float32!;
-            const u32 = buf.uint32!;
-
-            for (let i = 0; i < batchCount; i++) {
-                const sourceIndex = reverseOrder
-                    ? count - 1 - offset - i
-                    : offset + i;
-
-                // aPosition
-                f32[index] = x[sourceIndex];
-                f32[index + 1] = y[sourceIndex];
-
-                // aScale
-                f32[index + 2] = uniScaleX ? rawWidth : rawWidth * scaleX[sourceIndex];
-                f32[index + 3] = uniScaleY ? rawHeight : rawHeight * scaleY[sourceIndex];
-
-                // aRotation
-                f32[index + 4] = uniRotation ? rotationOffset : rotation[sourceIndex] + rotationOffset;
-
-                // aUVRect
-                if (uniUV) {
-                    f32[index + 5] = u0 as number;
-                    f32[index + 6] = v0 as number;
-                    f32[index + 7] = u1 as number;
-                    f32[index + 8] = v1 as number;
-                } else {    
-                    const curU0 = (u0 as ArrayLike<number>)[sourceIndex]
-                    const curV0 = (v0 as ArrayLike<number>)[sourceIndex]
-                    const curU1 = (u1 as ArrayLike<number>)[sourceIndex]
-                    const curV1 = (v1 as ArrayLike<number>)[sourceIndex]
-
-                    f32[index + 5] = curU0;
-                    f32[index + 6] = curV0;
-                    f32[index + 7] = curU1;
-                    f32[index + 8] = curV1;
-
-                    // aScale
-                    f32[index + 2] *= curV1 - curV0
-                    f32[index + 3] *= curU1 - curU0
-                }
-
-                // aColor
-                if (uniColor) {
-                    u32[index + 9] = 0xFFFFFFFF;
-                } else if (numberColor) {
-                    u32[index + 9] = color[sourceIndex] as number
-                } else {
-                    const curColor = color[sourceIndex] as Color
-                    u32[index + 9] = premultipliedAlpha ? curColor.premultipliedUint32 : curColor.uint32;
-                }
-
-                // aOrigin
-                f32[index + 10] = originX;
-                f32[index + 11] = originY;
-                index += INSTANCE_ELEMS;
-            }
-
-            buf.usedElemNum = index;
-            buf.makeDirty();
-            this.instanceCount += batchCount;
-            offset += batchCount;
+        if (!this.texture) {
+            this.texture = texture;
+            this.useTexture(texture.glTexture, 0, 0);
         }
+
+        const batchCount = count;
+        const buf = this.instanceBuffer;
+        let index = buf.usedElemNum;
+
+        buf.resize(batchCount * INSTANCE_ELEMS);
+        const f32 = buf.float32!;
+        const u32 = buf.uint32!;
+
+        index = loopFunction(
+            x, y, scaleX, scaleY, rotation, u0, v0, u1, v1, color,
+            f32, u32, rawWidth, rawHeight, rotationOffset, staticColor,
+            originX, originY, count, batchCount, index
+        )
+
+        buf.usedElemNum = index;
+        buf.makeDirty();
+        this.instanceCount += batchCount;
 
         this.customMatrix = customMatrix
         this.flush()
+    }
+
+    getParticleLoop(
+        uniScaleX: boolean,
+        uniScaleY: boolean,
+        uniRotation: boolean,
+        uniUV: boolean,
+        uniColor: boolean,
+        numberColor: boolean,
+        reverseOrder: boolean,
+        premultipliedAlpha: boolean,
+    ): Function {
+        const flags = [...arguments].join("_")
+
+        if (this.particleLoopCache.has(flags)) {
+            return this.particleLoopCache.get(flags)!;
+        }
+
+        let code = `
+return function( x, y, scaleX, scaleY, rotation, u0, v0, u1, v1, color, f32, u32, rawWidth, rawHeight, rotationOffset, staticColor, originX, originY, count, batchCount, index ) {
+    ${(uniScaleX && uniUV) ? `const baseSx = rawWidth;` : ''}
+    ${(uniScaleY && uniUV) ? `const baseSy = rawHeight;` : ''}
+
+    const endIdx = index + batchCount * 12;
+    let idx = index;
+    if (endIdx > f32.length) return index;
+    
+    ${reverseOrder
+        ? `for (let src = count - 1; idx < endIdx; src--, idx += 12) {`
+        : `for (let src = 0; idx < endIdx; src++, idx += 12) {`
+    }
+        f32[idx]     = x[src];
+        f32[idx + 1] = y[src];
+
+        ${uniUV ? `
+        f32[idx + 2] = ${uniScaleX ? 'baseSx' : 'rawWidth * scaleX[src]'};
+        f32[idx + 3] = ${uniScaleY ? 'baseSy' : 'rawHeight * scaleY[src]'};
+        f32[idx + 4] = ${uniRotation ? 'rotationOffset' : 'rotation[src] + rotationOffset'};
+        f32[idx + 5] = u0;
+        f32[idx + 6] = v0;
+        f32[idx + 7] = u1;
+        f32[idx + 8] = v1;
+        ` : `
+        const cu0 = u0[src], cv0 = v0[src], cu1 = u1[src], cv1 = v1[src];
+        f32[idx + 2] = (rawWidth * (cu1 - cu0)) ${uniScaleX ? '' : '* scaleX[src]'};
+        f32[idx + 3] = (rawHeight * (cv1 - cv0)) ${uniScaleY ? '' : '* scaleY[src]'};
+        f32[idx + 4] = ${uniRotation ? 'rotationOffset' : 'rotation[src] + rotationOffset'};
+        f32[idx + 5] = cu0;
+        f32[idx + 6] = cv0;
+        f32[idx + 7] = cu1;
+        f32[idx + 8] = cv1;
+        `}
+
+        u32[idx + 9] = ${
+            uniColor ? 'staticColor' :
+            numberColor ? 'color[src]' :
+            `color[src].${premultipliedAlpha ? 'premultipliedUint32' : 'uint32'}`
+        };
+
+        f32[idx + 10] = originX;
+        f32[idx + 11] = originY;
+    }
+    return idx;
+}
+`;
+        const compiledFunc = new Function(code)();
+        this.particleLoopCache.set(flags, compiledFunc);
+
+        return compiledFunc;
     }
 
     override render(): void {
