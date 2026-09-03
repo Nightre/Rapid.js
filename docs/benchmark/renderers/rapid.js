@@ -12,7 +12,12 @@ async function run(runtime) {
         createSprites,
     } = runtime;
     const { CanvasScaleMode, Color, Rapid, TextureFilterMode } = libraries;
-    const createColor = (red, green, blue) => new Color(red, green, blue, 255);
+
+    const createColor = (red, green, blue) => {
+        const color = new Color(red, green, blue, 255);
+        return mode === "single" ? color.uint32 : color;
+    };
+    
     const sprites = createSprites(createColor);
     const rapid = new Rapid({
         canvas,
@@ -27,22 +32,29 @@ async function run(runtime) {
         textureFilter: TextureFilterMode.NEAREST,
     });
     const textures = textureImages.map((image) => rapid.texture.create(image));
-    let particleOptions;
-    let drawOptions;
 
-    if (mode === "single") {
-        particleOptions = {
-            texture: textures[0],
-            x: sprites.x,
-            y: sprites.y,
-            rotation: sprites.rotation,
-            color: sprites.color,
+    try {
+        if (mode === "single") {
+            const particleOptions = {
+                texture: textures[0],
+                x: sprites.x,
+                y: sprites.y,
+                rotation: sprites.rotation,
+                color: sprites.color,
+                count: sprites.count,
+                originX: 0.5,
+                originY: 0.5,
+            };
 
-            originX: 0.5,
-            originY: 0.5,
-        };
-    } else {
-        drawOptions = {
+            return await sampleLoop((delta) => {
+                updateSprites(sprites, delta);
+                rapid.clear();
+                rapid.drawParticles(particleOptions);
+                rapid.flush();
+            });
+        }
+
+        const drawOptions = {
             texture: textures[0],
             x: 0,
             y: 0,
@@ -50,23 +62,17 @@ async function run(runtime) {
             origin: 0.5,
             color: null,
         };
-    }
 
-    try {
         return await sampleLoop((delta) => {
-            updateSprites(sprites, delta); // defined in sprites.js
+            updateSprites(sprites, delta);
             rapid.clear();
-            if (mode === "single") {
-                rapid.drawParticles(particleOptions);
-            } else {
-                for (let i = 0; i < sprites.count; i++) {
-                    drawOptions.texture = textures[sprites.textureIndex[i]];
-                    drawOptions.x = sprites.x[i];
-                    drawOptions.y = sprites.y[i];
-                    drawOptions.rotation = sprites.rotation[i];
-                    drawOptions.color = sprites.color[i];
-                    rapid.drawSprite(drawOptions);
-                }
+            for (let i = 0; i < sprites.count; i++) {
+                drawOptions.texture = textures[sprites.textureIndex[i]];
+                drawOptions.x = sprites.x[i];
+                drawOptions.y = sprites.y[i];
+                drawOptions.rotation = sprites.rotation[i];
+                drawOptions.color = sprites.color[i];
+                rapid.drawSprite(drawOptions);
             }
             rapid.flush();
         });
