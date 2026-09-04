@@ -64,7 +64,7 @@ rapid.flush();
 
 ## Render a scene
 
-Expressing complex game hierarchies doesn't require `DisplayObject` trees. Rapid's `MatrixStack` brings the familiar, intuitive `save()` and `restore()` flow from Canvas 2D into high-performance WebGL, letting you compose parent-child relationships with zero object allocation. For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
+Expressing complex game hierarchies doesn't require `DisplayObject` trees. `rapid.matrixStack` brings the familiar, intuitive `save()` and `restore()` flow from Canvas 2D into high-performance WebGL, letting you compose parent-child relationships with zero object allocation.
 
 ```ts
 // root
@@ -135,8 +135,7 @@ rapid.drawSprite({
 rapid.flush();
 ```
 
-
-Next step: <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
+For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 
 ## Benchmark
 
