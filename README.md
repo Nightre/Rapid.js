@@ -60,7 +60,40 @@ rapid.drawRect({
 });
 rapid.flush();
 ```
+## Render a scene
 
+Rapid.js retains every matrix created in the MatrixStack, even after it has been popped, so you can use it for rendering or modify it later.
+
+```ts
+// root
+// ├── world
+// │   ├── player
+// │   └── enemies
+// │       ├── enemy #0
+// │       ├── enemy #1
+// │       └── ...
+// └── ui
+
+// matrixStack (rapid.js)
+const stack = rapid.matrixStack;
+// root
+stack.save();
+    stack.translate(0, 0);
+    // world
+    stack.save();
+    // player
+    rapid.drawSprite(player);
+    stack.save(); // enemies
+        for (let i = 0; i < 2; i++) {
+            // enemy
+            stack.translate(x, y);
+            rapid.drawSprite(enemies[i]);
+        }
+    stack.restore();
+stack.restore();
+// ui
+rapid.drawSprite(ui);
+```
 Next step: <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
 
 ## Benchmark
