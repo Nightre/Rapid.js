@@ -49,14 +49,13 @@ import { Rapid, Color } from "rapid-render";
 
 const canvas = document.querySelector("canvas")!;
 const rapid = new Rapid({canvas});
+const texture = await rapid.texture.load("./image/sprite.png")
 
 rapid.clear();
-rapid.drawRect({
-   x: 40,
-   y: 40,
-   width: 160,
-   height: 96,
-   color: new Color(84, 184, 234),
+rapid.drawSprite({
+    texture: texture,
+    x: 40,
+    y: 40,
 });
 rapid.flush();
 ```
