@@ -62,7 +62,7 @@ rapid.flush();
 ```
 ## Render a scene
 
-Rapid.js retains every matrix created in the MatrixStack, even after it has been popped, so you can use it for rendering or modify it later.
+Rapid.js retains every matrix created in the MatrixStack, even after it has been popped, so you can use it for rendering or modify it later. For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 
 ```ts
 // root
@@ -74,23 +74,22 @@ Rapid.js retains every matrix created in the MatrixStack, even after it has been
 // │       └── ...
 // └── ui
 
-// matrixStack (rapid.js)
 const stack = rapid.matrixStack;
-// root
+// 1.root
 stack.save();
     stack.translate(0, 0);
-    // world
+    // 2.world
     stack.save();
-    // player
-    rapid.drawSprite(player);
-    stack.save(); // enemies
-        for (let i = 0; i < 2; i++) {
-            // enemy
-            stack.translate(x, y);
-            rapid.drawSprite(enemies[i]);
-        }
-    stack.restore();
-stack.restore();
+        rapid.drawSprite(player); // player
+        // 3.enemies
+        stack.save();
+            for (let i = 0; i < 2; i++) {
+                stack.translate(x, y);
+                rapid.drawSprite(enemies[i]); // enemy
+            }
+        stack.restore(); // 3.enemies
+    stack.restore(); // 2.world
+stack.restore(); // 1.root
 // ui
 rapid.drawSprite(ui);
 ```
