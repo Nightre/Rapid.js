@@ -20,7 +20,9 @@
 
 ## What is Rapid?
 
-Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight at just **69 kB** (**~20 kB gzipped**) It handles the rendering layer while leaving your game architecture, update loop, and state management fully in your hands.
+Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight just **69 kB** (**~20 kB gzipped**) and handles only the rendering layer, leaving your game architecture entirely in your hands.
+
+If you don't want your renderer to dictate how your game is organized, Rapid.js is for you!
 
 ## Highlights
 
@@ -31,7 +33,7 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightwe
   Add sprite and geometry effects through shader hooks while still using Rapid's normal renderer, transforms, textures, and draw APIs.
 
 - **Flexible transforms**  
-  Fast, flexible, matrix-powered transforms for motion and hierarchies. Retain the matrix tree after traversal; local changes update only affected subtrees. No rebuild required.
+  Fast, flexible, matrix-powered transforms for motion and hierarchies. **Retain the matrix tree after traversal**; local changes update only affected subtrees. No rebuild required.
 
 - **A complete 2D toolkit**  
   Draw sprites, lines, masks, particles, render textures, text, and custom geometry from one compact WebGL renderer.
@@ -59,9 +61,10 @@ rapid.drawSprite({
 });
 rapid.flush();
 ```
+
 ## Render a scene
 
-Rapid.js retains every matrix created in the MatrixStack, even after it has been popped, so you can use it for rendering or modify it later. For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
+Expressing complex game hierarchies doesn't require `DisplayObject` trees. Rapid's `MatrixStack` brings the familiar, intuitive `save()` and `restore()` flow from Canvas 2D into high-performance WebGL, letting you compose parent-child relationships with zero object allocation. For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 
 ```ts
 // root
@@ -92,6 +95,47 @@ stack.restore(); // 1.root
 // ui
 rapid.drawSprite(ui);
 ```
+
+## Reuse and Update Matrix Subtrees
+
+`rapid.matrixStack` does not sacrifice the flexibility of a retained scene graph. Use `customMatrix` to render with any matrix in the hierarchy(even after its stack scope has been popped)
+
+When you modify a node's local matrix, call `updateMatrixSubtree()` to automatically recalculate that node and all affected descendant world matrices, without rebuilding the entire matrix hierarchy.
+
+```ts
+rapid.clear();
+
+const stack = rapid.matrixStack;
+const matrix = rapid.matrix;
+
+// Build a transform hierarchy.
+const world = stack.save();
+stack.translate(200, 200);
+
+const enemyNode = stack.save();
+stack.translate(80, 0);
+
+stack.restore(); // enemyNode
+stack.restore(); // world
+
+// Both nodes have been popped, but their matrices remain available.
+// Move the world node later in the same frame.
+matrix.identity(world.local);
+matrix.translate(world.local, 100, 100);
+
+// Recalculate only `world` and its descendants.
+stack.updateMatrixSubtree(world);
+
+// Render using the stored matrix of the popped child node.
+rapid.drawSprite({
+  texture: enemy,
+  customMatrix: enemyNode.world,
+});
+
+rapid.flush();
+```
+
+
 Next step: <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
 
 ## Benchmark
