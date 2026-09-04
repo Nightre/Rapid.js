@@ -206,7 +206,7 @@ export class Rapid {
         this.dpr = window.devicePixelRatio || 1;
         this.antialias = options.antialias ?? false;
         this.textureFilter = options.textureFilter ?? TextureFilterMode.NEAREST;
-        this.premultipliedAlpha = options.premultipliedAlpha ?? false;
+        this.premultipliedAlpha = options.premultipliedAlpha ?? true;
         this.roundPixels = options.roundPixels ?? false;
         this.scaleMode = options.scaleMode ?? CanvasScaleMode.CanvasItem
 
