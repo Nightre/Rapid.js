@@ -168,20 +168,19 @@ export class GLShader {
             }
         }
 
-        // uniforms: "uniform <type> <name>" or "uniform <type> <name>[N]"
-        const uniformMatches = source.match(/uniform\s+\w+\s+\w+(?:\[\d+\])?/g);
-        if (uniformMatches) {
-            for (const match of uniformMatches) {
-                const parts = match.split(/\s+/);
-                const glslType = parts[1] as GlslType;
-                // strip array suffix: uTextures[4] → uTextures
-                const name = parts[2].replace(/\[\d+\]$/, "");
-                const loc = gl.getUniformLocation(this.program, name);
-                if (loc !== null) {
-                    this.uniformLoc[name] = loc;
-                    this.uniformType[name] = glslType;
-                    this.uniformIsArray[name] = /\[\d+\]$/.test(parts[2]);
-                }
+        // uniforms: "uniform [precision] <type> <name>" with an optional array suffix
+        const uniformMatches = source.matchAll(
+            /uniform\s+(?:(?:lowp|mediump|highp)\s+)?(\w+)\s+(\w+)(\s*\[\s*\d+\s*\])?/g
+        );
+
+        for (const match of uniformMatches) {
+            const glslType = match[1] as GlslType;
+            const name = match[2];
+            const loc = gl.getUniformLocation(this.program, name);
+            if (loc !== null) {
+                this.uniformLoc[name] = loc;
+                this.uniformType[name] = glslType;
+                this.uniformIsArray[name] = match[3] !== undefined;
             }
         }
     }
