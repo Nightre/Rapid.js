@@ -278,11 +278,11 @@ class Texture {
     public glTexture: WebGLTexture | null = null;
 
     get width(): number {
-        return (this.isRotated ? this.rawHeight : this.rawWidth) * this.scale;
+        return this.isRotated ? this.rawHeight : this.rawWidth;
     }
 
     get height(): number {
-        return (this.isRotated ? this.rawWidth : this.rawHeight) * this.scale;
+        return this.isRotated ? this.rawWidth : this.rawHeight;
     }
 
     // Stored pixel-space region (before UV conversion), used by getSubTexture()
