@@ -134,7 +134,8 @@ rapid.drawSprite({
 
 rapid.flush();
 ```
-With this flexible matrix stack, you can effortlessly build your own architecture, or even mix different architectures. like ECS, Object Trees, Component-Based, Data-Driven pipelines, and more.
+
+With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. you can use ECS, scene graphs, components, or any hybrid approach you prefer.
 
 For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 
