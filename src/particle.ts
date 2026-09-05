@@ -224,6 +224,7 @@ export class ParticleEmitter {
     scaleY = new DynamicArrayBuffer(ArrayType.Float32)
     rotation = new DynamicArrayBuffer(ArrayType.Float32)
     color = new DynamicArrayBuffer(ArrayType.Uint32)
+    private remainingLife = new DynamicArrayBuffer(ArrayType.Float32)
 
     animations = {
         speed: new ParticleAttributeStore(),
@@ -255,6 +256,7 @@ export class ParticleEmitter {
             this.scaleY,
             this.rotation,
             this.color,
+            this.remainingLife,
             ...Object.values(this.animations).flatMap(v => v.getArrayBuffer())
         ]
     }
@@ -316,6 +318,7 @@ export class ParticleEmitter {
 
     createParticle() {
         const lifeTime = Random.scalarOrRange(this.options.life, 1)
+        this.remainingLife.push(lifeTime)
         let spawnX = 0
         let spawnY = 0
 
@@ -406,6 +409,12 @@ export class ParticleEmitter {
 
         Object.values(ani).forEach(a => a.update(deltaTime))
         for (let index = 0; index < this.count; index++) {
+            this.remainingLife.typedArray[index] -= deltaTime
+            if (this.remainingLife.typedArray[index] <= 0) {
+                removeIndex.push(index)
+                continue
+            }
+
             const rotation = ani.rotation.get(index);
             const scale = ani.scale.get(index);
             const speed = ani.speed.get(index);
