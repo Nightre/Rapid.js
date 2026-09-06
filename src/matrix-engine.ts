@@ -503,39 +503,73 @@ export class MatrixStack {
             this.stepWorldM.push(this.curWorldM)
             this.stepAction.push(0);
 
-            this.step ++;
+            this.step++;
         }
     }
-
+    private getStep(step: number | { step: number }) {
+        return (typeof step == "number" ? step : step.step)
+    }
     /**
      * Evaluates and updates matrices from the given step. Used primarily for deferred transformation.
      * @param step - The initial step to update matrices from.
      */
     updateMatrixSubtree(step: number | { step: number }) {
-        const currentIndex = (typeof step == "number" ? step : step.step)
+        const startIdx = this.getStep(step)
 
-        let depth = 0
-        let index = currentIndex
-        while (index < this.step) {
-            const action = this.stepAction.get(index)
-
-            if (action === 1) { // save 
+        this.walkSubtree(startIdx, (index, action) => {
+            if (action === 1) {
                 const worldMatrix = this.stepWorldM.get(index)
                 const localMatrix = worldMatrix - 1
                 const parentMatrix = this.stepParentM.get(index)
-
                 this.matrix.multiplyOut(worldMatrix, parentMatrix, localMatrix)
-                depth++
-            } else { // restore
-                depth--
-                if (depth === 0) {
-                    // 作用域结束
-                    break
-                }
             }
+        })
+    }
+
+    private walkSubtree(
+        startIndex: number,
+        callback: (index: number, action: number, depth: number) => boolean | void
+    ): void {
+        let depth = 0
+        let index = startIndex
+
+        while (index < this.step) {
+            const action = this.stepAction.get(index)
+
+            if (action === 1) depth++
+            else depth--
+
+            // 回调在更新深度后调用，这样回调就能知道当前节点的相对深度
+            if (callback(index, action, depth) === false) return
+
+            // 遇到关闭起始节点的 restore，子树结束，直接返回
+            if (action === 0 && depth === 0) return
 
             index++
         }
+    }
+    getParent(step: number | { step: number }) {
+        const currentIndex = this.getStep(step)
+        return this.stepParentM.get(currentIndex)
+    }
+
+    getChildren(step: number | { step: number }): number[] {
+        const startIdx = this.getStep(step)
+        const children: number[] = []
+        let isFirst = true  // 跳过起始节点自身
+
+        this.walkSubtree(startIdx, (index, action, depth) => {
+            if (isFirst) {
+                isFirst = false
+                return
+            }
+            // 相对深度为 2 的 save，正是直接子节点
+            if (action === 1 && depth === 2) {
+                children.push(index)
+            }
+        })
+
+        return children
     }
 
     /**
