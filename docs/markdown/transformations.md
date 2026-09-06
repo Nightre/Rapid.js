@@ -205,9 +205,9 @@ It is commonly used together with `MatrixStore` and `updateMatrixSubtree`.
 import { Vec2 } from "rapid-render";
 
 let position = new Vec2(160, 120);
-const velocity = new Vec2(1, 0).mul(200);
+const velocity = new Vec2(1, 0).multiply(200);
 
-position = position.add(velocity.mul(deltaTime));
+position = position.add(velocity.multiply(deltaTime));
 ```
 
 Most `Vec2` methods return a new `Vec2` instance without mutating the original object. In-place modification methods include `set`, `to`, `normalize`, etc. See [Vec2 API](api/classes/Vec2.html) for detailed methods.

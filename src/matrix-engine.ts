@@ -446,9 +446,6 @@ export class MatrixStack {
     /** Records the parent world matrix for each step (used by updateMatrixSubtree). */
     stepParentM = new DynamicArrayBuffer(ArrayType.Uint32)
 
-    /** Buffer used during hierarchy traversal updates. */
-    parentStack = new DynamicArrayBuffer(ArrayType.Uint32)
-
     /** The index of the current local matrix in the matrix store. */
     curLocalM = -1
     /** The index of the current world matrix in the matrix store. */
@@ -548,6 +545,7 @@ export class MatrixStack {
             index++
         }
     }
+
     getParent(step: number | { step: number }) {
         const currentIndex = this.getStep(step)
         return this.stepParentM.get(currentIndex)
@@ -636,10 +634,10 @@ export class MatrixStack {
      */
     reset(): void {
         this.matrix.reset();
-        this.stack.reset();
-        this.stepAction.reset();
-        this.stepWorldM.reset();
-        this.stepParentM.reset();
+        this.stack.clear();
+        this.stepAction.clear();
+        this.stepWorldM.clear();
+        this.stepParentM.clear();
         this.step = 0;
 
         this.curLocalM = this.matrix.alloc(); // localM

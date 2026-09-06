@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { MatrixStack } from "../dist/rapid-render.js";
+import { MatrixStack } from "../test-dist/rapid-render-internal.js";
 
 const EPSILON = 1e-5;
 

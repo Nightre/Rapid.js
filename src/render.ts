@@ -259,10 +259,6 @@ export class Rapid {
         this.textureFilter = filter;
     }
 
-    setAntialias(antialias: boolean) {
-        this.antialias = antialias;
-    }
-
     getColorUint32(color?: Color): number {
         return getColorUint32(this.premultipliedAlpha, color)
     }
@@ -905,7 +901,7 @@ export class Rapid {
     }
 
     cssToDevicePixel(p: Vec2) {
-        return p.mul(this.dpr)
+        return p.multiply(this.dpr)
     }
 
     cssToLogic(p: Vec2) {

@@ -7,7 +7,7 @@ import {
     MatrixStore,
     Rapid,
     SpriteRegion,
-} from "../dist/rapid-render.js";
+} from "../test-dist/rapid-render-internal.js";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {

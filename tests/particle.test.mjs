@@ -6,7 +6,7 @@ import {
     DynamicArrayBuffer,
     ParticleEmitter,
     ParticleRegion,
-} from "../dist/rapid-render.js";
+} from "../test-dist/rapid-render-internal.js";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {

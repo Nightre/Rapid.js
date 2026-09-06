@@ -206,9 +206,9 @@ rapid.drawSprite({
 import { Vec2 } from "rapid-render";
 
 let position = new Vec2(160, 120);
-const velocity = new Vec2(1, 0).mul(200);
+const velocity = new Vec2(1, 0).multiply(200);
 
-position = position.add(velocity.mul(deltaTime));
+position = position.add(velocity.multiply(deltaTime));
 ```
 
 大部分 `Vec2` 方法会返回一个新的 `Vec2`，不会修改原对象。需要原地修改时可以使用 `set`、`to`、`normalize` 等方法。详细方法见 [Vec2 API](api/classes/Vec2.html)。

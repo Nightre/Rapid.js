@@ -11,6 +11,7 @@ node_modules
 dist
 pages-dist
 dist-ssr
+test-dist
 *.local
 
 # Editor directories and files
