@@ -288,8 +288,6 @@ class Texture {
     // Stored pixel-space region (before UV conversion), used by getSubTexture()
     protected _px: number = 0;
     protected _py: number = 0;
-    protected _pw: number = 0;
-    protected _ph: number = 0;
 
     constructor(base?: BaseTexture) {
         if (base) this.setBase(base);
@@ -327,7 +325,7 @@ class Texture {
         if (!this.base) return this;
 
         // Store pixel-space region for use by withPadding()
-        this._px = x; this._py = y; this._pw = w; this._ph = h;
+        this._px = x; this._py = y;
         this.isAtlas = x !== 0 || y !== 0 || w !== this.base.width || h !== this.base.height;
 
         this.uvX = x / this.base.width;
@@ -381,7 +379,6 @@ class Texture {
         t.isAtlas = this.isAtlas;
         // Copy stored pixel region so getSubTexture() works on clones too
         t._px = this._px; t._py = this._py;
-        t._pw = this._pw; t._ph = this._ph;
         return t;
     }
 

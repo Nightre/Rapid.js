@@ -5,7 +5,7 @@ import {
     BaseTexture,
     Texture,
     TextureManager,
-} from "../dist/rapid-render.js";
+} from "../test-dist/rapid-render-internal.js";
 
 const createBase = (width = 64, height = 32) => {
     const glTexture = {};

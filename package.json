@@ -21,9 +21,9 @@
     "typescript"
   ],
   "files": [
-    "dist",
-    "index.d.ts"
+    "dist"
   ],
+  "sideEffects": false,
   "license": "MIT",
   "main": "./dist/rapid-render.umd.cjs",
   "module": "./dist/rapid-render.js",
@@ -36,7 +36,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "npm run build && node --test",
+    "build:test-internal": "vite build --config vite.test.config.ts",
+    "test": "npm run build && npm run build:test-internal && node --test",
     "build:docs": "vite build --config vite.docs.config.ts",
     "docs": "typedoc",
     "example:dev": "vite --config example/vite.config.ts",

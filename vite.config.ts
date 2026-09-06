@@ -3,12 +3,16 @@ import { fileURLToPath } from 'node:url'
 import dts from 'vite-plugin-dts';
 import { benchmarkRendererSources } from './vite.benchmark-renderers'
 
-function removeIndentPlugin() {
+function compactLibraryPlugin() {
   return {
-    name: 'remove-four-spaces',
+    name: 'compact-library-output',
     renderChunk(code: string) {
       return {
-        code: code.replace(/^[ ]{4,}/gm, ''),
+        // Vite deliberately preserves whitespace for ES library output. Remove
+        // emitted API docs while keeping Rollup's /* @__PURE__ */ annotations.
+        code: code
+          .replace(/\/\*\*[\s\S]*?\*\//g, '')
+          .replace(/^[ ]{4,}/gm, ''),
         map: null
       }
     }
@@ -16,6 +20,7 @@ function removeIndentPlugin() {
 }
 
 export default defineConfig({
+  publicDir: false,
   resolve: {
     alias: {
       // `npm run dev` serves the docs from the repo root, and the demo sources
@@ -38,6 +43,6 @@ export default defineConfig({
       requestPrefix: '/docs/benchmark/renderers/',
     }),
     dts(),
-    removeIndentPlugin()
+    compactLibraryPlugin()
   ],
 })

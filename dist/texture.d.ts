@@ -126,8 +126,6 @@ declare class Texture {
     get height(): number;
     protected _px: number;
     protected _py: number;
-    protected _pw: number;
-    protected _ph: number;
     constructor(base?: BaseTexture);
     /**
      * Sets the base texture and increments its reference count.

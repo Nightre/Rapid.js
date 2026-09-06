@@ -241,13 +241,6 @@ export class DynamicArrayBuffer {
         return this.usedElemNum
     }
 
-    /**
-     * Resets the buffer's used element count, effectively emptying it.
-     * Same behavior as `clear`.
-     */
-    reset(): void {
-        this.usedElemNum = 0;
-    }
 }
 
 /**

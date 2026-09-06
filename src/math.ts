@@ -33,19 +33,11 @@ export class Vec2 {
         return new Vec2(this.x - v.x, this.y - v.y);
     }
 
-    sub(v: Vec2): Vec2 {
-        return new Vec2(this.x - v.x, this.y - v.y);
-    }
-
     multiply(f: number | Vec2): Vec2 {
         if (f instanceof Vec2) {
             return new Vec2(this.x * f.x, this.y * f.y);
         }
         return new Vec2(this.x * f, this.y * f);
-    }
-
-    mul(f: number | Vec2): Vec2 {
-        return this.multiply(f);
     }
 
     divide(f: number | Vec2): Vec2 {
@@ -76,10 +68,6 @@ export class Vec2 {
     to(vec: Vec2): void {
         this.x = vec.x;
         this.y = vec.y;
-    }
-
-    copy(): Vec2 {
-        return new Vec2(this.x, this.y);
     }
 
     equals(vec: Vec2): boolean {
