@@ -44,6 +44,12 @@ If you don't want your renderer to dictate how your game is organized, Rapid.js 
 npm install rapid-render
 ```
 
+Or via the unpkg CDN
+
+```html
+<script src="https://unpkg.com/rapid-render/dist/rapid-render.umd.cjs"></script>
+```
+
 ## Quick Start
 
 ```ts
