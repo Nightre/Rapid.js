@@ -446,6 +446,9 @@ export class MatrixStack {
     /** Records the parent world matrix for each step (used by updateMatrixSubtree). */
     stepParentM = new DynamicArrayBuffer(ArrayType.Uint32)
 
+    stepClose = new DynamicArrayBuffer(ArrayType.Uint32)
+    stepStack = new DynamicArrayBuffer(ArrayType.Uint32)
+
     /** The index of the current local matrix in the matrix store. */
     curLocalM = -1
     /** The index of the current world matrix in the matrix store. */
@@ -477,7 +480,8 @@ export class MatrixStack {
         this.stepWorldM.push(this.curWorldM)
         this.stepParentM.push(parentWorldM)
         this.stepAction.push(1)
-
+        this.stepClose.push(0)
+        this.stepStack.push(this.step)
         this.matrix.copy(this.curWorldM, parentWorldM);
 
         return { world: this.curWorldM, local: this.curLocalM, step: this.step++ }
@@ -488,7 +492,7 @@ export class MatrixStack {
      * Equivalent to context.restore().
      */
     restore() {
-        if (this.stack.length == 0) {
+        if (this.stack.length == 0 || this.stepStack.length == 0) {
             return;
         } else {
 
@@ -499,6 +503,8 @@ export class MatrixStack {
             this.stepParentM.push(this.stack.get(this.stack.length - 1)) // get stack top
             this.stepWorldM.push(this.curWorldM)
             this.stepAction.push(0);
+            this.stepClose.push(0); // placeholder
+            this.stepClose.typedArray[this.stepStack.pop()] = this.step;
 
             this.step++;
         }
@@ -506,43 +512,40 @@ export class MatrixStack {
     private getStep(step: number | { step: number }) {
         return (typeof step == "number" ? step : step.step)
     }
-    /**
-     * Evaluates and updates matrices from the given step. Used primarily for deferred transformation.
-     * @param step - The initial step to update matrices from.
-     */
-    updateMatrixSubtree(step: number | { step: number }) {
-        const startIdx = this.getStep(step)
-
-        this.walkSubtree(startIdx, (index, action) => {
-            if (action === 1) {
-                const worldMatrix = this.stepWorldM.get(index)
-                const localMatrix = worldMatrix - 1
-                const parentMatrix = this.stepParentM.get(index)
-                this.matrix.multiplyOut(worldMatrix, parentMatrix, localMatrix)
-            }
-        })
-    }
 
     private walkSubtree(
         startIndex: number,
-        callback: (index: number, action: number, depth: number) => boolean | void
+        callback: (index: number, action: number, depth: number) => boolean | void,
+        maxDepth: number = Infinity
     ): void {
-        let depth = 0
-        let index = startIndex
+        let depth = 0;
+        let index = startIndex;
 
         while (index < this.step) {
-            const action = this.stepAction.get(index)
+            const action = this.stepAction.get(index);
 
-            if (action === 1) depth++
-            else depth--
+            if (action === 1) {
+                depth++;
+                // 如果当前深度超过了 maxDepth，则跳过这棵子树
+                if (depth > maxDepth) {
+                    const endIndex = this.stepClose.get(index);
+                    if (endIndex > index) {
+                        index = endIndex + 1; // 跳到 restore 之后
+                        depth--; // 因为跳过了这个 save 对应的 restore，深度应该减回
+                        continue;
+                    }
+                }
+            } else {
+                depth--;
+            }
 
-            // 回调在更新深度后调用，这样回调就能知道当前节点的相对深度
-            if (callback(index, action, depth) === false) return
+            // 回调在更新深度后调用
+            if (callback(index, action, depth) === false) return;
 
-            // 遇到关闭起始节点的 restore，子树结束，直接返回
-            if (action === 0 && depth === 0) return
+            // 遇到关闭起始节点的 restore，子树结束
+            if (action === 0 && depth === 0) return;
 
-            index++
+            index++;
         }
     }
 
@@ -552,22 +555,33 @@ export class MatrixStack {
     }
 
     getChildren(step: number | { step: number }): number[] {
-        const startIdx = this.getStep(step)
-        const children: number[] = []
-        let isFirst = true  // 跳过起始节点自身
+        const startIdx = this.getStep(step);
+        const children: number[] = [];
+        let isFirst = true;
 
         this.walkSubtree(startIdx, (index, action, depth) => {
             if (isFirst) {
-                isFirst = false
-                return
+                isFirst = false;
+                return;
             }
-            // 相对深度为 2 的 save，正是直接子节点
             if (action === 1 && depth === 2) {
-                children.push(index)
+                children.push(index);
             }
-        })
+        }, 2); // 只遍历到深度 2
 
-        return children
+        return children;
+    }
+
+    updateMatrixSubtree(step: number | { step: number }) {
+        const startIdx = this.getStep(step);
+        this.walkSubtree(startIdx, (index, action) => {
+            if (action === 1) {
+                const worldMatrix = this.stepWorldM.get(index);
+                const localMatrix = worldMatrix - 1;
+                const parentMatrix = this.stepParentM.get(index);
+                this.matrix.multiplyOut(worldMatrix, parentMatrix, localMatrix);
+            }
+        }); // maxDepth 默认 Infinity，遍历全部后代
     }
 
     /**
@@ -638,6 +652,8 @@ export class MatrixStack {
         this.stepAction.clear();
         this.stepWorldM.clear();
         this.stepParentM.clear();
+        this.stepClose.clear();
+        this.stepStack.clear();
         this.step = 0;
 
         this.curLocalM = this.matrix.alloc(); // localM
