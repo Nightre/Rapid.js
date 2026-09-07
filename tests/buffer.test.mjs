@@ -5,7 +5,7 @@ import {
     ArrayType,
     DynamicArrayBuffer,
     WebglBufferArray,
-} from "../test-dist/rapid-render-internal.js";
+} from "../dist/rapid-render.js";
 
 test("DynamicArrayBuffer automatically grows on push and preserves its data", () => {
     const buffer = new DynamicArrayBuffer(ArrayType.Uint32);

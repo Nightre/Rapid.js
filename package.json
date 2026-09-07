@@ -37,7 +37,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:test-internal": "vite build --config vite.test.config.ts",
-    "test": "npm run build && npm run build:test-internal && node --test",
+    "test": "npm run build && node --test",
     "build:docs": "vite build --config vite.docs.config.ts",
     "docs": "typedoc",
     "example:dev": "vite --config example/vite.config.ts",
