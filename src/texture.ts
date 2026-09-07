@@ -742,10 +742,8 @@ class TextTexture extends Texture {
 
         const textMetrics = ctx.measureText(lines[0] || 'M');
 
-        const lineHeight = (
-            (textMetrics.fontBoundingBoxAscent || fontSize) +
-            (textMetrics.fontBoundingBoxDescent || fontSize * 0.2)
-        )
+        const fontBoundingBoxDescent = textMetrics.fontBoundingBoxDescent
+        const lineHeight = fontBoundingBoxDescent
 
         for (const line of lines) {
             const metrics = ctx.measureText(line);

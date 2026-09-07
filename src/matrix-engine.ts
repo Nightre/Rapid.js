@@ -509,6 +509,13 @@ export class MatrixStack {
             this.step++;
         }
     }
+
+    restoreAll() {
+        while (this.stack.length > 0 && this.stepStack.length > 0) {
+            this.restore();
+        }
+    }
+
     private getStep(step: number | { step: number }) {
         return (typeof step == "number" ? step : step.step)
     }
@@ -555,19 +562,22 @@ export class MatrixStack {
     }
 
     getChildren(step: number | { step: number }): number[] {
-        const startIdx = this.getStep(step);
+        const root = this.getStep(step);
+        const rootClose = this.stepClose.get(root);
         const children: number[] = [];
-        let isFirst = true;
 
-        this.walkSubtree(startIdx, (index, action, depth) => {
-            if (isFirst) {
-                isFirst = false;
-                return;
-            }
-            if (action === 1 && depth === 2) {
+        let index = root + 1;
+
+        while (index < rootClose) {
+            if (this.stepAction.get(index) === 1) {
                 children.push(index);
+
+                // 整棵 child subtree 都不需要检查
+                index = this.stepClose.get(index) + 1;
+            } else {
+                index++;
             }
-        }, 2); // 只遍历到深度 2
+        }
 
         return children;
     }
