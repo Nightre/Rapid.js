@@ -104,7 +104,7 @@ rapid.drawSprite(ui);
 
 ## Reuse and Update Matrix Subtrees
 
-`rapid.matrixStack` does not sacrifice the flexibility of a retained scene graph. Use `customMatrix` to render with any matrix in the hierarchy(even after its stack scope has been popped)
+Use `customMatrix` to render with any matrix in the hierarchy(even after its stack scope has been popped)
 
 When you modify a node's local matrix, call `updateMatrixSubtree()` to automatically recalculate that node and all affected descendant world matrices, without rebuilding the entire matrix hierarchy.
 
