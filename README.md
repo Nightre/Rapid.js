@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/npm/v/rapid-render?logo=npm&label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/badge/gzipped-~20.8%20kB-5C7CFA" alt="gzipped size"></a>
+  <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/badge/gzipped-20.8%20kB-5C7CFA" alt="gzipped size"></a>
   <a href="https://github.com/Nightre/Rapid.js/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/rapid-render" alt="license"></a>
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict">
 </p>
@@ -27,11 +27,17 @@
 
 ## What is Rapid?
 
-Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightweight just **69 kB** (**~20 kB gzipped**) and handles only the rendering layer, leaving your game architecture entirely in your hands.
+Rapid is a focused WebGL 2D rendering engine for games and visual tools.
 
 If you don't want your renderer to dictate how your game is organized, Rapid.js is for you!
 
+## Full 2D Toolkit
+
+Shaders, lines, masks, particles, render textures, sprites, custom geometry, and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
+
 ## Architecture Recipes
+
+Rapid.js handles only the rendering layer, leaving your game architecture entirely in your hands.
 
 Rapid.js is frame-stateless, making it easy to build games with different architectures. Below are minimal, working implementations of several popular architectures built on Rapid.js, each in **around 100 lines** of JavaScript.
 
@@ -56,7 +62,7 @@ Or via the unpkg CDN
 ## Quick Start
 
 ```ts
-import { Rapid, Color } from "rapid-render";
+import { Rapid } from "rapid-render";
 
 const canvas = document.querySelector("canvas")!;
 const rapid = new Rapid({canvas});
@@ -73,7 +79,7 @@ rapid.flush();
 
 ## Render a scene
 
-`rapid.matrixStack` brings the familiar, intuitive `save()` and `restore()` flow from Canvas 2D into high-performance WebGL, letting you compose parent-child relationships with zero object allocation.
+`rapid.matrixStack` brings the familiar, intuitive `save()` and `restore()` flow from Canvas 2D into high-performance WebGL. It reuses typed-array-backed matrix storage and avoids per-transform matrix allocation.
 
 ```ts
 // root
@@ -95,8 +101,10 @@ stack.save();
         // 3.enemies
         stack.save();
             for (let i = 0; i < 2; i++) {
-                stack.translate(x, y);
-                rapid.drawSprite(enemies[i]); // enemy
+                stack.save();
+                    stack.translate(enemyX[i], enemyY[i]);
+                    rapid.drawSprite(enemies[i]); // enemy
+                stack.restore();
             }
         stack.restore(); // 3.enemies
     stack.restore(); // 2.world
@@ -107,7 +115,7 @@ rapid.drawSprite(ui);
 
 ## Reuse and Update Matrix Subtrees
 
-Use `customMatrix` to render with any matrix in the hierarchy(even after its stack scope has been popped)
+Use `customMatrix` to render with any matrix in the hierarchy (even after its stack scope has been popped).
 
 When you modify a node's local matrix, call `updateMatrixSubtree()` to automatically recalculate that node and all affected descendant world matrices, without rebuilding the entire matrix hierarchy.
 
@@ -144,7 +152,7 @@ rapid.drawSprite({
 rapid.flush();
 ```
 
-With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. you can use ECS, scene graphs, components, or any hybrid approach you prefer.
+With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. You can use ECS, scene graphs, components, or any hybrid approach you prefer.
 
 For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 
