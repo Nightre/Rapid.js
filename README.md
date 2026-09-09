@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://nightre.github.io/Rapid.js/">Website & Playground</a>
+  <a href="https://nightre.github.io/Rapid.js/">Website & Examples</a>
   |
   <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
   |
