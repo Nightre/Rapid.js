@@ -24,19 +24,15 @@ Rapid is a focused WebGL 2D rendering engine for games and visual tools. lightwe
 
 If you don't want your renderer to dictate how your game is organized, Rapid.js is for you!
 
-## Highlights
+## Architecture Recipes
 
-- **Rendering speed**  
-  An efficient batching system significantly reduces draw calls, allowing Rapid.js to maintain smooth, stable performance even when rendering large numbers of sprites at once.
+Rapid.js is a frame-stateless rendering engine. Its flexible `MatrixStack` makes it easy to build virtually any game architecture on top. Below are minimal, working implementations of several popular architectures—each in **fewer than 100 lines** of JavaScript.
 
-- **Powerful custom shaders**  
-  Add sprite and geometry effects through shader hooks while still using Rapid's normal renderer, transforms, textures, and draw APIs.
+- **Architecture recipes**  
+  [Game Object](recipes/game-object.js) · [Component](recipes/component.js) · [Display List](recipes/display-list.js) · [ECS Integration](recipes/ecs-integration.js) · [Immediate Mode](recipes/immediate-mode.js)
 
-- **Flexible transforms**  
-  Fast, flexible, matrix-powered transforms for motion and hierarchies. **Retain the matrix tree after traversal**; local changes update only affected subtrees. No rebuild required.
-
-- **A complete 2D toolkit**  
-  Draw sprites, lines, masks, particles, render textures, text, and custom geometry from one compact WebGL renderer.
+- **Game-engine-style recipes**  
+  [Kaplay-like](recipes/game-engine/kaplay-like.js) · [Pixi-like](recipes/game-engine/pixi-like.js) · [Phaser-like](recipes/game-engine/phaser-like.js) · [Excalibur-like](recipes/game-engine/excalibur-like.js) · [LittleJS-like](recipes/game-engine/littlejs-like.js) · [p5-like](recipes/game-engine/p5-like.js)
 
 ## Install
 

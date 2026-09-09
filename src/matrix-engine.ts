@@ -425,6 +425,12 @@ export class MatrixStore {
     }
 }
 
+export interface MatrixSaveState {
+    world: number,
+    local: number,
+    step: number
+}
+
 /**
  * A highly performant MatrixStack useful for hierarchal scene graphs.
  * Handles both local and world transformations automatically.
@@ -469,7 +475,7 @@ export class MatrixStack {
      * Equivalent to context.save().
      * @returns The current step counter before saving.
      */
-    save() {
+    save(): MatrixSaveState {
         this.stack.push(this.curWorldM)
         const parentWorldM = this.curWorldM;
 
