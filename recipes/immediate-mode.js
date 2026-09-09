@@ -19,15 +19,21 @@ export class ImmediateScene {
         try {
             stack.applyTransform(transform, width, height)
             draw(this, matrix)
-        } finally { stack.restore() }
+        } finally {
+            stack.restore()
+        }
     }
 
     sprite(options) { this.rapid.drawSprite(options) }
 
     render(draw) {
         this.rapid.clear()
-        try { draw(this) }
-        finally { this.rapid.matrixStack.restoreAll() }
+        try {
+            draw(this)
+        }
+        finally {
+            this.rapid.matrixStack.restoreAll()
+        }
         this.rapid.flush()
     }
 }

@@ -17,11 +17,32 @@ export class P5Like {
         this.rapid = rapid
         this.scene = new ImmediateScene(rapid)
     }
-    draw(callback) { this.scene.render(() => callback(this)) }
-    push() { return this.rapid.matrixStack.save() }
-    pop() { this.rapid.matrixStack.restore() }
-    translate(x, y) { this.rapid.matrixStack.translate(x, y) }
-    rotate(angle) { this.rapid.matrixStack.rotate(angle) }
-    scale(x, y = x) { this.rapid.matrixStack.scale(x, y) }
-    image(texture, x = 0, y = 0) { this.rapid.drawSprite({ texture, x, y }) }
+    
+    draw(callback) {
+        this.scene.render(() => callback(this))
+    }
+
+    push() {
+        return this.rapid.matrixStack.save()
+    }
+
+    pop() {
+        this.rapid.matrixStack.restore()
+    }
+
+    translate(x, y) {
+        this.rapid.matrixStack.translate(x, y)
+    }
+
+    rotate(angle) {
+        this.rapid.matrixStack.rotate(angle)
+    }
+
+    scale(x, y = x) {
+        this.rapid.matrixStack.scale(x, y)
+    }
+
+    image(texture, x = 0, y = 0) {
+        this.rapid.drawSprite({ texture, x, y })
+    }
 }

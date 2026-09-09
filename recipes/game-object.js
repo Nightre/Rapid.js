@@ -42,7 +42,9 @@ export class ObjectNode {
 
     updateTree(dt) {
         this.update(dt)
-        for (const child of this.children) child.updateTree(dt)
+        for (const child of this.children) {
+            child.updateTree(dt)
+        }
     }
 
     collect(rapid, list) {
@@ -52,8 +54,12 @@ export class ObjectNode {
         try {
             stack.applyTransform(this, this.size.x, this.size.y)
             list.push(this)
-            for (const child of this.children) child.collect(rapid, list)
-        } finally { stack.restore() }
+            for (const child of this.children) {
+                child.collect(rapid, list)
+            }
+        } finally {
+            stack.restore()
+        }
     }
 }
 
@@ -72,15 +78,26 @@ export class SpriteNode extends ObjectNode {
 export class ObjectTree {
     root = new ObjectNode()
     drawList = []
-    add(object) { return this.root.add(object) }
-    update(dt) { for (const child of this.root.children) child.updateTree(dt) }
+    add(object) {
+        return this.root.add(object)
+    }
+
+    update(dt) {
+        for (const child of this.root.children) {
+            child.updateTree(dt)
+        }
+    }
 
     render(rapid) {
         rapid.clear()
         this.drawList.length = 0
-        for (const child of this.root.children) child.collect(rapid, this.drawList)
+        for (const child of this.root.children) {
+            child.collect(rapid, this.drawList)
+        }
         this.drawList.sort((a, b) => a.zIndex - b.zIndex)
-        for (const object of this.drawList) object.draw(rapid, object.matrix.world)
+        for (const object of this.drawList) {
+            object.draw(rapid, object.matrix.world)
+        }
         rapid.flush()
     }
 }

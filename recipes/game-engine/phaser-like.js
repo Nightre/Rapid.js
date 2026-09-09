@@ -11,8 +11,14 @@ export function demo(rapid, texture) {
 }
 
 const withXY = item => Object.defineProperties(item, {
-    x: { get: () => item.position.x, set: value => item.position.x = value },
-    y: { get: () => item.position.y, set: value => item.position.y = value },
+    x: { 
+        get: () => item.position.x,
+        set: value => item.position.x = value 
+    },
+    y: { 
+        get: () => item.position.y,
+        set: value => item.position.y = value
+    },
 })
 
 /** Minimal Phaser-style Scene facade backed by a display list. */

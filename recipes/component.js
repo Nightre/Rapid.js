@@ -59,13 +59,16 @@ export class Node {
     use(component) {
         component.node = this
         this.components.push(component)
-        if (component.texture && !this.size.x && !this.size.y)
+        if (component.texture && !this.size.x && !this.size.y) {
             this.size = { x: component.texture.rawWidth, y: component.texture.rawHeight }
+        }
         return component
     }
 
     update(dt) {
-        for (const c of this.components) if (c.enabled) c.update(dt)
+        for (const c of this.components) {
+            if (c.enabled) c.update(dt)
+        }
         for (const child of this.children) child.update(dt)
     }
 
@@ -75,25 +78,42 @@ export class Node {
         const matrix = stack.save()
         try {
             stack.applyTransform(this, this.size.x, this.size.y)
-            for (const c of this.components)
-                if (c.enabled && c.draw) list.push({ c, matrix: matrix.world, z: this.zIndex })
-            for (const child of this.children) child.collect(rapid, list)
-        } finally { stack.restore() }
+            for (const c of this.components) {
+                if (c.enabled && c.draw) {
+                    list.push({ c, matrix: matrix.world, z: this.zIndex })
+                }
+            }
+            for (const child of this.children) {
+                child.collect(rapid, list)
+            }
+        } finally {
+            stack.restore()
+        }
     }
 }
 
 export class ComponentScene {
     root = new Node()
     drawList = []
-    add(node) { return this.root.add(node) }
-    update(dt) { this.root.update(dt) }
+    
+    add(node) {
+        return this.root.add(node)
+    }
+
+    update(dt) {
+        this.root.update(dt)
+    }
 
     render(rapid) {
         rapid.clear()
         this.drawList.length = 0
-        for (const child of this.root.children) child.collect(rapid, this.drawList)
+        for (const child of this.root.children) {
+            child.collect(rapid, this.drawList)
+        }
         this.drawList.sort((a, b) => a.z - b.z)
-        for (const item of this.drawList) item.c.draw(rapid, item.matrix)
+        for (const item of this.drawList) {
+            item.c.draw(rapid, item.matrix)
+        }
         rapid.flush()
     }
 }

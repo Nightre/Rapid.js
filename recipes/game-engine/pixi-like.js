@@ -12,30 +12,61 @@ export function demo(rapid, texture) {
 }
 
 class DisplayObject extends ObjectNode {
-    get x() { return this.position.x }
-    set x(value) { this.position.x = value }
-    get y() { return this.position.y }
-    set y(value) { this.position.y = value }
+    get x() {
+        return this.position.x
+    }
+
+    set x(value) {
+        this.position.x = value
+    }
+
+    get y() {
+        return this.position.y
+    }
+
+    set y(value) {
+        this.position.y = value
+    }
+
     addChild(...children) {
-        for (const child of children) this.add(child)
+        for (const child of children) {
+            this.add(child)
+        }
         return children[0]
     }
-    removeChild(child) { return this.remove(child) }
+    
+    removeChild(child) {
+        return this.remove(child)
+    }
 }
 
 export class Container extends DisplayObject { }
 
 export class Sprite extends SpriteNode {
-    get x() { return this.position.x }
-    set x(value) { this.position.x = value }
-    get y() { return this.position.y }
-    set y(value) { this.position.y = value }
+    get x() { 
+        return this.position.x
+    }
+
+    set x(value) {
+        this.position.x = value
+    }
+    get y() {
+        return this.position.y
+    }
+
+    set y(value) {
+        this.position.y = value
+    }
 }
 
 /** Minimal Pixi-style facade over the game-object recipe. */
 export class Application {
     tree = new ObjectTree()
     stage = this.tree.add(new Container())
-    constructor(rapid) { this.rapid = rapid }
-    render() { this.tree.render(this.rapid) }
+    constructor(rapid) {
+        this.rapid = rapid
+    }
+    render() {
+        this.tree.render(this.rapid)
+    }
 }

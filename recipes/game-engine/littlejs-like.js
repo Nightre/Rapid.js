@@ -14,15 +14,21 @@ export class EngineObject extends SpriteNode {
         super(texture)
         this.position = pos
     }
-    addChild(child) { return this.add(child) }
+    addChild(child) {
+        return this.add(child)
+    }
     update(_dt) { }
 }
 
 /** Minimal LittleJS-style EngineObject facade. */
 export class LittleJSLike {
     objects = new ObjectTree()
-    constructor(rapid) { this.rapid = rapid }
-    add(object) { return this.objects.add(object) }
+    constructor(rapid) {
+        this.rapid = rapid
+    }
+    add(object) {
+        return this.objects.add(object)
+    }
     frame(dt) {
         this.objects.update(dt)
         this.objects.render(this.rapid)

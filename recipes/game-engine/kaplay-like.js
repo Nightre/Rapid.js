@@ -42,12 +42,22 @@ export const body = () => node => {
 /** Minimal Kaplay-style facade over the component recipe. */
 export class KaplayLike {
     scene = new ComponentScene()
-    constructor(rapid) { this.rapid = rapid }
-    center() { return { x: this.rapid.width / 2, y: this.rapid.height / 2 } }
+    constructor(rapid) {
+        this.rapid = rapid
+    }
+
+    center() {
+        return {
+            x: this.rapid.width / 2,
+            y: this.rapid.height / 2
+        }
+    }
 
     add(parts) {
         const object = this.scene.add(new Node())
-        for (const install of parts) install(object)
+        for (const install of parts) {
+            install(object)
+        }
         return object
     }
 
