@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://nightre.github.io/Rapid.js/">Website</a>
+  <a href="https://nightre.github.io/Rapid.js/">Website & Playground</a>
   |
   <a href="https://nightre.github.io/Rapid.js/docs.html">Docs</a>
   |
@@ -26,15 +26,13 @@ If you don't want your renderer to dictate how your game is organized, Rapid.js 
 
 ## Architecture Recipes
 
-Rapid.js is a frame-stateless rendering engine. Its flexible `MatrixStack` makes it easy to build virtually any game architecture on top. Below are minimal, working implementations of several popular architectures built on Rapid.js, each in **around 100 lines** of JavaScript.
+Rapid.js is frame-stateless, making it easy to build games with different architectures. Below are minimal, working implementations of several popular architectures built on Rapid.js, each in **around 100 lines** of JavaScript.
 
 - **Architecture recipes**  
   [Game Object](recipes/game-object.js) · [Component](recipes/component.js) · [Display List](recipes/display-list.js) · [ECS Integration](recipes/ecs-integration.js) · [Immediate Mode](recipes/immediate-mode.js)
 
 - **Game-engine-style recipes**  
 [Kaplay-like](recipes/game-engine/kaplay-like.js) · [Pixi-like](recipes/game-engine/pixi-like.js) · [Phaser-like](recipes/game-engine/phaser-like.js) · [Excalibur-like](recipes/game-engine/excalibur-like.js) · [LittleJS-like](recipes/game-engine/littlejs-like.js) · [p5-like](recipes/game-engine/p5-like.js)
-
-You can also mix and match these approaches (such as combining `Game Object` and `Component` patterns), or directly leverage the draw API and `MatrixStack` to design your own custom architecture.
 
 ## Install
 
