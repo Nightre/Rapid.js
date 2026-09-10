@@ -33,7 +33,7 @@ If you don't want your renderer to dictate how your game is organized, Rapid.js 
 
 ## Full 2D Toolkit
 
-Shaders, lines, masks, particles, render textures, sprites, custom geometry, filter and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
+Shaders, lines, masks, particles, render textures, sprites, custom geometry, filters and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
 
 ## Architecture Recipes
 
