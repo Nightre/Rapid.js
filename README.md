@@ -29,7 +29,7 @@
 
 Rapid is a focused WebGL 2D rendering engine for games and visual tools.
 
-If you don't want your renderer to dictate how your game is organized, Rapid.js is for you!
+If you want Pixi-level rendering without letting your renderer dictate how your game is organized, Rapid.js is for you!
 
 ## Full 2D Toolkit
 
