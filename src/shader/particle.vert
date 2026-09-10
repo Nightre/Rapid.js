@@ -32,10 +32,10 @@ void main(void) {
     float c = cos(aRotation);
     float s = sin(aRotation);
 
-    vec2 v = vec2(
+    vec2 position = vec2(
         scaled.x * c - scaled.y * s,
         scaled.x * s + scaled.y * c
     ) + aPosition;
 
-    gl_Position = u_projection * vec4(v, 0.0, 1.0);
+    gl_Position = u_projection * vec4(position, 0.0, 1.0);
 }
