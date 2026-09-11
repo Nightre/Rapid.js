@@ -10,12 +10,14 @@ uniform mat3x2 uLightMatrix[%TEXTURE_NUM%];
 uniform float uLightHeight[%TEXTURE_NUM%];
 uniform float uMetallic;
 uniform float uRoughness;
+uniform vec2 uNormalScale;
 
 void light_fragment(inout vec4 color, in vec2 vRegion) {
     if (color.a < 0.005) return;
 
     vec2 worldPos = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y) * (uLogicalResolution / uResolution);
     vec3 normal = normalize(texture(uNormalMap, vRegion).rgb * 2.0 - 1.0);
+    normal = normalize(normal * vec3(uNormalScale, 1.0));
 
     vec3 totalDiffuse = vec3(0.0);
     vec3 totalSpecular = vec3(0.0);

@@ -46,6 +46,9 @@ export interface ILight {
     color?: Color | Color[],
     lightHeight?: number | number[],
     customShader?: LightShader,
+
+    normalScaleY?: number
+    normalScaleX?: number
 }
 
 export class Light {
@@ -126,7 +129,6 @@ export class Light {
         const colors = toArray(option.color, MAX_LIGHTS)
         const heights = toArray(option.lightHeight, MAX_LIGHTS)
         const lightTexture = toArray(option.lightTexture, MAX_LIGHTS)
-
         shader.setUniforms({
             uResolution: [this.rapid.physicsWidth, this.rapid.physicsHeight],
             uLogicalResolution: [this.rapid.logicWidth, this.rapid.logicHeight],
@@ -143,7 +145,9 @@ export class Light {
             uLightHeight: Float32Array.from(matrices.map((_, i) => heights[i] ?? heights[0] ?? 80)),
             uMetallic: option.metallic ?? 0.8,
             uRoughness: option.roughness ?? 0.15,
+            uNormalScale: [option.normalScaleX ?? 1, option.normalScaleY ?? 1],
         })
+
         return shader
     }
 }

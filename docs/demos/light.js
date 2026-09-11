@@ -53,6 +53,9 @@ export default async function (rapid, { canvas, loop }) {
       color: lights.map(item => item.color),
       metallic: 0.35,
       roughness: 0.25,
+      
+      normalScaleY: 1,
+      normalScaleX: 1,
     });
 
     rapid.drawSprite({
