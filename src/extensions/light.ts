@@ -1,4 +1,5 @@
-import { MaskType, Rapid } from "../render";
+import { MaskType } from "../render";
+import type { Rapid } from "../render";
 import { CustomGlShader, UniformValue } from "../webgl/glshader";
 import FsShaderSource from "../shader/light.frag?raw";
 import VsShaderSource from "../shader/light.vert?raw";

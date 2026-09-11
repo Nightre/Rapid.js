@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
-import {
-    ArrayType,
-    DynamicArrayBuffer,
-    ParticleEmitter,
-    ParticleRegion,
-} from "../dist/rapid-render.js";
+import { ArrayType, DynamicArrayBuffer } from "../src/buffer";
+import { ParticleEmitter } from "../src/extensions/particle";
+import { ParticleRegion } from "../src/region/particleRegion";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {
@@ -49,7 +46,15 @@ class TestParticleRegion extends ParticleRegion {
 }
 
 const createParticleRegion = () => new TestParticleRegion({
-    gl: { ARRAY_BUFFER: 0, STATIC_DRAW: 0, DYNAMIC_DRAW: 0 },
+    gl: {
+        ARRAY_BUFFER: 0,
+        STATIC_DRAW: 0,
+        DYNAMIC_DRAW: 0,
+        TEXTURE0: 0,
+        TEXTURE_2D: 0,
+        activeTexture() {},
+        bindTexture() {},
+    },
     maxTextureUnits: 16,
     matrix: {},
     projection: new Float32Array(16),

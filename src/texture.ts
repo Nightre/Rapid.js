@@ -1,4 +1,5 @@
-import { Rapid, TextureFilterMode } from "./render"
+import type { Rapid } from "./render"
+import type { TextureFilterMode } from "./texture-filter-mode"
 import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
 

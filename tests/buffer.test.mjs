@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
 import {
     ArrayType,
     DynamicArrayBuffer,
     WebglBufferArray,
-} from "../dist/rapid-render.js";
+} from "../src/buffer";
 
 test("DynamicArrayBuffer automatically grows on push and preserves its data", () => {
     const buffer = new DynamicArrayBuffer(ArrayType.Uint32);

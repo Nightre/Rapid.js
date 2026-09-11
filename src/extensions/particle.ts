@@ -1,6 +1,6 @@
 import { Color } from "../color";
 import { Vec2 } from "../math";
-import { Rapid } from "../render";
+import type { Rapid } from "../render";
 import { Texture } from "../texture";
 import { isPlainObject, Random } from "../utils";
 import { ArrayType, DynamicArrayBuffer } from "../buffer";

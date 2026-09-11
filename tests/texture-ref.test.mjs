@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
-import {
-    BaseTexture,
-    Texture,
-    TextureManager,
-} from "../dist/rapid-render.js";
+import { BaseTexture, Texture, TextureManager } from "../src/texture";
 
 const createBase = (width = 64, height = 32) => {
     const glTexture = {};

@@ -1,13 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 
-import {
-    ArrayType,
-    DynamicArrayBuffer,
-    MatrixStore,
-    Rapid,
-    SpriteRegion,
-} from "../dist/rapid-render.js";
+import { ArrayType, DynamicArrayBuffer } from "../src/buffer";
+import { MatrixStore } from "../src/matrix-engine";
+import { Rapid } from "../src/render";
+import { SpriteRegion } from "../src/region/spriteRegion";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {
@@ -58,7 +55,9 @@ const createHarness = () => {
         TEXTURE_2D: 0x0de1,
         activeTexture() {},
         bindTexture(_target, texture) {
-            boundTextures.push(texture);
+            // Region cleanup unbinds every occupied slot. The assertions below
+            // describe texture assignment, so retain only actual bindings.
+            if (texture !== null) boundTextures.push(texture);
         },
         bindVertexArray() {},
         drawArraysInstanced(mode, first, count, instanceCount) {

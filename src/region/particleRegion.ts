@@ -1,7 +1,7 @@
 import { SpriteRegion } from "./spriteRegion";
 import VsShaderSource from "../shader/particle.vert?raw";
 import FsShaderSource from "../shader/particle.frag?raw";
-import { Rapid } from "../render";
+import type { Rapid } from "../render";
 import GLShader, { CustomGlShader } from "../webgl/glshader";
 import { drawArraysInstanced, UNSIGNED_BYTE } from "../webgl/utils";
 import { Texture } from "../texture";

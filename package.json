@@ -37,7 +37,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:test-internal": "vite build --config vite.test.config.ts",
-    "test": "npm run build && node --test",
+    "test": "vitest run",
     "build:docs": "vite build --config vite.docs.config.ts",
     "docs": "typedoc",
     "example:dev": "vite --config example/vite.config.ts",
@@ -50,7 +50,8 @@
     "@types/stats.js": "^0.17.4",
     "highlight.js": "^11.11.1",
     "stats.js": "^0.17.0",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
   },
   "dependencies": {}
 }

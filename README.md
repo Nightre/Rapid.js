@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/npm/v/rapid-render?logo=npm&label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/badge/gzipped-20.8%20kB-5C7CFA" alt="gzipped size"></a>
+  <a href="https://www.npmjs.com/package/rapid-render"><img src="https://img.shields.io/badge/gzipped-22.5%20kB-5C7CFA" alt="gzipped size"></a>
   <a href="https://github.com/Nightre/Rapid.js/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/rapid-render" alt="license"></a>
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript strict">
 </p>
@@ -33,7 +33,7 @@ If you want Pixi-level rendering without letting your renderer dictate how your 
 
 ## Full 2D Toolkit
 
-Custom Shaders, Light & Shadow, Lines, Masks, Particles, Render textures, Sprites, Custom Geometry, Filters and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
+Particles, Light & Shadow, Custom Shaders, Lines, Masks, Render textures, Sprites, Custom Geometry, Filters and more. all from one focused WebGL renderer. Yet it is only **22.5 kB gzipped**.
 
 ## Architecture Recipes
 

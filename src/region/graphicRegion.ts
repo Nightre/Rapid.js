@@ -1,4 +1,4 @@
-import { Rapid } from "../render";
+import type { Rapid } from "../render";
 import { Region } from "./region";
 import GLShader from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";

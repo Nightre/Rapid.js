@@ -1,7 +1,7 @@
-import { Rapid } from "../render";
+import type { Rapid } from "../render";
 import { MatrixStore } from "../matrix-engine";
 import GLShader, { CustomGlShader } from "../webgl/glshader";
-import { WebGLContext } from "../webgl/utils";
+import type { WebGLContext } from "../webgl/utils";
 
 export class Region {
     defaultShader!: GLShader

@@ -1,5 +1,5 @@
-import { Region } from "../region/region";
-import { Rapid } from "../render";
+import type { Region } from "../region/region";
+import type { Rapid } from "../render";
 import { createShaderProgram, FLOAT, vertexAttribDivisor } from "./utils";
 
 export type WebGLContext = WebGL2RenderingContext;

@@ -26,6 +26,9 @@ import {
 import { Vec2 } from "./math";
 import { AtlasSpriteRegion } from "./region/atlasSpriteRegion";
 import { ParticleRegion } from "./region/particleRegion";
+import { TextureFilterMode } from "./texture-filter-mode";
+
+export { TextureFilterMode } from "./texture-filter-mode";
 
 /**
  * Options for initializing the Rapid application.
@@ -93,11 +96,6 @@ export enum BlendMode {
     SCREEN,
     /** Erase blending (removes alpha based on source). */
     ERASE
-}
-
-export enum TextureFilterMode {
-    LINEAR,
-    NEAREST
 }
 
 export enum CanvasScaleMode {

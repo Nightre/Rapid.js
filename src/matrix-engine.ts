@@ -1,6 +1,6 @@
 import { DynamicArrayBuffer, ArrayType } from "./buffer";
 import { Vec2 } from "./math";
-import { Rapid } from "./render";
+import type { Rapid } from "./render";
 
 
 export interface ITransformOptions {
