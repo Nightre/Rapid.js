@@ -1,7 +1,7 @@
 import type { Rapid } from "../render";
 import { MatrixStore } from "../matrix-engine";
 import GLShader, { CustomGlShader } from "../webgl/glshader";
-import type { WebGLContext } from "../webgl/utils";
+import { generateShader, type WebGLContext } from "../webgl/utils";
 
 export class Region {
     defaultShader!: GLShader
@@ -20,6 +20,7 @@ export class Region {
 
     protected usedTextures: WebGLTexture[] = []
     protected usedTexturePadding: number[] = []
+    protected extraTextureUnit = 0
 
     constructor(public rapid: Rapid) {
         this.gl = rapid.gl;
@@ -75,12 +76,24 @@ export class Region {
         return textureUnit
     }
 
+    getMaxTexutreUnit(customShader?: CustomGlShader) {
+        return this.rapid.maxTextureUnits - this.extraTextureUnit - (customShader?.usedTextureUnitNum ?? 0)
+    }
+
     createShader(vs: string, fs: string) {
+        const maxTextureUnits = this.getMaxTexutreUnit()
+        fs = generateShader(fs, maxTextureUnits);
+        vs = generateShader(vs, maxTextureUnits);
         return new GLShader(this.gl, vs, fs);
     }
 
     createCustomShader(customShader: CustomGlShader) {
-        return customShader.getGLShader(this, this.KEY, this.vs, this.fs)
+        const maxTextureUnits = this.getMaxTexutreUnit(customShader)
+
+        const fs = generateShader(this.fs, maxTextureUnits);
+        const vs = generateShader(this.vs, maxTextureUnits);
+
+        return customShader.getGLShader(this, this.KEY, vs, fs)
     }
 
     getCustomShader(customShader?: GLShader | CustomGlShader): GLShader {

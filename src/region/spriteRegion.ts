@@ -1,8 +1,7 @@
 import type { Rapid } from "../render";
 import { Region } from "./region";
-import { CustomGlShader } from "../webgl/glshader";
 import { ArrayType, WebglBufferArray } from "../buffer";
-import { drawArraysInstanced, generateShader, UNSIGNED_BYTE } from "../webgl/utils";
+import { drawArraysInstanced, UNSIGNED_BYTE } from "../webgl/utils";
 
 import VsShaderSource from "../shader/sprite.vert?raw";
 import FsShaderSource from "../shader/sprite.frag?raw";
@@ -28,7 +27,6 @@ export class SpriteRegion extends Region {
     protected instanceCount: number = 0;
     protected localSpriteMatrix = new Float32Array(6);
     protected worldSpriteMatrix = new Float32Array(6);
-
     KEY = "Sprite"
 
     constructor(rapid: Rapid) {
@@ -54,12 +52,9 @@ export class SpriteRegion extends Region {
     }
 
     createDefaultShader() {
-        const rapid = this.rapid
-        const fs = generateShader(FsShaderSource, rapid.maxTextureUnits);
-        const vs = generateShader(VsShaderSource, rapid.maxTextureUnits);
-        this.vs = vs;
-        this.fs = fs;
-        this.defaultShader = this.createShader(vs, fs)
+        this.vs = VsShaderSource;
+        this.fs = FsShaderSource;
+        this.defaultShader = this.createShader(VsShaderSource, FsShaderSource)
         return this.defaultShader;
     }
 
@@ -85,13 +80,6 @@ export class SpriteRegion extends Region {
             this.currentShader.use();
         }
         return shader;
-    }
-
-    createCustomShader(customShader: CustomGlShader) {
-        const fs = generateShader(FsShaderSource, this.rapid.maxTextureUnits - customShader.usedTextureUnitNum);
-        const vs = generateShader(VsShaderSource, this.rapid.maxTextureUnits - customShader.usedTextureUnitNum);
-
-        return customShader.getGLShader(this, this.KEY, vs, fs)
     }
 
     /**

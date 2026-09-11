@@ -25,16 +25,13 @@ void main(void) {
     vColor = aColor;
 
     vRegion = aUVRect.xy + aVertex * (aUVRect.zw - aUVRect.xy);
-    // CUSTOM_CODE_CALL
 
     vec2 scaled = (aVertex - aOrigin) * aScale;
     float c = cos(aRotation);
     float s = sin(aRotation);
 
-    vec2 position = vec2(
-        scaled.x * c - scaled.y * s,
-        scaled.x * s + scaled.y * c
-    ) + aPosition;
+    vec4 position = vec4(mat2(c, s, -s, c) * scaled + aPosition, 0.0, 1.0);
+    // CUSTOM_CODE_CALL
 
-    gl_Position = u_projection * vec4(position, 0.0, 1.0);
+    gl_Position = u_projection * position;
 }

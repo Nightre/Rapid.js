@@ -6,6 +6,7 @@ in vec2 vRegion;
 in vec4 vUVRect;
 
 uniform sampler2D uTexture;
+uniform sampler2D uTextures[%TEXTURE_NUM%];
 uniform int uUseTexture;
 
 out vec4 fragColor;

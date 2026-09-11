@@ -1,29 +1,37 @@
 import { MaskType } from "../render";
 import type { Rapid } from "../render";
-import { CustomGlShader, UniformValue } from "../webgl/glshader";
+import { CustomGlShader } from "../webgl/glshader";
+import type { UniformValue } from "../webgl/glshader";
 import FsShaderSource from "../shader/light.frag?raw";
 import VsShaderSource from "../shader/light.vert?raw";
 
 import { Vec2 } from "../math";
 import { RenderTexture, Texture } from "../texture";
 import { Color } from "../color";
-import { MatrixSaveState } from "../matrix-engine";
+import type { MatrixSaveState } from "../matrix-engine";
 import { toArray } from "../utils";
 import { generateShader } from "../webgl/utils";
+import { Region } from "../region/region";
 
 export const MAX_LIGHTS = 8
 
 export class LightShader extends CustomGlShader {
     constructor(rapid: Rapid, vs: string = "", fs: string = "", usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
-        const useTexture = 1
         super(
             rapid,
-            vs + VsShaderSource,
-            generateShader(fs + FsShaderSource, rapid.maxTextureUnits - useTexture, "layer", "lightUV", "lightTex = "),
-            usedTextureUnitNum + useTexture,
+            vs, fs,
+            usedTextureUnitNum + 2,
             uniforms
         )
         this.prefix.push("light_")
+    }
+
+    getGLShader(region: Region, key: string, baseVS: string, baseFS: string) {
+        const fs = generateShader(FsShaderSource, region.getMaxTexutreUnit(this), "layer", "lightUV", "lightTex = ")
+        baseFS = this.replaceCustomCode(baseFS, fs)
+        baseVS = this.replaceCustomCode(baseVS, VsShaderSource)
+
+        return super.getGLShader(region, key, baseVS, baseFS)
     }
 }
 

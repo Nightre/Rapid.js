@@ -24,14 +24,10 @@ export class ParticleRegion extends SpriteRegion {
     texture?: Texture
     customMatrix?: number
     particleLoopCache = new Map<string, Function>();
+    protected extraTextureUnit: number = 1;
 
     constructor(rapid: Rapid) {
         super(rapid)
-    }
-
-    createCustomShader(customShader: CustomGlShader) {
-        // override sprite Region
-        return customShader.getGLShader(this, this.KEY, VsShaderSource, FsShaderSource)
     }
 
     createDefaultShader() {

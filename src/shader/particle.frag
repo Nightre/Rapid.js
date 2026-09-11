@@ -2,6 +2,7 @@
 precision mediump float;
 
 uniform sampler2D uTexture;
+uniform sampler2D uTextures[%TEXTURE_NUM%];
 
 in vec2 vRegion;
 in vec4 vColor;

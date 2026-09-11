@@ -1,4 +1,4 @@
-import { WebGLContext } from "./webgl/utils"
+import type { WebGLContext } from "./webgl/utils"
 
 /**
  * Defines the type of the underlying array buffer elements.

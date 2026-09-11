@@ -159,7 +159,6 @@ export function generateShader(fs: string, max: number, id = "vTextureId", uv = 
         }
         fs = fs.replaceAll("%GET_COLOR%", code)
     }
-
     return fs
 }
 export const FLOAT = 5126;

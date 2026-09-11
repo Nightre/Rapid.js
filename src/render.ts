@@ -1,19 +1,14 @@
-import { getContext, WebGLContext } from "./webgl/utils";
+import { getContext } from "./webgl/utils";
+import type { WebGLContext } from "./webgl/utils";
 import GLShader, { CustomGlShader } from "./webgl/glshader";
 import { Region } from "./region/region";
 import { SpriteRegion } from "./region/spriteRegion";
-import { MatrixStack, MatrixStore, ITransformOptions } from "./matrix-engine";
+import { MatrixStack, MatrixStore } from "./matrix-engine";
+import type { ITransformOptions } from "./matrix-engine";
 import { GraphicRegion } from "./region/graphicRegion";
 import { RenderTexture, Texture, TextureManager } from "./texture";
 import { Color } from "./color";
 import {
-    ICircleOptions,
-    IDrawParticleBatchOptions,
-    IGraphicOptions,
-    ILineOptions,
-    IMaskImageOptions,
-    IRectOptions,
-    ISpriteOptions,
     drawCircle,
     drawGraphic,
     drawLine,
@@ -22,6 +17,15 @@ import {
     drawRect,
     drawSprite,
     getColorUint32,
+} from "./draw";
+import type {
+    ICircleOptions,
+    IDrawParticleBatchOptions,
+    IGraphicOptions,
+    ILineOptions,
+    IMaskImageOptions,
+    IRectOptions,
+    ISpriteOptions,
 } from "./draw";
 import { Vec2 } from "./math";
 import { AtlasSpriteRegion } from "./region/atlasSpriteRegion";

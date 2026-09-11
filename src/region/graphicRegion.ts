@@ -19,7 +19,8 @@ const VERTEX_STRIDE = 20;
 export class GraphicRegion extends Region {
     private vertexBuffer!: WebglBufferArray;
     private vertexCount: number = 0;
-
+    protected extraTextureUnit: number = 1;
+    
     matrixIndex: number = -1
     drawMode: number = this.gl.TRIANGLES
 

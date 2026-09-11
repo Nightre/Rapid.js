@@ -363,6 +363,11 @@ export class CustomGlShader {
         }
     }
 
+    replaceCustomCode(shader: string, code: string) {
+        shader = shader.replace("// CUSTOM_CODE", code + "// CUSTOM_CODE");
+        return shader
+    }
+
     /**
      * Retrieves or compiles a customized GLShader for a specific region.
      * @param region The Region requesting the shader.
@@ -383,9 +388,9 @@ export class CustomGlShader {
         const prefix = this.prefix.length == 0 ? [""] : this.prefix
 
         baseVS = baseVS.replace("// CUSTOM_CODE_CALL", prefix.map(p => p + "vertex(position, vRegion);").join(""));
-        baseVS = baseVS.replace("// CUSTOM_CODE", this.vs);
+        baseVS = this.replaceCustomCode(baseVS, this.vs);
         baseFS = baseFS.replace("// CUSTOM_CODE_CALL", prefix.map(p => p + "fragment(fragColor, vRegion);").join(""));
-        baseFS = baseFS.replace("// CUSTOM_CODE", this.fs);
+        baseFS = this.replaceCustomCode(baseFS, this.fs);
 
         const shader = region.createShader(baseVS, baseFS);
         shader.isCustom = true;

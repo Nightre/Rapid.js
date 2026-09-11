@@ -1,9 +1,10 @@
 import { Color } from "./color";
-import { ITransformOptions } from "./matrix-engine";
+import type { ITransformOptions } from "./matrix-engine";
 import { Vec2 } from "./math";
 import { Texture } from "./texture";
 import GLShader, { CustomGlShader } from "./webgl/glshader";
-import { ILineRenderOptions, getLineGeometry } from "./line";
+import { getLineGeometry } from "./line";
+import type { ILineRenderOptions } from "./line";
 import type { Rapid } from "./render";
 
 export type DrawShader = GLShader | CustomGlShader;
