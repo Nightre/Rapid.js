@@ -87,12 +87,12 @@ export function setTextureFilterMode(gl: WebGLRenderingContext | WebGL2Rendering
         [TextureFilterMode.LINEAR]: gl.LINEAR,
         [TextureFilterMode.NEAREST]: gl.NEAREST,
     }[filterMode] ?? gl.NEAREST;
-    
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
 }
 
-export interface ICreateTextureOptions extends ITextOptions{
+export interface ICreateTextureOptions extends ITextOptions {
     onlySize?: boolean
 }
 /**
@@ -103,7 +103,7 @@ export interface ICreateTextureOptions extends ITextOptions{
  * @returns A WebGL texture
  */
 export function createTexture(
-    render:Rapid,
+    render: Rapid,
     source: TexImageSource | { width: number; height: number },
     options: ICreateTextureOptions,
 ): WebGLTexture {
@@ -141,21 +141,21 @@ export function createTexture(
     return texture;
 }
 
-export function generateShader(fs: string, max: number) {
-    if (fs.includes("%TEXTURE_NUM%")) fs = fs.replace("%TEXTURE_NUM%", max.toString())
+export function generateShader(fs: string, max: number, id = "vTextureId", uv = "uv", set = "return") {
+    if (fs.includes("%TEXTURE_NUM%")) fs = fs.replaceAll("%TEXTURE_NUM%", max.toString())
     if (fs.includes("%GET_COLOR%")) {
         let code = ""
         for (let index = 0; index < max; index++) {
             if (index == 0) {
-                code += `if(vTextureId == ${index})`
+                code += `if(${id} == ${index})`
             } else if (index == max - 1) {
                 code += `else`
             } else {
-                code += `else if(vTextureId == ${index})`
+                code += `else if(${id} == ${index})`
             }
-            code += `{return texture(uTextures[${index}], uv);}`
+            code += `{${set} texture(uTextures[${index}], ${uv});}`
         }
-        fs = fs.replace("%GET_COLOR%", code)
+        fs = fs.replaceAll("%GET_COLOR%", code)
     }
 
     return fs

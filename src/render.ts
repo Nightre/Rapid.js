@@ -209,7 +209,6 @@ export class Rapid {
         this.premultipliedAlpha = options.premultipliedAlpha ?? true;
         this.roundPixels = options.roundPixels ?? false;
         this.scaleMode = options.scaleMode ?? CanvasScaleMode.CanvasItem
-
         const gl = getContext(this.canvas, this.antialias, this.premultipliedAlpha);
         this.gl = gl;
 
@@ -378,7 +377,7 @@ export class Rapid {
     addGraphicVertex(
         x: number, y: number,
         u: number = 0, v: number = 0,
-        color: Color | number,
+        color: Color | number = 0xFFFFFFFF,
     ): void {
         this.graphicRegion.addVertex(x, y, u, v, typeof color == "number" ? color : this.getColorUint32(color));
     }
@@ -542,7 +541,7 @@ export class Rapid {
             this.enterRenderTexture(outputRT);
             this.clearRenderTexture();
             // Draw the full source (or previous pass output) as a full-RT quad at (0,0).
-            // The projection is already set to (0, w, h, 0) by enterRenderTexture.
+            // RenderTexture uses a bottom-up projection so its logical top row is stored at v=0.
 
             // We can't let `drawsprite` handle the padding offset because `renderTexture` has a limited size.
             // Render from the top left corner the image will render outside the `renderTexture`.
@@ -575,7 +574,7 @@ export class Rapid {
         rt.activate();
 
         this.gl.viewport(0, 0, rt.rawWidth, rt.rawHeight);
-        this.updateProjection(0, rt.rawWidth, rt.rawHeight, 0);
+        this.updateProjection(0, rt.rawWidth, 0, rt.rawHeight);
     }
 
     /**

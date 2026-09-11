@@ -92,3 +92,7 @@ export class Random {
         return (range as Vec2 | Color).clone() as T;
     }
 }
+
+export const toArray = <T extends unknown>(v: T | T[], max: number): T[] => {
+    return (Array.isArray(v) ? v : [v]).slice(0, max)
+}

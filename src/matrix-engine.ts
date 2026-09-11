@@ -522,7 +522,7 @@ export class MatrixStack {
         }
     }
 
-    private getStep(step: number | { step: number }) {
+    getStep(step: number | { step: number }) {
         return (typeof step == "number" ? step : step.step)
     }
 

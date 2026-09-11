@@ -448,7 +448,6 @@ class RenderTexture extends Texture {
     private framebuffer: WebGLFramebuffer | null;
     private renderbuffer: WebGLRenderbuffer | null;
     private gl: WebGL2RenderingContext;
-    public flipY: boolean = true;
     public clearColor?: Color;
 
     /** Actual GPU-allocated dimensions — grow-only, never shrink */
@@ -526,7 +525,7 @@ class RenderTexture extends Texture {
         this.rawHeight = height;
 
         // UV maps the logical portion within the (possibly larger) GPU allocation.
-        // RenderTexture orientation is handled by flipY at draw time, so UV stays canonical.
+        // The render-target projection stores logical y=0 at texture v=0.
         this.uvX = 0;
         this.uvW = width / this._allocW;
         this.uvY = 0;
@@ -588,15 +587,13 @@ class RenderTexture extends Texture {
         const readW = Math.min(iw, this.rawWidth - ix);
         const readH = Math.min(ih, this.rawHeight - iy);
 
-        const readY = this.rawHeight - iy - readH;
-
         const gl = this.gl;
         const prevFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 
         const pixels = new Uint8Array(readW * readH * 4);
-        gl.readPixels(ix, readY, readW, readH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        gl.readPixels(ix, iy, readW, readH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, prevFramebuffer);
 

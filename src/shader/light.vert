@@ -1,0 +1,1 @@
+void light_vertex(inout vec4 p, vec2 u) {}

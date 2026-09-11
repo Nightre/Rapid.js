@@ -1,10 +1,10 @@
-import { Color } from "./color";
-import { Vec2 } from "./math";
-import { Rapid } from "./render";
-import { Texture } from "./texture";
-import { isPlainObject, Random } from "./utils";
-import { ArrayType, DynamicArrayBuffer } from "./buffer";
-import { CustomGlShader } from "./webgl/glshader";
+import { Color } from "../color";
+import { Vec2 } from "../math";
+import { Rapid } from "../render";
+import { Texture } from "../texture";
+import { isPlainObject, Random } from "../utils";
+import { ArrayType, DynamicArrayBuffer } from "../buffer";
+import { CustomGlShader } from "../webgl/glshader";
 
 /**
  * Describes an animated attribute: it transitions from `start` to `end`
@@ -477,3 +477,4 @@ export class ParticleEmitter {
         this.emit(this.emitRate);
     }
 }
+

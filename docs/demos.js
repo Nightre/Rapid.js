@@ -33,6 +33,7 @@ export const demoOrder = [
   "masks",
   "draw-particles",
   "particles",
+  "light",
 ];
 
 /** Label shown in the picker. */
@@ -49,6 +50,7 @@ const demoTitles = {
   masks: "Masks & Clipping",
   particles: "Particle Emitter (Helper Class)",
   "draw-particles": "Draw Particles (Tilemap)",
+  light: "Light & Normal Map",
 };
 
 // Vite resolves both of these at build time: the first to lazy module

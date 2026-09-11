@@ -13,7 +13,7 @@ export default async function (rapid, { loop }) {
     uniform vec2 uDir;
     uniform vec2 uTexel;
 
-    void fragment(inout vec4 color) {
+    void fragment(inout vec4 color, vec2 vRegion) {
       vec4 sum = vec4(0.0);
       sum += sampleClampTexture(vRegion - uDir * uTexel * 3.0) * 0.10;
       sum += sampleClampTexture(vRegion - uDir * uTexel * 2.0) * 0.15;
@@ -29,7 +29,7 @@ export default async function (rapid, { loop }) {
   const tintSource = `
     uniform float uTime;
 
-    void fragment(inout vec4 color) {
+    void fragment(inout vec4 color, vec2 vRegion) {
       float glow = 0.6 + 0.4 * sin(uTime * 3.0);
       color.rgb *= vec3(1.0, glow, 0.6 + 0.4 * glow);
     }

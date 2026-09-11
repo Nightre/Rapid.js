@@ -12,27 +12,21 @@ in vec4 vUVRect;
 out vec4 fragColor;
 in vec2 vPadding;
 
-bool clampUV(vec2 uv) {
-    return uv.x < vUVRect.x || uv.x > vUVRect.z || uv.y < vUVRect.y || uv.y > vUVRect.w;
-}
-
 vec4 sampleTexture(vec2 uv) {
     %GET_COLOR%
 }
 
 vec4 sampleClampTexture(vec2 uv) {
-    if (clampUV(uv)) {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-    }
-    return sampleTexture(uv);
+    vec2 inMin = step(vUVRect.xy, uv);
+    vec2 inMax = step(uv, vUVRect.zw);
+
+    float mask = inMin.x * inMin.y * inMax.x * inMax.y;
+
+    return sampleTexture(uv) * mask;
 }
 
 vec4 sampleTextureLocal(vec2 uv){
-    vec2 gUV = mix(vUVRect.xy, vUVRect.zw, uv);
-    if (clampUV(gUV)) {
-        return vec4(0.0, 0.0, 0.0, 0.0);
-    }
-    return sampleTexture(gUV);
+    return sampleClampTexture(mix(vUVRect.xy, vUVRect.zw, uv));
 }
 
 // CUSTOM_CODE

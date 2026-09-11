@@ -10,7 +10,7 @@ in vec2 aScale;
 in float aRotation;
 in vec2 aOrigin;
 
-// per-instance：UV 区域 (u0, v0, u1, v1)
+// per-instance：UV
 in vec4 aUVRect;
 
 // per-instance：tint color
@@ -24,7 +24,6 @@ out vec4 vColor;
 void main(void) {
     vColor = aColor;
 
-    //vRegion = mix(aUVRect.xy, aUVRect.zw, vertex.xy);
     vRegion = aUVRect.xy + aVertex * (aUVRect.zw - aUVRect.xy);
     // CUSTOM_CODE_CALL
 

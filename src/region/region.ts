@@ -27,7 +27,7 @@ export class Region {
         this.matrixStore = rapid.matrix;
     }
 
-    protected createBuffer(){
+    protected createBuffer() {
 
     }
 
@@ -147,9 +147,12 @@ export class Region {
 
         if (this.customShader) {
             const customShader = this.customShader;
-            const textureUniforms: Record<string, number> = {};
-            for (const loc in customShader.uniformTextures) {
-                textureUniforms[loc] = this.useTexture(customShader.uniformTextures[loc]);
+            const textureUniforms: Record<string, number | number[]> = {};
+            for (const [loc, texture] of Object.entries(customShader.uniformTextures)) {
+                textureUniforms[loc] = this.useTexture(texture);
+            }
+            for (const [loc, textures] of Object.entries(customShader.uniformArrayTexture)) {
+                textureUniforms[loc] = textures.map(u => this.useTexture(u))
             }
             this.customShader.applyUniform(this.KEY, textureUniforms);
         }
@@ -168,6 +171,12 @@ export class Region {
     }
 
     resetRender() {
+        const gl = this.gl
+        for (let unit = 0; unit < this.usedTextures.length; unit++) {
+            gl.activeTexture(gl.TEXTURE0 + unit)
+            gl.bindTexture(gl.TEXTURE_2D, null)
+        }
+
         this.usedTextures.length = 0;
         this.usedTexturePadding.length = 0;
     }

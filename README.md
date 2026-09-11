@@ -33,7 +33,7 @@ If you want Pixi-level rendering without letting your renderer dictate how your 
 
 ## Full 2D Toolkit
 
-Shaders, lines, masks, particles, render textures, sprites, custom geometry, filters and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
+Custom Shaders, Light & Shadow, Lines, Masks, Particles, Render textures, Sprites, Custom Geometry, Filters and more. all from one focused WebGL renderer. Yet it is only **20.8 kB gzipped**.
 
 ## Architecture Recipes
 

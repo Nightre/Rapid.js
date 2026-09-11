@@ -9,7 +9,7 @@ void vertex(inout vec4 position, vec2 uv) {
   // 修改 position。最后 Rapid.js 会继续乘 u_projection。
 }
 
-void fragment(inout vec4 color) {
+void fragment(inout vec4 color, vec2 vRegion) {
   // 修改 color。color 默认已经采样了当前 Texture 并乘过 tint color。
 }
 ```
@@ -27,7 +27,7 @@ void vertex(inout vec4 position, vec2 uv) {
 const fs = `
 uniform float uTime;
 
-void fragment(inout vec4 color) {
+void fragment(inout vec4 color, vec2 vRegion) {
   color.rgb *= 0.5 + 0.5 * sin(uTime);
 }
 `;
@@ -83,7 +83,7 @@ const fs = `
 uniform float uAmount;
 uniform vec4 uTint;
 
-void fragment(inout vec4 color) {
+void fragment(inout vec4 color, vec2 vRegion) {
   color.rgb = mix(color.rgb, uTint.rgb, uAmount);
 }
 `;
@@ -117,7 +117,7 @@ const noise = await rapid.texture.load("./image/noise.png");
 const fs = `
 uniform sampler2D uNoise;
 
-void fragment(inout vec4 color) {
+void fragment(inout vec4 color, vec2 vRegion) {
   vec4 noiseColor = texture(uNoise, vRegion * 4.0);
   color.rgb *= noiseColor.rgb;
 }
@@ -141,7 +141,7 @@ const outlineFs = `
 uniform vec4 uOutlineColor;
 uniform vec2 uTexel;
 
-void fragment(inout vec4 color) {
+void fragment(inout vec4 color, vec2 vRegion) {
   float a = color.a;
   a = max(a, sampleClampTexture(vRegion + vec2( uTexel.x, 0.0)).a);
   a = max(a, sampleClampTexture(vRegion + vec2(-uTexel.x, 0.0)).a);

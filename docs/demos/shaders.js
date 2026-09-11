@@ -20,7 +20,7 @@ export default async function (rapid, { loop }) {
     const wobbleFragment = `
         uniform mediump float uTime;
 
-        void fragment(inout vec4 color) {
+        void fragment(inout vec4 color, vec2 vRegion) {
         float pulse = 0.72 + 0.28 * sin(uTime * 4.0);
         color.rgb *= vec3(1.0, pulse, pulse);
         }
@@ -42,7 +42,7 @@ export default async function (rapid, { loop }) {
         uniform vec4 uOutlineColor;
         uniform float uThickness;
 
-        void fragment(inout vec4 color) {
+        void fragment(inout vec4 color, vec2 vRegion) {
         if (color.a > 0.0) return;
 
         float around = 0.0;
@@ -61,7 +61,7 @@ export default async function (rapid, { loop }) {
         outlineFragment,
         0,
         {
-            uTexel: [1 / toycar.base.width, 1 / toycar.base.height],
+            uTexel: [1 / toycar.rawWidth, 1 / toycar.rawHeight],
             uOutlineColor: [1, 0.88, 0.08, 1],
             uThickness: 1,
         },
@@ -72,7 +72,7 @@ export default async function (rapid, { loop }) {
         uniform float uTime;
         uniform float uMix;
 
-        void fragment(inout vec4 color) {
+        void fragment(inout vec4 color, vec2 vRegion) {
         vec2 local = (vRegion - vUVRect.xy) / (vUVRect.zw - vUVRect.xy);
         vec2 patternUV = local * 2.0 + vec2(uTime * 0.25, uTime * 0.1);
         vec4 sampled = texture(uPattern, patternUV);

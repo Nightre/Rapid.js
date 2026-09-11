@@ -190,7 +190,6 @@ declare class RenderTexture extends Texture {
     private framebuffer;
     private renderbuffer;
     private gl;
-    flipY: boolean;
     clearColor?: Color;
     /** Actual GPU-allocated dimensions — grow-only, never shrink */
     private _allocW;

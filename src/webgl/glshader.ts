@@ -33,7 +33,7 @@ type GlslType =
     | "vec2" | "vec3" | "vec4"
     | "ivec2" | "ivec3" | "ivec4"
     | "bvec2" | "bvec3" | "bvec4"
-    | "mat2" | "mat3" | "mat4";
+    | "mat2" | "mat3" | "mat4" | "mat3x2";
 
 /**
  * Wraps a WebGL shader program.
@@ -202,6 +202,7 @@ function applyUniform(
     switch (type) {
         // scalars
         case "float":
+            if (isArray) return gl.uniform1fv(loc, value as Float32Array);
             return gl.uniform1f(loc, value as number);
         case "int":
         case "bool":
@@ -210,7 +211,6 @@ function applyUniform(
             // array of samplers (e.g. uTextures[8]) → uniform1iv
             if (isArray) return gl.uniform1iv(loc, value as Int32Array);
             return gl.uniform1i(loc, value as number);
-
         // float vectors
         case "vec2":
             return gl.uniform2fv(loc, value as number[]);
@@ -237,7 +237,9 @@ function applyUniform(
             return gl.uniformMatrix3fv(loc, false, value as Float32Array);
         case "mat4":
             return gl.uniformMatrix4fv(loc, false, value as Float32Array);
-
+        case "mat3x2":
+            // 注意：WebGL2RenderingContext 才有这个方法
+            return gl.uniformMatrix3x2fv(loc, false, value as Float32Array);
         // fallback: guess by value shape
         default:
             return applyUniformFallback(gl, loc, value);
@@ -283,13 +285,16 @@ export class CustomGlShader {
     uniformDirty: Set<string> = new Set();
     /** Map of textures to be bound to this shader */
     uniformTextures: Record<string, WebGLTexture> = {};
+    uniformArrayTexture: Record<string, WebGLTexture[]> = {}
     /** Number of texture units reserved by this custom shader */
     usedTextureUnitNum: number = 0;
     /** Padding in pixels this shader needs beyond the sprite bounds (for outline/glow effects) */
     padding: number = 0;
     rapid: Rapid
 
-    constructor(rapid: Rapid, vs: string, fs: string, usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
+    prefix: string[] = []
+
+    constructor(rapid: Rapid, vs: string = "", fs: string = "", usedTextureUnitNum = 0, uniforms?: Record<string, UniformValue>) {
         this.vs = vs;
         this.fs = fs;
         this.rapid = rapid
@@ -301,14 +306,17 @@ export class CustomGlShader {
      * Updates uniform values or textures for the custom shader.
      * @param uniforms Map of uniform values or WebGL textures to apply.
      */
-    setUniforms(uniforms: Record<string, UniformValue | WebGLTexture>) {
+    setUniforms(uniforms: Record<string, UniformValue | WebGLTexture | WebGLTexture[]>) {
         this.rapid.flush()
         const normalUniforms: Record<string, UniformValue> = {};
         const textureUniforms: Record<string, WebGLTexture> = {};
+        const uniformArrayTexture: Record<string, WebGLTexture[]> = {};
 
         for (const [key, value] of Object.entries(uniforms)) {
             if (value instanceof WebGLTexture) {
                 textureUniforms[key] = value;
+            } else if (Array.isArray(value) && value[0] instanceof WebGLTexture) {
+                uniformArrayTexture[key] = value
             } else {
                 normalUniforms[key] = value as UniformValue;
             }
@@ -316,6 +324,7 @@ export class CustomGlShader {
 
         Object.assign(this.uniforms, normalUniforms);
         Object.assign(this.uniformTextures, textureUniforms);
+        Object.assign(this.uniformArrayTexture, uniformArrayTexture);
 
         for (const key of this.glshader.keys()) {
             this.uniformDirty.add(key);
@@ -340,7 +349,7 @@ export class CustomGlShader {
      * @param key The region key.
      * @param textureUniforms Map of texture uniform names to assigned texture unit indices.
      */
-    applyUniform(key: string, textureUniforms: Record<string, number>) {
+    applyUniform(key: string, textureUniforms: Record<string, number | number[]>) {
         const shader = this.glshader.get(key);
         if (!shader) return;
 
@@ -371,10 +380,11 @@ export class CustomGlShader {
             return null;
         }
 
-        baseVS = baseVS.replace("// CUSTOM_CODE_CALL", "vertex(position, vRegion);");
-        baseFS = baseFS.replace("// CUSTOM_CODE_CALL", "fragment(fragColor);");
+        const prefix = this.prefix.length == 0 ? [""] : this.prefix
 
+        baseVS = baseVS.replace("// CUSTOM_CODE_CALL", prefix.map(p => p + "vertex(position, vRegion);").join(""));
         baseVS = baseVS.replace("// CUSTOM_CODE", this.vs);
+        baseFS = baseFS.replace("// CUSTOM_CODE_CALL", prefix.map(p => p + "fragment(fragColor, vRegion);").join(""));
         baseFS = baseFS.replace("// CUSTOM_CODE", this.fs);
 
         const shader = region.createShader(baseVS, baseFS);
