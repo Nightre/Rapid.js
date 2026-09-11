@@ -44,6 +44,7 @@ export interface ILight {
     metallic?: number,
     roughness?: number,
     color?: Color | Color[],
+    ambientColor?: Color,
     lightHeight?: number | number[],
     customShader?: LightShader,
 
@@ -145,6 +146,9 @@ export class Light {
             uLightHeight: Float32Array.from(matrices.map((_, i) => heights[i] ?? heights[0] ?? 80)),
             uMetallic: option.metallic ?? 0.8,
             uRoughness: option.roughness ?? 0.15,
+            uAmbientColor: option.ambientColor
+                ? [option.ambientColor.r / 255, option.ambientColor.g / 255, option.ambientColor.b / 255]
+                : [0.1, 0.1, 0.15],
             uNormalScale: [option.normalScaleX ?? 1, option.normalScaleY ?? 1],
         })
 

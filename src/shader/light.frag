@@ -10,6 +10,7 @@ uniform mat3x2 uLightMatrix[%TEXTURE_NUM%];
 uniform float uLightHeight[%TEXTURE_NUM%];
 uniform float uMetallic;
 uniform float uRoughness;
+uniform vec3 uAmbientColor;
 uniform vec2 uNormalScale;
 
 void light_fragment(inout vec4 color, in vec2 vRegion) {
@@ -48,5 +49,5 @@ void light_fragment(inout vec4 color, in vec2 vRegion) {
         }
     }
 
-    color.rgb = color.rgb * (vec3(0.1, 0.1, 0.15) + totalDiffuse) + totalSpecular;
+    color.rgb = color.rgb * (uAmbientColor + totalDiffuse) + totalSpecular;
 }
