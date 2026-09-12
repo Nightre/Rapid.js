@@ -667,7 +667,6 @@ class TextTexture extends Texture {
         this._style = { ...defaultTextStyle, ...options };
         this._text = options?.text ?? "";
         this.options = { premultipliedAlpha: render.premultipliedAlpha, ...options };
-        this.scale = 1 / render.dpr
 
         this.canvas = document.createElement("canvas");
         const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
@@ -726,7 +725,14 @@ class TextTexture extends Texture {
     public update(): void {
         const ctx = this.ctx;
         const style = this.style;
-        const dpr = this.render.dpr;
+
+        const pixelsPerLogicX =
+            this.render.physicsWidth / this.render.logicWidth;
+        const pixelsPerLogicY =
+            this.render.physicsHeight / this.render.logicHeight;
+        const resolution = Math.max(pixelsPerLogicX, pixelsPerLogicY);
+
+        this.scale = 1 / resolution;
 
         const fontSize = style.fontSize!;
         const fontWeight = style.fontWeight!;
@@ -786,8 +792,8 @@ class TextTexture extends Texture {
             Math.ceil(totalHeight + padding * 2)
         );
 
-        const pixelWidth = Math.ceil(logicalWidth * dpr);
-        const pixelHeight = Math.ceil(logicalHeight * dpr);
+        const pixelWidth = Math.ceil(logicalWidth * resolution);
+        const pixelHeight = Math.ceil(logicalHeight * resolution);
 
         if (
             this.canvas.width !== pixelWidth ||
@@ -797,8 +803,13 @@ class TextTexture extends Texture {
             this.canvas.height = pixelHeight;
         }
 
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, pixelWidth / dpr, pixelHeight / dpr);
+        ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+        ctx.clearRect(
+            0,
+            0,
+            pixelWidth / resolution,
+            pixelHeight / resolution
+        );
         ctx.font = font;
         ctx.textBaseline = "alphabetic";
         ctx.textAlign = align;
