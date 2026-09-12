@@ -1,5 +1,5 @@
 import type { Rapid } from "./render"
-import type { TextureFilterMode } from "./texture-filter-mode"
+import { TextureFilterMode } from "./texture-filter-mode"
 import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
 
@@ -666,7 +666,11 @@ class TextTexture extends Texture {
         this.render = render;
         this._style = { ...defaultTextStyle, ...options };
         this._text = options?.text ?? "";
-        this.options = { premultipliedAlpha: render.premultipliedAlpha, ...options };
+        this.options = {
+            premultipliedAlpha: render.premultipliedAlpha,
+            textureFilter: TextureFilterMode.LINEAR,
+            ...options
+        };
 
         this.canvas = document.createElement("canvas");
         const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
@@ -677,7 +681,6 @@ class TextTexture extends Texture {
         this.canvas.height = 1;
         const glTexture = createTexture(render, this.canvas, this.options);
         this.setBase(new BaseTexture(glTexture, 1, 1));
-
         this.update();
     }
 
@@ -726,13 +729,7 @@ class TextTexture extends Texture {
         const ctx = this.ctx;
         const style = this.style;
 
-        // 要从canvas获取，因为可能是 CanvasScaleMode.Viewport
-        const pixelsPerLogicX =
-            this.render.canvas.width / this.render.logicWidth;
-        const pixelsPerLogicY =
-            this.render.canvas.height / this.render.logicHeight;
-        const resolution = Math.max(pixelsPerLogicX, pixelsPerLogicY);
-
+        const resolution = this.render.dpr;
         this.scale = 1 / resolution;
 
         const fontSize = style.fontSize!;
@@ -850,7 +847,7 @@ class TextTexture extends Texture {
             targetDescent - alphabeticDescent;
 
         this.offsetY =
-            -padding - ascent + alphabeticBaselineOffset;
+            (-padding - ascent + alphabeticBaselineOffset);
     }
 }
 

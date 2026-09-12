@@ -22,6 +22,7 @@ export interface ITextureOptions {
 declare class TextureManager {
     private render;
     private cache;
+    private textTextures;
     constructor(render: Rapid);
     /**
      * Asynchronously loads a texture from a URL.
@@ -51,6 +52,10 @@ declare class TextureManager {
      * @returns The newly created TextTexture.
      */
     createTextTexture(options?: ITextOptions): TextTexture;
+    /** Re-rasterizes every managed text texture at the current resolution. */
+    updateTextTextures(): void;
+    /** Stops tracking a text texture after it has been destroyed. */
+    unregisterTextTexture(texture: TextTexture): void;
     /**
      * Destroys a texture and potentially removes its BaseTexture from the cache.
      * If a Texture instance is provided, it decrements the reference count of the BaseTexture.
@@ -279,5 +284,7 @@ declare class TextTexture extends Texture {
      * Updates the internal canvas and uploads it to WebGL
      */
     update(): void;
+    /** Stops resolution updates and releases this texture reference. */
+    destroy(): void;
 }
 export { TextureManager, Texture, RenderTexture, TextTexture };
