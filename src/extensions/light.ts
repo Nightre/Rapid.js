@@ -89,36 +89,42 @@ export class Light {
         const R = Math.hypot(texture.rawWidth, texture.rawHeight) * 0.5 * 1.05;
 
         rapid.drawToRenderTexture(this.rt, () => {
-            rapid.withMask(() => {
-                rapid.startMaskGraphic(rapid.gl.TRIANGLES);
+            rapid.matrixStack.save()
+            rapid.matrixStack.identity()
+            try {
+                rapid.withMask(() => {
+                    rapid.startMaskGraphic(rapid.gl.TRIANGLES);
 
-                for (let i = 0; i < texturePoints.length; i++) {
-                    const a = texturePoints[i];
-                    const b = texturePoints[(i + 1) % texturePoints.length];
+                    for (let i = 0; i < texturePoints.length; i++) {
+                        const a = texturePoints[i];
+                        const b = texturePoints[(i + 1) % texturePoints.length];
 
-                    const aDir = a.subtract(light).normalized();
-                    const bDir = b.subtract(light).normalized();
+                        const aDir = a.subtract(light).normalized();
+                        const bDir = b.subtract(light).normalized();
 
-                    const dot = Math.max(-0.999, Math.min(1, aDir.dot(bDir)));
-                    const cosHalf = Math.sqrt((1 + dot) * 0.5);
-                    const dist = R / cosHalf;
+                        const dot = Math.max(-0.999, Math.min(1, aDir.dot(bDir)));
+                        const cosHalf = Math.sqrt((1 + dot) * 0.5);
+                        const dist = R / cosHalf;
 
-                    const farA = light.add(aDir.multiply(dist));
-                    const farB = light.add(bDir.multiply(dist));
+                        const farA = light.add(aDir.multiply(dist));
+                        const farB = light.add(bDir.multiply(dist));
 
-                    rapid.addGraphicVertex(a.x, a.y);
-                    rapid.addGraphicVertex(b.x, b.y);
-                    rapid.addGraphicVertex(farB.x, farB.y);
+                        rapid.addGraphicVertex(a.x, a.y);
+                        rapid.addGraphicVertex(b.x, b.y);
+                        rapid.addGraphicVertex(farB.x, farB.y);
 
-                    rapid.addGraphicVertex(a.x, a.y);
-                    rapid.addGraphicVertex(farB.x, farB.y);
-                    rapid.addGraphicVertex(farA.x, farA.y);
-                }
+                        rapid.addGraphicVertex(a.x, a.y);
+                        rapid.addGraphicVertex(farB.x, farB.y);
+                        rapid.addGraphicVertex(farA.x, farA.y);
+                    }
 
-                rapid.endGraphic();
-            }, () => {
-                rapid.drawSprite({ texture })
-            }, MaskType.NOT_EQUAL)
+                    rapid.endGraphic();
+                }, () => {
+                    rapid.drawSprite({ texture })
+                }, MaskType.NOT_EQUAL)
+            } finally {
+                rapid.matrixStack.restore()
+            }
         })
         return this.rt
     }
@@ -131,8 +137,6 @@ export class Light {
         const heights = toArray(option.lightHeight, MAX_LIGHTS)
         const lightTexture = toArray(option.lightTexture, MAX_LIGHTS)
         shader.setUniforms({
-            uResolution: [this.rapid.physicsWidth, this.rapid.physicsHeight],
-            uLogicalResolution: [this.rapid.logicWidth, this.rapid.logicHeight],
             uNormalMap: option.normalMap.glTexture!,
             uLightTextureId: lightTexture.map(l => l.glTexture),
             uLightCount: matrices.length,

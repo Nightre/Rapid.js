@@ -2,8 +2,6 @@
 uniform mediump int uLightTextureId[%TEXTURE_NUM%];
 
 uniform sampler2D uNormalMap;
-uniform vec2 uResolution;
-uniform vec2 uLogicalResolution;
 uniform mediump int uLightCount;
 uniform vec4 uLightColor[%TEXTURE_NUM%];
 uniform mat3x2 uLightMatrix[%TEXTURE_NUM%];
@@ -13,10 +11,12 @@ uniform float uRoughness;
 uniform vec3 uAmbientColor;
 uniform vec2 uNormalScale;
 
+in vec2 light_worldPos;
+
 void light_fragment(inout vec4 color, in vec2 vRegion) {
     if (color.a < 0.005) return;
 
-    vec2 worldPos = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y) * (uLogicalResolution / uResolution);
+    vec2 worldPos = light_worldPos;
     vec3 normal = normalize(texture(uNormalMap, vRegion).rgb * 2.0 - 1.0);
     normal = normalize(normal * vec3(uNormalScale, 1.0));
 
