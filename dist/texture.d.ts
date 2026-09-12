@@ -247,6 +247,7 @@ export interface ITextStyle {
     strokeThickness?: number;
     align?: "left" | "center" | "right";
     lineHeight?: number;
+    baseline?: CanvasTextBaseline;
 }
 export interface ITextOptions extends ITextStyle, ITextureOptions {
     text?: string;

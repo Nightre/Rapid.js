@@ -632,6 +632,7 @@ export interface ITextStyle {
     strokeThickness?: number;
     align?: "left" | "center" | "right";
     lineHeight?: number,
+    baseline?: CanvasTextBaseline,
 }
 
 const defaultTextStyle: ITextStyle = {
@@ -712,7 +713,7 @@ class TextTexture extends Texture {
             case "center":
                 return width / 2;
             case "right":
-                return width;
+                return width - padding;
             case "left":
             default:
                 return padding;
@@ -724,79 +725,120 @@ class TextTexture extends Texture {
      */
     public update(): void {
         const ctx = this.ctx;
-        const style = this.style
+        const style = this.style;
+        const dpr = this.render.dpr;
+
         const fontSize = style.fontSize!;
         const fontWeight = style.fontWeight!;
         const fontFamily = style.fontFamily!;
         const lineHeightRate = style.lineHeight!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-        const dpr = this.render.dpr
+
+        const baseline: CanvasTextBaseline = style.baseline ?? "top";
+        const align = style.align ?? "left";
+        const strokeThickness = style.strokeThickness ?? 0;
+        const hasStroke = strokeThickness > 0;
+
+        const lines = this._text.split("\n");
+        const defaultText = "国g"
+        const reference = lines[0] || defaultText;
+
+        // 内部始终使用 alphabetic 测量和绘制。
         ctx.font = font;
-        ctx.textBaseline = "top";
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
 
-        const lines = this._text.split('\n');
         let maxWidth = 0;
-        let totalHeight = 0;
-
-        const textMetrics = ctx.measureText(lines[0] || 'M');
-
-        const fontBoundingBoxDescent = textMetrics.fontBoundingBoxDescent
-        const lineHeight = fontBoundingBoxDescent
+        let ascent = 0;
+        let descent = 0;
 
         for (const line of lines) {
-            const metrics = ctx.measureText(line);
-            if (metrics.width > maxWidth) maxWidth = metrics.width;
-            totalHeight += lineHeight * lineHeightRate;
+            const metrics = ctx.measureText(line || defaultText);
+
+            maxWidth = Math.max(maxWidth, line ? metrics.width : 0);
+            ascent = Math.max(ascent, metrics.actualBoundingBoxAscent);
+            descent = Math.max(descent, metrics.actualBoundingBoxDescent);
         }
-        totalHeight -= lineHeight * (lineHeightRate - 1)
 
-        const padding = (this._style.strokeThickness || 0);
+        // 测量用户基线相对于 alphabetic 的偏移量
+        ctx.textBaseline = "alphabetic";
 
-        const logicalWidth = Math.ceil(maxWidth + padding * 2) || 1;
-        const logicalHeight = Math.ceil(totalHeight + padding * 2) || 1;
+        const alphabeticDescent =
+            ctx.measureText(reference).fontBoundingBoxDescent;
+
+        ctx.textBaseline = baseline;
+
+        const targetDescent =
+            ctx.measureText(reference).fontBoundingBoxDescent;
+
+        const lineStep = fontSize * lineHeightRate;
+        const totalHeight =
+            ascent + descent + (lines.length - 1) * lineStep;
+
+        const padding = Math.ceil(strokeThickness / 2) + 2;
+
+        const logicalWidth = Math.max(
+            1,
+            Math.ceil(maxWidth + padding * 2)
+        );
+        const logicalHeight = Math.max(
+            1,
+            Math.ceil(totalHeight + padding * 2)
+        );
 
         const pixelWidth = Math.ceil(logicalWidth * dpr);
         const pixelHeight = Math.ceil(logicalHeight * dpr);
 
-        // Only resize if actually changed, because resizing clears canvas
-        if (this.canvas.width !== pixelWidth || this.canvas.height !== pixelHeight) {
+        if (
+            this.canvas.width !== pixelWidth ||
+            this.canvas.height !== pixelHeight
+        ) {
             this.canvas.width = pixelWidth;
             this.canvas.height = pixelHeight;
         }
 
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-
+        ctx.clearRect(0, 0, pixelWidth / dpr, pixelHeight / dpr);
         ctx.font = font;
-        ctx.textBaseline = "top";
-        ctx.textAlign = this._style.align!;
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = align;
 
-        const startX = this.updateOffset(logicalWidth, padding);
+        const startX = this.updateOffset(logicalWidth, padding)
 
-        const strokeThickness = style.strokeThickness!
-        const hasStroke = strokeThickness > 0;
         if (hasStroke) {
             ctx.lineWidth = strokeThickness;
-            ctx.strokeStyle = style.stroke as string;
+            ctx.strokeStyle = style.stroke ?? "#000000";
             ctx.lineJoin = "round";
         }
+
         if (style.fill) {
-            ctx.fillStyle = style.fill as string;
+            ctx.fillStyle = style.fill;
         }
 
-        let y = padding;
+        // 因为是 alphabetic baseline。是在字母底座开始，要增加ascent，才是字母顶上
+        const alphabeticY = padding + ascent;
+        let y = alphabeticY;
+
         for (const line of lines) {
             if (hasStroke) {
                 ctx.strokeText(line, startX, y);
             }
+
             if (style.fill) {
                 ctx.fillText(line, startX, y);
             }
-            y += lineHeight * lineHeightRate;
+
+            y += lineStep;
         }
 
         this.base?.updateSource(this.render.gl, this.canvas, this.options);
         this.setRegion(0, 0, pixelWidth, pixelHeight);
+
+        const alphabeticBaselineOffset =
+            targetDescent - alphabeticDescent;
+
+        this.offsetY =
+            -padding - ascent + alphabeticBaselineOffset;
     }
 }
 

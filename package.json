@@ -1,7 +1,7 @@
 {
   "name": "rapid-render",
   "private": false,
-  "version": "1.0.17",
+  "version": "1.0.21",
   "type": "module",
   "description": "A high-performance lightweight WebGL 2D renderer for browser games.",
   "repository": "https://github.com/Nightre/Rapid.js",
