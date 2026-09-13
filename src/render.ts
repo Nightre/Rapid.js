@@ -881,10 +881,19 @@ export class Rapid {
     }
 
     applyCamera(transform: ITransformOptions) {
-        this.matrixStack.applyTransform(transform)
+        const worldMatrix = this.matrixStack.curWorldM;
+        const identityMatrix = this.matrix.alloc();
+        const cameraMatrix = this.matrix.alloc();
 
-        const m = this.matrixStack.curWorldM
-        this.matrix.invert(m)
+        try {
+            this.matrixStack.applyTransform(transform, 0, 0, cameraMatrix, identityMatrix);
+
+            this.matrix.invert(cameraMatrix)
+            this.matrix.multiplyOut(worldMatrix, worldMatrix, cameraMatrix)
+        } finally {
+            this.matrix.free(cameraMatrix)
+            this.matrix.free(identityMatrix)
+        }
     }
 
     logicToPhysics(p: Vec2) {

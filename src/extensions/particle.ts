@@ -445,24 +445,30 @@ export class ParticleEmitter {
         const options = this.options
         const customMatrix = this.localSpace ? undefined : this.rapid.matrix.alloc()
 
-        this.rapid.drawParticles({
-            texture: options.texture,
-            shader: options.shader,
+        try {
+            this.rapid.drawParticles({
+                texture: options.texture,
+                shader: options.shader,
 
-            x: this.x.typedArray,
-            y: this.y.typedArray,
-            scaleX: this.scaleX.typedArray,
-            scaleY: this.scaleY.typedArray,
-            rotation: this.rotation.typedArray,
-            color: this.color.typedArray,
-            count: this.count,
-            reverseOrder: true,
+                x: this.x.typedArray,
+                y: this.y.typedArray,
+                scaleX: this.scaleX.typedArray,
+                scaleY: this.scaleY.typedArray,
+                rotation: this.rotation.typedArray,
+                color: this.color.typedArray,
+                count: this.count,
+                reverseOrder: true,
 
-            originX: options.origin?.x ?? 0.5,
-            originY: options.origin?.y ?? 0.5,
+                originX: options.origin?.x ?? 0.5,
+                originY: options.origin?.y ?? 0.5,
 
-            customMatrix
-        })
+                customMatrix
+            })
+        } finally {
+            if (customMatrix !== undefined) {
+                this.rapid.matrix.free(customMatrix)
+            }
+        }
     }
 
     /** Returns `true` if the emitter is running or still has live particles. */

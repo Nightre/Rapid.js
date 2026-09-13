@@ -131,7 +131,7 @@ export default async function (rapid, { loop }) {
         rapid.flush();
 
         //==== Custom matrices ====//
-
+        const tempSlots = []
         for (let row = 0; row < 2; row++) {
             for (let column = 0; column < 3; column++) {
                 const wave = Math.sin(time * 2 + (column + row) * 0.7);
@@ -144,9 +144,14 @@ export default async function (rapid, { loop }) {
                 rapid.matrix.scale(slot, 0.42 + wave * 0.06, 0.42 + wave * 0.06);
                 rapid.matrix.translate(slot, -32, -32);
                 rapid.drawSprite({ texture: toycar, customMatrix: slot });
+                tempSlots.push(slot)
             }
         }
 
         rapid.flush();
+
+        for (const slot of tempSlots) {
+            rapid.matrix.free(slot);
+        }
     });
 }
