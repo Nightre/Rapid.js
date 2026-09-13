@@ -11,7 +11,7 @@ export class Vec2 {
 
     constructor(x?: number, y?: number) {
         this.x = x !== undefined ? x : 0;
-        this.y = y !== undefined ? y : 0;
+        this.y = y !== undefined ? y : this.x;
     }
 
     set(x: number, y?: number): Vec2 {
