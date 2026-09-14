@@ -420,6 +420,7 @@ export class MatrixStore {
         data[o + 4] = ma * tx + mc * ty + mx;
         data[o + 5] = mb * tx + md * ty + my;
     }
+    
     multiplyAffine(
         indexIn: number,
         indexOut: number,
@@ -452,6 +453,54 @@ export class MatrixStore {
         data[o + 4] = ma * tx + mc * ty + mx;
         data[o + 5] = mb * tx + md * ty + my;
     }
+
+    clampBounds(
+        index: number,
+        viewWidth: number,
+        viewHeight: number,
+        limitLeft?: number,
+        limitRight?: number,
+        limitTop?: number,
+        limitBottom?: number
+    ): void {
+        if (limitLeft === undefined && limitRight === undefined && 
+            limitTop === undefined && limitBottom === undefined) {
+            return;
+        }
+
+        const o = index * NUM_ELEMENTS;
+        const d = this.data;
+
+        const scaleX = Math.sqrt(d[o] * d[o] + d[o + 1] * d[o + 1]) || 1;
+        const scaleY = Math.sqrt(d[o + 2] * d[o + 2] + d[o + 3] * d[o + 3]) || 1;
+
+        const halfW = (viewWidth * 0.5) / scaleX;
+        const halfH = (viewHeight * 0.5) / scaleY;
+
+        let tx = d[o + 4];
+        let ty = d[o + 5];
+
+        if (limitLeft !== undefined && limitRight !== undefined) {
+            const spanX = limitRight - limitLeft;
+            tx = spanX < halfW * 2 ? (limitLeft + limitRight) * 0.5 : Math.max(limitLeft + halfW, Math.min(tx, limitRight - halfW));
+        } else if (limitLeft !== undefined) {
+            tx = Math.max(tx, limitLeft + halfW);
+        } else if (limitRight !== undefined) {
+            tx = Math.min(tx, limitRight - halfW);
+        }
+
+        if (limitTop !== undefined && limitBottom !== undefined) {
+            const spanY = limitBottom - limitTop;
+            ty = spanY < halfH * 2 ? (limitTop + limitBottom) * 0.5 : Math.max(limitTop + halfH, Math.min(ty, limitBottom - halfH));
+        } else if (limitTop !== undefined) {
+            ty = Math.max(ty, limitTop + halfH);
+        } else if (limitBottom !== undefined) {
+            ty = Math.min(ty, limitBottom - halfH);
+        }
+
+        d[o + 4] = tx;
+        d[o + 5] = ty;
+    }
 }
 
 export interface MatrixSaveState {
@@ -473,8 +522,8 @@ export class MatrixStack {
 
     /** Internal stack maintaining structural information. */
     stack = new DynamicArrayBuffer(ArrayType.Uint32)
-    curMatrix = new DynamicArrayBuffer(ArrayType.Uint32)
-    lastMatrix = new DynamicArrayBuffer(ArrayType.Uint32)
+    currStack = new DynamicArrayBuffer(ArrayType.Uint32)
+    prevStack = new DynamicArrayBuffer(ArrayType.Uint32)
 
     /** Records the world matrices generated at each step. */
     stepWorldM = new DynamicArrayBuffer(ArrayType.Uint32)
@@ -526,8 +575,8 @@ export class MatrixStack {
         this.stepStack.push(this.step)
         this.matrix.copy(this.curWorldM, parentWorldM);
 
-        this.curMatrix.push(this.curLocalM)
-        this.curMatrix.push(this.curWorldM)
+        this.currStack.push(this.curLocalM)
+        this.currStack.push(this.curWorldM)
 
         return { world: this.curWorldM, local: this.curLocalM, step: this.step++ }
     }
@@ -705,11 +754,11 @@ export class MatrixStack {
      */
     reset(): void {
         //this.matrix.reset();
-        for (let index = 0; index < this.lastMatrix.length; index++) {
-            this.matrix.free(this.lastMatrix.typedArray[index])
+        for (let index = 0; index < this.prevStack.length; index++) {
+            this.matrix.free(this.prevStack.typedArray[index])
         }
-        this.lastMatrix.clear();
-        [this.curMatrix, this.lastMatrix] = [this.lastMatrix, this.curMatrix]
+        this.prevStack.clear();
+        [this.currStack, this.prevStack] = [this.prevStack, this.currStack]
 
         this.stack.clear();
         this.stepAction.clear();
@@ -722,8 +771,8 @@ export class MatrixStack {
 
         this.curLocalM = this.matrix.alloc(); // localM
         this.curWorldM = this.matrix.alloc(); // worldM
-        this.curMatrix.push(this.curLocalM)
-        this.curMatrix.push(this.curWorldM)
+        this.currStack.push(this.curLocalM)
+        this.currStack.push(this.curWorldM)
     }
 
     /**
@@ -799,112 +848,14 @@ export class MatrixStack {
         return this.matrix.transformPoint(this.curLocalM, x, y);
     }
 
-    /**
-     * Applies a transform options object to the current matrix state.
-     * Optionally saves the matrix first
-     */
-    // applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0, outputMatrix: number = -1, worldMatrix: number = this.curWorldM, localMatrix: number = this.curWorldM) {
-    //     let x = transform.x ?? 0;
-    //     let y = transform.y ?? 0;
-
-    //     if (transform.position) {
-    //         x += transform.position.x;
-    //         y += transform.position.y;
-    //     }
-
-    //     let scaleX = 1;
-    //     let scaleY = 1;
-
-    //     const scale = transform.scale;
-
-    //     if (scale) {
-    //         if (typeof scale === "number") {
-    //             scaleX = scale;
-    //             scaleY = scale;
-    //         } else {
-    //             scaleX = scale.x;
-    //             scaleY = scale.y;
-    //         }
-    //     }
-
-    //     const rotation = transform.rotation ?? 0;
-
-    //     let offsetX = transform.offsetX ?? 0;
-    //     let offsetY = transform.offsetY ?? 0;
-
-    //     if (transform.offset) {
-    //         offsetX += transform.offset.x;
-    //         offsetY += transform.offset.y;
-    //     }
-
-    //     const origin = transform.origin;
-
-    //     if (origin !== undefined) {
-    //         if (typeof origin === "number") {
-    //             offsetX -= origin * width;
-    //             offsetY -= origin * height;
-    //         } else {
-    //             offsetX -= origin.x * width;
-    //             offsetY -= origin.y * height;
-    //         }
-    //     }
-
-    //     const cos = rotation ? Math.cos(rotation) : 1;
-    //     const sin = rotation ? Math.sin(rotation) : 0;
-
-    //     // R * S
-    //     const a = cos * scaleX;
-    //     const b = sin * scaleX;
-    //     const c = -sin * scaleY;
-    //     const d = cos * scaleY;
-
-    //     // translate(x, y)
-    //     // rotate(rotation)
-    //     // scale(scaleX, scaleY)
-    //     // translate(offsetX, offsetY)
-    //     const tx = x + a * offsetX + c * offsetY;
-    //     const ty = y + b * offsetX + d * offsetY;
-
-    //     if (outputMatrix !== -1) {
-    //         // 不修改matrix stack
-    //         this.matrix.multiplyAffine(
-    //             worldMatrix,
-    //             outputMatrix,
-    //             a,
-    //             b,
-    //             c,
-    //             d,
-    //             tx,
-    //             ty
-    //         )
-    //         return
-    //     }
-
-    //     // localMatrix = localMatrix * localTransform
-    //     this.matrix.multiplyAffineInPlace(
-    //         localMatrix,
-    //         a,
-    //         b,
-    //         c,
-    //         d,
-    //         tx,
-    //         ty
-    //     );
-
-    //     // worldMatrix = worldMatrix * localTransform
-    //     this.matrix.multiplyAffineInPlace(
-    //         worldMatrix,
-    //         a,
-    //         b,
-    //         c,
-    //         d,
-    //         tx,
-    //         ty
-    //     );
-    // }
-
-
-    applyTransform(transform: ITransformOptions, width: number = 0, height: number = 0, customMatrix: number = -1, worldMatrix: number = this.curWorldM, localMatrix: number = this.curLocalM) {
+    applyTransform(
+        transform: ITransformOptions,
+        width: number = 0,
+        height: number = 0,
+        customMatrix: number = -1,
+        worldMatrix: number = this.curWorldM,
+        localMatrix: number = this.curLocalM
+    ) {
         let x = transform.x ?? 0;
         let y = transform.y ?? 0;
 
@@ -918,7 +869,7 @@ export class MatrixStack {
 
         const scale = transform.scale;
 
-        if (scale) {
+        if (scale !== undefined) {
             if (typeof scale === "number") {
                 scaleX = scale;
                 scaleY = scale;

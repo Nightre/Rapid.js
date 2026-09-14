@@ -34,6 +34,13 @@ import { TextureFilterMode } from "./texture-filter-mode";
 
 export { TextureFilterMode } from "./texture-filter-mode";
 
+interface ICamera extends ITransformOptions{
+    limitLeft?: number
+    limitRight?: number
+    limitTop?: number
+    limitBottom?: number
+}
+
 /**
  * Options for initializing the Rapid application.
  */
@@ -880,7 +887,7 @@ export class Rapid {
         this.gl.disable(this.gl.SCISSOR_TEST);
     }
 
-    applyCamera(transform: ITransformOptions) {
+    applyCamera(transform: ICamera) {
         const worldMatrix = this.matrixStack.curWorldM;
         const identityMatrix = this.matrix.alloc();
         const cameraMatrix = this.matrix.alloc();
@@ -888,6 +895,17 @@ export class Rapid {
         try {
             this.matrixStack.applyTransform(transform, 0, 0, cameraMatrix, identityMatrix);
 
+            this.matrix.clampBounds(
+                cameraMatrix,
+                this.width,
+                this.height,
+                transform.limitLeft,
+                transform.limitRight,
+                transform.limitTop,
+                transform.limitBottom
+            );
+
+            this.matrixStack.translate(this.width/2, this.height/2)
             this.matrix.invert(cameraMatrix)
             this.matrix.multiplyOut(worldMatrix, worldMatrix, cameraMatrix)
         } finally {
