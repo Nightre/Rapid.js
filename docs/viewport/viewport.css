@@ -32,10 +32,8 @@ body {
   width: min(260px, calc(100vw - 24px));
   padding: 12px;
   border: 1px solid #3c3c3c;
-  border-radius: 4px;
   background: #1e1e1e;
   color: #cccccc;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .viewport-controls h1 {
@@ -57,11 +55,6 @@ body {
 
 .viewport-controls select {
   font-size: 12px;
-  padding: 2px 4px;
-  border: 1px solid #444444;
-  border-radius: 3px;
-  background: #2a2a2a;
-  color: #dddddd;
 }
 
 #viewport-stats {

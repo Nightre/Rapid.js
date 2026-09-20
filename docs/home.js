@@ -7,6 +7,7 @@ const copyButtonLabel = copyButton?.querySelector(".copy-button-label");
 const features = document.querySelector("#features");
 const demoStack = document.querySelector(".hero-demo-stack");
 const VIEWPORT_PAGE_VALUE = "__viewport_page__";
+const TEXT_PAGE_VALUE = "__text_page__";
 
 /** Stops whatever demo is currently running. */
 let stopDemo = () => {};
@@ -43,6 +44,10 @@ if (select && code) {
       return option;
     }),
     Object.assign(document.createElement("option"), {
+      value: TEXT_PAGE_VALUE,
+      textContent: "Text Playground →",
+    }),
+    Object.assign(document.createElement("option"), {
       value: VIEWPORT_PAGE_VALUE,
       textContent: "Viewport Test →",
     }),
@@ -50,6 +55,11 @@ if (select && code) {
 
   select.value = demoOrder[0];
   select.addEventListener("change", () => {
+    if (select.value === TEXT_PAGE_VALUE) {
+      stopDemo();
+      window.location.assign("./text/");
+      return;
+    }
     if (select.value === VIEWPORT_PAGE_VALUE) {
       stopDemo();
       window.location.assign("./viewport/");

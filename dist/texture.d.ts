@@ -1,6 +1,9 @@
 import { Rapid } from './render';
-import { TextureFilterMode } from './texture-filter-mode';
 import { Color } from './color';
+export declare enum TextureFilterMode {
+    LINEAR = 0,
+    NEAREST = 1
+}
 export type Images = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas;
 export declare enum TextureWrapMode {
     REPEAT = 0,

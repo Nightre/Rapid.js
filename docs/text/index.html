@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Rapid text texture playground.">
+  <title>Rapid Text Playground</title>
+  <link rel="icon" href="../image/logo.png">
+  <link rel="stylesheet" href="./text.css">
+</head>
+
+<body>
+  <canvas id="game" aria-label="Rapid text playground"></canvas>
+
+  <aside class="text-controls" aria-label="Text controls">
+    <header>
+      <div>
+        <a href="../" aria-label="Back to Rapid home">Rapid</a>
+        <h1>Text Playground</h1>
+      </div>
+      <button id="reset" type="button">Reset</button>
+    </header>
+
+    <label class="control control-wide">
+      <span>Text</span>
+      <textarea id="text" rows="4">Hello, Rapid!
+TextTexture</textarea>
+    </label>
+
+    <section>
+      <h2>Style</h2>
+      <div class="control-grid">
+        <label class="control control-wide">
+          <span>Font family</span>
+          <input id="font-family" type="text" value="Arial">
+        </label>
+
+        <label class="control">
+          <span>Font size</span>
+          <input id="font-size" type="number" min="1" max="240" step="1" value="48">
+        </label>
+
+        <label class="control">
+          <span>Font weight</span>
+          <select id="font-weight">
+            <option>normal</option>
+            <option selected>bold</option>
+            <option>100</option>
+            <option>200</option>
+            <option>300</option>
+            <option>400</option>
+            <option>500</option>
+            <option>600</option>
+            <option>700</option>
+            <option>800</option>
+            <option>900</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Fill</span>
+          <input id="fill" type="color" value="#ffffff">
+        </label>
+
+        <label class="control">
+          <span>Stroke</span>
+          <input id="stroke" type="color" value="#18202b">
+        </label>
+
+        <label class="control">
+          <span>Stroke width</span>
+          <input id="stroke-thickness" type="number" min="0" max="40" step="0.5" value="4">
+        </label>
+
+        <label class="control">
+          <span>Line height</span>
+          <input id="line-height" type="number" min="0.1" max="4" step="0.05" value="1.2">
+        </label>
+
+        <label class="control">
+          <span>Align</span>
+          <select id="align">
+            <option>left</option>
+            <option selected>center</option>
+            <option>right</option>
+          </select>
+        </label>
+
+        <label class="control">
+          <span>Baseline</span>
+          <select id="baseline">
+            <option>top</option>
+            <option>hanging</option>
+            <option selected>middle</option>
+            <option>alphabetic</option>
+            <option>ideographic</option>
+            <option>bottom</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Transform</h2>
+      <div class="control-grid">
+        <label class="control control-wide range-control">
+          <span>Logical size <output id="logic-size-value">960 × 540</output></span>
+          <input id="logic-size" type="range" min="320" max="1920" step="16" value="960">
+        </label>
+
+        <label class="control control-wide range-control">
+          <span>X <output id="position-x-value">480</output></span>
+          <input id="position-x" type="range" min="0" max="960" step="1" value="480">
+        </label>
+
+        <label class="control control-wide range-control">
+          <span>Y <output id="position-y-value">270</output></span>
+          <input id="position-y" type="range" min="0" max="540" step="1" value="270">
+        </label>
+
+        <label class="control control-wide range-control">
+          <span>Rotation <output id="rotation-value">0°</output></span>
+          <input id="rotation" type="range" min="-180" max="180" step="1" value="0">
+        </label>
+
+        <label class="control control-wide range-control">
+          <span>Scale <output id="scale-value">1.00</output></span>
+          <input id="scale" type="range" min="0.1" max="4" step="0.05" value="1">
+        </label>
+      </div>
+    </section>
+
+    <output id="text-stats" aria-live="polite"></output>
+  </aside>
+
+  <script type="module" src="./text.js"></script>
+</body>
+
+</html>
