@@ -1,7 +1,11 @@
 import type { Rapid } from "./render"
-import { TextureFilterMode } from "./texture-filter-mode"
 import { createTexture, setTextureFilterMode, setTextureWrapMode } from "./webgl/utils"
 import { Color } from "./color"
+
+export enum TextureFilterMode {
+    LINEAR,
+    NEAREST,
+}
 
 export type Images =
     | HTMLImageElement

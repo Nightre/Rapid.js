@@ -1,7 +1,6 @@
-import { TextureFilterMode } from "../texture-filter-mode";
 import { TextureWrapMode } from "../texture";
 import type { Rapid } from "../render";
-import type { ITextOptions } from "../texture";
+import { ITextOptions, TextureFilterMode } from "../texture";
 
 export type WebGLContext = WebGL2RenderingContext;
 

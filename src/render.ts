@@ -6,7 +6,7 @@ import { SpriteRegion } from "./region/spriteRegion";
 import { MatrixStack, MatrixStore } from "./matrix-engine";
 import type { ITransformOptions } from "./matrix-engine";
 import { GraphicRegion } from "./region/graphicRegion";
-import { RenderTexture, Texture, TextureManager } from "./texture";
+import { RenderTexture, Texture, TextureManager, TextureFilterMode } from "./texture";
 import { Color } from "./color";
 import {
     drawCircle,
@@ -30,7 +30,6 @@ import type {
 import { Vec2 } from "./math";
 import { AtlasSpriteRegion } from "./region/atlasSpriteRegion";
 import { ParticleRegion } from "./region/particleRegion";
-import { TextureFilterMode } from "./texture-filter-mode";
 import { ExpandMode, ViewPort, type ICamera } from "./viewport";
 
 /**
