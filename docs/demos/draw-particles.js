@@ -278,7 +278,7 @@ export default async function (rapid, { canvas, loop }) {
         }
         rapid.matrixStack.restore();
 
-        rapid.drawSprite({ texture: label, x: rapid.width / 2, y: 17, origin: 0.5 });
+        rapid.drawSprite({ texture: label, x: rapid.width / 2, y: 17 });
         rapid.drawSprite({ texture: tileset, x: 5, y: 5 });
 
         rapid.flush();

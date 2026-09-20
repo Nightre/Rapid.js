@@ -60,12 +60,12 @@ export default function (rapid, { loop }) {
             color: new Color(180, 205, 220),
         });
 
-        rapid.drawSprite({ texture: title, x: guideX, y: 27, origin: 0.5 });
+        rapid.drawSprite({ texture: title, x: guideX, y: 27 });
 
-        rapid.drawSprite({ texture: left, x: guideX, y: 65, origin: new Vec2(0, 0) });
-        rapid.drawSprite({ texture: center, x: guideX, y: 138, origin: new Vec2(0.5, 0) });
-        rapid.drawSprite({ texture: right, x: guideX, y: 211, origin: new Vec2(1, 0) });
-        rapid.drawSprite({ texture: timer, x: guideX, y: 282, origin: 0.5 });
+        rapid.drawSprite({ texture: left, x: guideX, y: 65, });
+        rapid.drawSprite({ texture: center, x: guideX, y: 138, });
+        rapid.drawSprite({ texture: right, x: guideX, y: 211, });
+        rapid.drawSprite({ texture: timer, x: guideX, y: 282, });
 
         rapid.flush();
     });

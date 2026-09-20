@@ -62,6 +62,7 @@ const createParticleRegion = () => new TestParticleRegion({
 
 const atlasTexture = {
     glTexture: {},
+    updateResolution() {},
     rawWidth: 64,
     rawHeight: 32,
     uvX: 0.25,

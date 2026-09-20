@@ -643,7 +643,6 @@ export class MatrixStack {
         if (this.stack.length == 0) {
             return;
         } else {
-
             this.curWorldM = this.stack.pop()
             this.curLocalM = this.stack.pop()
         }

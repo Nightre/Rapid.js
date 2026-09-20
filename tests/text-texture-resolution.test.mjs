@@ -28,7 +28,7 @@ const createTextTextureStub = () => {
 };
 
 describe("TextTexture resolution levels", () => {
-    it("keeps fractional resolution below 2x and updates at font-pixel boundaries", () => {
+    it("tracks fractional matrix scale exactly", () => {
         const { texture, setMatrixScale } = createTextTextureStub();
 
         setMatrixScale(1.25);
@@ -38,29 +38,29 @@ describe("TextTexture resolution levels", () => {
 
         setMatrixScale(1.29);
         texture.updateResolution(0);
-        expect(texture.resolution).toBe(1.25);
-        expect(texture.update).toHaveBeenCalledTimes(1);
+        expect(texture.resolution).toBe(1.29);
+        expect(texture.update).toHaveBeenCalledTimes(2);
 
         setMatrixScale(1.31);
         texture.updateResolution(0);
         expect(texture.resolution).toBe(1.31);
-        expect(texture.update).toHaveBeenCalledTimes(2);
+        expect(texture.update).toHaveBeenCalledTimes(3);
     });
 
-    it("uses power-of-two levels above 2x", () => {
+    it("tracks large matrix scales exactly", () => {
         const { texture, setMatrixScale } = createTextTextureStub();
 
         setMatrixScale(5);
         texture.updateResolution(0);
-        expect(texture.resolution).toBe(8);
+        expect(texture.resolution).toBe(5);
 
         setMatrixScale(6);
         texture.updateResolution(0);
-        expect(texture.resolution).toBe(8);
-        expect(texture.update).toHaveBeenCalledTimes(1);
+        expect(texture.resolution).toBe(6);
+        expect(texture.update).toHaveBeenCalledTimes(2);
     });
 
-    it("ignores tiny resolution changes within the same font-pixel size", () => {
+    it("updates for small resolution changes", () => {
         const { texture, setMatrixScale } = createTextTextureStub();
 
         setMatrixScale(0.05);
@@ -69,12 +69,12 @@ describe("TextTexture resolution levels", () => {
 
         setMatrixScale(0.09);
         texture.updateResolution(0);
-        expect(texture.resolution).toBe(0.05);
-        expect(texture.update).toHaveBeenCalledTimes(1);
+        expect(texture.resolution).toBe(0.09);
+        expect(texture.update).toHaveBeenCalledTimes(2);
 
         setMatrixScale(0.11);
         texture.updateResolution(0);
         expect(texture.resolution).toBe(0.11);
-        expect(texture.update).toHaveBeenCalledTimes(2);
+        expect(texture.update).toHaveBeenCalledTimes(3);
     });
 });

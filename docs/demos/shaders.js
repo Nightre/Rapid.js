@@ -148,7 +148,6 @@ export default async function (rapid, { loop }) {
                 texture: labels[i],
                 x: 80 + i * 160,
                 y: 215,
-                origin: 0.5,
             });
         }
 

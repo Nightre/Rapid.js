@@ -111,43 +111,43 @@ test("MatrixStack save states remain usable after restore", () => {
     assertPointClose(stack.localToWorld(0, 0), { x: 0, y: 0 }, "restored root");
 });
 
-test("MatrixStack.retainMatrix removes matrices from automatic recycling", () => {
+test("MatrixStack.retainMatrix retains both matrices in a saved state", () => {
     const stack = createStack();
     const saved = stack.save();
     stack.translate(12, 34);
     stack.restore();
 
-    assert.equal(stack.retainMatrix(saved), saved);
+    stack.retainMatrix(saved);
 
-    // Two resets normally move the saved matrices to prevStack and then free
-    // them. Retained IDs must remain allocated instead.
-    stack.reset();
+    const queuedMatrices = stack.currStack.getArray(0, stack.currStack.length);
+    assert.equal(queuedMatrices.includes(saved.local), false);
+    assert.equal(queuedMatrices.includes(saved.world), false);
+
+    // reset() only recycles matrices that remain in currStack.
     stack.reset();
 
     assert.equal(stack.matrix.freeFlag.typedArray[saved.local], 1);
     assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 1);
-    assertPointClose(stack.matrix.getPosition(saved.world), { x: 12, y: 34 });
+    assertPointClose(stack.matrix.getPosition(saved.local), { x: 12, y: 34 }, "retained local");
+    assertPointClose(stack.matrix.getPosition(saved.world), { x: 12, y: 34 }, "retained world");
 
     stack.matrix.free(saved.local);
     stack.matrix.free(saved.world);
-    assert.equal(stack.matrix.freeFlag.typedArray[saved.local], 0);
-    assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 0);
 });
 
-test("MatrixStack.retainMatrix can retain one matrix from prevStack", () => {
+test("MatrixStack.retainMatrix can retain a single matrix ID", () => {
     const stack = createStack();
     const saved = stack.save();
     stack.translate(12, 34);
     stack.restore();
 
-    stack.reset();
-    assert.equal(stack.retainMatrix(saved.world), saved.world);
+    stack.retainMatrix(saved.world);
     stack.reset();
 
     assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 1);
     assertPointClose(stack.matrix.getPosition(saved.world), { x: 12, y: 34 }, "retained world");
 
-    // The unretained local ID has been recycled as the new root and reset.
+    // The unretained local matrix is available for reuse by the new root.
     assert.equal(saved.local, stack.curLocalM);
     assertPointClose(stack.matrix.getPosition(saved.local), { x: 0, y: 0 }, "recycled local");
 
