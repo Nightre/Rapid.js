@@ -101,19 +101,15 @@ stack.restore(); // 1.root
 rapid.drawSprite(ui);
 ```
 
-## Reuse and Update Matrix Subtrees
+## Use Saved World Matrices
 
-Use `customMatrix` to render with any matrix in the hierarchy (even after its stack scope has been popped).
-
-When you modify a node's local matrix, call `updateMatrixSubtree()` to automatically recalculate that node and all affected descendant world matrices, without rebuilding the entire matrix hierarchy.
+`save()` returns the current `parent`, `local`, and `world` matrix IDs. The IDs can be used with `customMatrix` after their stack scope has been restored, as long as they belong to the current frame.
 
 ```ts
 rapid.clear();
 
 const stack = rapid.matrixStack;
-const matrix = rapid.matrix;
-
-// Build a transform hierarchy.
+// Build the hierarchy for this frame.
 const world = stack.save();
 stack.translate(200, 200);
 
@@ -123,15 +119,8 @@ stack.translate(80, 0);
 stack.restore(); // enemyNode
 stack.restore(); // world
 
-// Both nodes have been popped, but their matrices remain available.
-// Move the world node later in the same frame.
-matrix.identity(world.local);
-matrix.translate(world.local, 100, 100);
-
-// Recalculate only `world` and its descendants.
-stack.updateMatrixSubtree(world);
-
-// Render using the stored matrix of the popped child node.
+// The stack has been restored, but enemyNode.world is still available during
+// this frame. Build the hierarchy again next frame with the latest game state.
 rapid.drawSprite({
   texture: enemy,
   customMatrix: enemyNode.world,
@@ -139,6 +128,8 @@ rapid.drawSprite({
 
 rapid.flush();
 ```
+
+`MatrixStack` is immediate-mode: rebuild transform hierarchies each frame. For retained scene graphs, keep transforms in your own game objects and feed them into the stack while traversing the scene.
 
 With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. You can use ECS, scene graphs, components, or any hybrid approach you prefer.
 

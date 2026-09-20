@@ -300,6 +300,15 @@ export class CustomGlShader {
         this.rapid = rapid
         this.uniforms = uniforms ?? {};
         this.usedTextureUnitNum = usedTextureUnitNum;
+
+        this.beforePreCompile()
+        this.preCompile()
+    }
+
+    beforePreCompile(){}
+
+    preCompile(){
+        //this.rapid.regions.forEach((r) => r.createCustomShader(this))
     }
 
     /**

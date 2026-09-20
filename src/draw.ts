@@ -25,8 +25,8 @@ export interface IDrawParticleBatchOptions extends IDisplayOptions {
     rotation?: ArrayLike<number> | number;
     color?: ArrayLike<Color> | ArrayLike<number> | number;
     count?: number;
-    scaleX?: ArrayLike<number>;
-    scaleY?: ArrayLike<number>;
+    scaleX?: ArrayLike<number> | number;
+    scaleY?: ArrayLike<number> | number;
     originX?: number;
     originY?: number;
     flipX?: boolean;
@@ -80,8 +80,17 @@ const withOptionsTransform = (
     width: number,
     height: number,
 ) => {
+    const temporary = rapid.matrix.temporary
+
     if (options.customMatrix !== undefined) {
-        return options.customMatrix;
+        rapid.matrixStack.applyTransform(
+            options,
+            width,
+            height,
+            temporary,
+            options.customMatrix,
+        );
+        return temporary;
     }
 
     if (options.modifyStack) {
@@ -93,12 +102,12 @@ const withOptionsTransform = (
 
         return
     } else {
-        const temporary = rapid.matrix.temporary
         rapid.matrixStack.applyTransform(
             options,
             width,
             height,
-            temporary
+            temporary,
+            rapid.matrixStack.curWorldM,
         );
         return temporary
     }

@@ -441,9 +441,9 @@ export class ParticleEmitter {
      * Renders all live particles.
      * In local-space mode the emitter's own transform is applied around the batch.
      */
-    render() {
+    render(customMatrix?: number) {
         const options = this.options
-        const customMatrix = this.localSpace ? undefined : this.rapid.matrix.alloc()
+        const renderMatrix = customMatrix ?? (this.localSpace ? undefined : this.rapid.matrix.alloc())
 
         try {
             this.rapid.drawParticles({
@@ -462,11 +462,11 @@ export class ParticleEmitter {
                 originX: options.origin?.x ?? 0.5,
                 originY: options.origin?.y ?? 0.5,
 
-                customMatrix
+                customMatrix: renderMatrix
             })
         } finally {
-            if (customMatrix !== undefined) {
-                this.rapid.matrix.free(customMatrix)
+            if (customMatrix === undefined && renderMatrix !== undefined && !this.localSpace) {
+                this.rapid.matrix.free(renderMatrix)
             }
         }
     }

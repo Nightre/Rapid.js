@@ -146,44 +146,30 @@ const raw = matrix.getMatrix(node.local);
 ms.restore();
 ```
 
-这种写法适合骨骼、关节、机械臂这类长期存在的层级结构。
+这种写法适合在当前帧里直接检查或调整矩阵数据。长期存在的变换状态应保存在自己的场景对象中，遍历场景时再重建矩阵栈。
 
-## updateMatrixSubtree: 只改一个节点，整棵子树跟着动
+## restore 后使用保存的矩阵 ID
 
-有时候需要在一帧内重复修改创建好的matrixstack。但是重建整个matrixstack开销太大。此时就需要`updateMatrixSubtree`来局部更新受影响的matrixstack。
-
-如果你直接改了某个节点的 local 矩阵，它的 world 与它下游的 world 矩阵不会自动全部重算。这个时候调用 `updateMatrixSubtree(child)`，就可以从这个节点开始，把会被它影响的 world 矩阵更新一遍。
+`save()` 会返回节点的 `parent`、`local` 和 `world` 矩阵 ID。`restore()` 会切换当前矩阵状态，但返回的 ID 在当前帧中仍然可以用于绘制。
 
 ```ts
 const stack = rapid.matrixStack;
-const matrix = rapid.matrix;
-
 const root = stack.save();
 stack.translate(200, 200);
 
 const child = stack.save();
 stack.translate(80, 0);
-rapid.drawSprite({ texture: stick }); // (200 + 80, 200 + 0)
+stack.restore();
 stack.restore();
 
-stack.restore();
-
-// 后面只修改 root 的 local 矩阵
-matrix.identity(root.local);
-matrix.translate(root.local, 100, 100);
-stack.updateMatrixSubtree(root); // 这会自动更新 root.world 和 child.world
-
+// 矩阵栈已经回到根节点，但 child.world 在当前帧仍然有效。
 rapid.drawSprite({
   texture: stick,
   customMatrix: child.world,
-}); // (100 + 80, 100 + 0)
+}); // (200 + 80, 200 + 0)
 ```
 
-`updateMatrixSubtree(child)` 只会重算 `child` 和它下面的子节点，不会影响兄弟节点。它做的事情就是重新计算：
-
-```ts
-world = parent.world * local;
-```
+`MatrixStack` 是即时模式，不会保留可遍历的子树。`rapid.clear()` 会为下一帧重置矩阵栈，因此每一帧都应该根据最新游戏状态重新构建层级。修改保存的 local 矩阵不会自动传播到后代节点。
 
 ## customMatrix: 跳过 MatrixStack 直接使用 Matrix
 
@@ -196,7 +182,7 @@ rapid.drawSprite({
 });
 ```
 
-它通常和 `MatrixStore`、`updateMatrixSubtree` 一起使用。
+它既可以使用 `save()` 返回的 world ID，也可以使用你通过 `MatrixStore` 自行分配和管理的矩阵 ID。
 
 ## Vec2
 

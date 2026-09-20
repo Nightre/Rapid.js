@@ -294,6 +294,8 @@ class Texture {
         if (base) this.setBase(base);
     }
 
+    public updateResolution(_matrixId?:number){}
+
     /**
      * Sets the base texture and increments its reference count.
      * @param base - The BaseTexture instance.
@@ -659,7 +661,8 @@ class TextTexture extends Texture {
     private _text: string;
     private _style: ITextStyle;
     private options: ITextOptions
-    flipY = true
+
+    resolution: number = 1
 
     constructor(render: Rapid, options?: ITextOptions) {
         super();
@@ -668,10 +671,9 @@ class TextTexture extends Texture {
         this._text = options?.text ?? "";
         this.options = {
             premultipliedAlpha: render.premultipliedAlpha,
-            textureFilter: TextureFilterMode.LINEAR,
-            ...options
+            ...options,
+            textureFilter: TextureFilterMode.NEAREST,
         };
-
         this.canvas = document.createElement("canvas");
         const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx) throw new Error("Failed to get 2d context for TextTexture");
@@ -681,7 +683,7 @@ class TextTexture extends Texture {
         this.canvas.height = 1;
         const glTexture = createTexture(render, this.canvas, this.options);
         this.setBase(new BaseTexture(glTexture, 1, 1));
-        this.update();
+        this.updateResolution()
     }
 
     public get text(): string {
@@ -722,21 +724,36 @@ class TextTexture extends Texture {
         }
     }
 
+    public updateResolution(matrixId?:number){
+        let requiredResolution = 1
+
+        if (matrixId !== undefined) {
+            const matrixStore = this.render.matrix
+            const scale = matrixStore.getScale(matrixId)
+            const matrixScale = Math.max(scale.x, scale.y)
+            requiredResolution *= matrixScale
+        }
+        requiredResolution *= this.render.viewport.resolution
+
+        if (requiredResolution != this.resolution) {
+            this.resolution = requiredResolution;
+            this.scale = 1 / this.resolution;
+            this.update()   
+        }
+    }
+
     /**
      * Updates the internal canvas and uploads it to WebGL
      */
     public update(): void {
         const ctx = this.ctx;
         const style = this.style;
-
-        const resolution = this.render.dpr;
-        this.scale = 1 / resolution;
-
         const fontSize = style.fontSize!;
         const fontWeight = style.fontWeight!;
         const fontFamily = style.fontFamily!;
         const lineHeightRate = style.lineHeight!;
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        const resolution = this.resolution
 
         const baseline: CanvasTextBaseline = style.baseline ?? "top";
         const align = style.align ?? "left";
@@ -801,7 +818,7 @@ class TextTexture extends Texture {
             this.canvas.height = pixelHeight;
         }
 
-        ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+        ctx.setTransform(resolution, 0, 0, -resolution, 0, pixelHeight);
         ctx.clearRect(
             0,
             0,
@@ -846,8 +863,8 @@ class TextTexture extends Texture {
         const alphabeticBaselineOffset =
             targetDescent - alphabeticDescent;
 
-        this.offsetY =
-            (-padding - ascent + alphabeticBaselineOffset);
+        this.offsetX = -startX
+        this.offsetY = (-padding - ascent + alphabeticBaselineOffset);
     }
 }
 

@@ -19,7 +19,7 @@ export default async function (rapid, { loop }) {
     const labels = [
         makeLabel("Transform options"),
         makeLabel("Matrix stack tree"),
-        makeLabel("updateMatrixSubtree()"),
+        makeLabel("Saved world matrices"),
         makeLabel("Custom matrices"),
     ];
     const divider = new Color(205, 225, 235);
@@ -37,10 +37,10 @@ export default async function (rapid, { loop }) {
             width: 1,
             color: divider,
         });
-        rapid.drawSprite({ texture: labels[0], x: 120, y: 20, origin: 0.5 });
-        rapid.drawSprite({ texture: labels[1], x: 360, y: 20, origin: 0.5 });
-        rapid.drawSprite({ texture: labels[2], x: 120, y: 168, origin: 0.5 });
-        rapid.drawSprite({ texture: labels[3], x: 360, y: 168, origin: 0.5 });
+        rapid.drawSprite({ texture: labels[0], x: 120, y: 20, });
+        rapid.drawSprite({ texture: labels[1], x: 360, y: 20, });
+        rapid.drawSprite({ texture: labels[2], x: 120, y: 168, });
+        rapid.drawSprite({ texture: labels[3], x: 360, y: 168, });
 
         //==== Transform options ====// 
 
@@ -95,7 +95,7 @@ export default async function (rapid, { loop }) {
         stack.restore(); // back to B
         stack.restore(); // back to A
 
-        //==== updateMatrixSubtree ====//
+        //==== Saved world matrices ====//
 
         const hub = stack.save(); // get now matrix
         stack.translate(105, 232);
@@ -112,22 +112,11 @@ export default async function (rapid, { loop }) {
         stack.restore();
         stack.restore();
 
-        // Use a previously stored matrix via `customMatrix` elsewhere (even if the matrix stack is already empty).
+        // `save()` returns matrix IDs. They remain usable after `restore()` for
+        // the rest of this frame, so drawing can happen outside the stack scope.
         rapid.drawCircle({ radius: 7, color: new Color(52, 73, 94), customMatrix: hub.world });
-        rapid.drawCircle({ radius: 10, color: new Color(255, 143, 112), customMatrix: orbit.world });
-        rapid.drawCircle({ radius: 10, color: new Color(255, 143, 112), customMatrix: child.world });
-        
-        // Modify the local matrix currently within the matrix stack (even if it has already been popped).
-        rapid.matrix.identity(orbit.local);
-        rapid.matrix.rotate(orbit.local, time + Math.PI/2); // Rotate it a little more.
-        rapid.matrix.translate(orbit.local, 48, 0);
-        // `updateMatrixSubtree` lets the modified `orbit.local` matrix affect all downstream matrices in its subtree.
-        stack.updateMatrixSubtree(orbit);
-
-        // The orbit's local matrix affects both the orbit's world matrix and the child's world matrix.
-        // Render the circles affected by the local matrix (they are a brighter red).
         rapid.drawCircle({ radius: 10, color: Color.Red, customMatrix: orbit.world });
-        rapid.drawCircle({ radius: 10, color: Color.Red, customMatrix: child.world });
+        rapid.drawCircle({ radius: 8, color: new Color(52, 152, 219), customMatrix: child.world });
         rapid.flush();
 
         //==== Custom matrices ====//

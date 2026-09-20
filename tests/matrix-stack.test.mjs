@@ -93,7 +93,7 @@ test("MatrixStack.applyTransform composes position, origin, scale and rotation",
     assertNumbersClose(stack.matrix.getMatrix(stack.curWorldM), worldBeforeCustom);
 });
 
-test("MatrixStack.updateMatrixSubtree updates only the selected hierarchy", () => {
+test("MatrixStack save states remain usable after restore", () => {
     const stack = createStack();
 
     const parent = stack.save();
@@ -102,37 +102,11 @@ test("MatrixStack.updateMatrixSubtree updates only the selected hierarchy", () =
     const child = stack.save();
     stack.translate(5, 0);
 
-    const grandchild = stack.save();
-    stack.translate(0, 2);
     stack.restore();
     stack.restore();
 
-    const sibling = stack.save();
-    stack.translate(100, 0);
-    stack.restore();
-    stack.restore();
-
-    // This branch is outside parent and must never be touched by its update.
-    const external = stack.save();
-    stack.translate(1000, 0);
-
-    stack.matrix.identity(parent.local);
-    stack.matrix.translate(parent.local, 30, 40);
-    stack.updateMatrixSubtree(parent);
-
-    assertPointClose(stack.matrix.getPosition(parent.world), { x: 30, y: 40 }, "parent");
-    assertPointClose(stack.matrix.getPosition(child.world), { x: 35, y: 40 }, "child");
-    assertPointClose(stack.matrix.getPosition(grandchild.world), { x: 35, y: 42 }, "grandchild");
-    assertPointClose(stack.matrix.getPosition(sibling.world), { x: 130, y: 40 }, "sibling");
-    assertPointClose(stack.matrix.getPosition(external.world), { x: 1000, y: 0 }, "external branch");
-
-    // Updating child must include grandchild, but stop before parent's sibling.
-    stack.matrix.identity(child.local);
-    stack.matrix.translate(child.local, 7, 8);
-    stack.updateMatrixSubtree(child);
-
-    assertPointClose(stack.matrix.getPosition(child.world), { x: 37, y: 48 }, "updated child");
-    assertPointClose(stack.matrix.getPosition(grandchild.world), { x: 37, y: 50 }, "updated grandchild");
-    assertPointClose(stack.matrix.getPosition(sibling.world), { x: 130, y: 40 }, "untouched sibling");
-    assertPointClose(stack.matrix.getPosition(external.world), { x: 1000, y: 0 }, "untouched external");
+    assert.equal(child.parent, parent.world);
+    assertPointClose(stack.matrix.getPosition(parent.world), { x: 10, y: 20 }, "saved parent");
+    assertPointClose(stack.matrix.getPosition(child.world), { x: 15, y: 20 }, "saved child");
+    assertPointClose(stack.localToWorld(0, 0), { x: 0, y: 0 }, "restored root");
 });

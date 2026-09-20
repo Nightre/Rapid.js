@@ -1,5 +1,6 @@
 import { Rapid, Color, Vec2 } from "rapid-render";
 import { highlightCodeBlock } from "./highlight.js";
+import { ExpandMode } from "rapid-render";
 
 /**
  * Demo registry.
@@ -27,6 +28,7 @@ export const demoOrder = [
   "geometry",
   "lines",
   "text",
+  "text-resolution",
   "shaders",
   "render-texture",
   "ping-pong-filter",
@@ -44,6 +46,7 @@ const demoTitles = {
   geometry: "Geometry",
   lines: "Lines",
   text: "Text",
+  "text-resolution": "Text Resolution Test",
   shaders: "Shaders",
   "render-texture": "Render Textures",
   "ping-pong-filter": "Ping-Pong Filter",
@@ -102,6 +105,7 @@ const getRapid = (canvas) => {
     physicsHeight: 300,
     backgroundColor: new Color(247, 253, 255),
     antialias: false,
+    expand: ExpandMode.EXPAND
   });
   return rapid;
 };

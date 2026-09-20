@@ -6,6 +6,7 @@ const copyButton = document.querySelector("[data-copy-target]");
 const copyButtonLabel = copyButton?.querySelector(".copy-button-label");
 const features = document.querySelector("#features");
 const demoStack = document.querySelector(".hero-demo-stack");
+const VIEWPORT_PAGE_VALUE = "__viewport_page__";
 
 /** Stops whatever demo is currently running. */
 let stopDemo = () => {};
@@ -41,10 +42,21 @@ if (select && code) {
       option.textContent = demos[id].title;
       return option;
     }),
+    Object.assign(document.createElement("option"), {
+      value: VIEWPORT_PAGE_VALUE,
+      textContent: "Viewport Test →",
+    }),
   );
 
   select.value = demoOrder[0];
-  select.addEventListener("change", () => showDemo(select.value));
+  select.addEventListener("change", () => {
+    if (select.value === VIEWPORT_PAGE_VALUE) {
+      stopDemo();
+      window.location.assign("./viewport/");
+      return;
+    }
+    showDemo(select.value);
+  });
   showDemo(select.value);
 
   window.addEventListener("beforeunload", () => stopDemo(), { once: true });

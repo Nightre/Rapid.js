@@ -15,7 +15,8 @@ in vec4 aUVRect;
 
 // per-instance：tint color
 in vec4 aColor;
-uniform mat4 u_projection;
+// Projection and scene transform are combined once per particle batch on the CPU.
+uniform mat4 u_matrix;
 
 out vec2 vRegion;
 out vec4 vColor;
@@ -33,5 +34,5 @@ void main(void) {
     vec4 position = vec4(mat2(c, s, -s, c) * scaled + aPosition, 0.0, 1.0);
     // CUSTOM_CODE_CALL
 
-    gl_Position = u_projection * position;
+    gl_Position = u_matrix * position;
 }

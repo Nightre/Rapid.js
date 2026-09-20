@@ -33,7 +33,7 @@ export default async function (rapid, { loop }) {
         fill: "#7b8794",
         align: "center",
     });
-    
+
     const x = [80, 240, 400];
 
     loop((time) => {
@@ -77,7 +77,7 @@ export default async function (rapid, { loop }) {
             origin: 0.5,
         });
 
-        rapid.drawSprite({ texture: stripLabel, x: 240, y: 178, origin: 0.5 });
+        rapid.drawSprite({ texture: stripLabel, x: 240, y: 178 });
 
         for (let i = 0; i < frames.length; i++) {
             rapid.drawSprite({
@@ -90,7 +90,7 @@ export default async function (rapid, { loop }) {
             });
         }
 
-        rapid.drawSprite({ texture: sourceLabel, x: 240, y: 282, origin: 0.5 });
+        rapid.drawSprite({ texture: sourceLabel, x: 240, y: 282 });
 
         rapid.flush();
     });

@@ -30,6 +30,7 @@ export default defineConfig({
       input: {
         main: fromRoot('./docs/index.html'),
         docs: fromRoot('./docs/docs.html'),
+        viewport: fromRoot('./docs/viewport/index.html'),
         benchmark: fromRoot('./docs/benchmark/index.html'),
       },
     },

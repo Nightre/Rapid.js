@@ -128,6 +128,7 @@ declare class Texture {
     protected _px: number;
     protected _py: number;
     constructor(base?: BaseTexture);
+    updateResolution(_matrixId?: number): void;
     /**
      * Sets the base texture and increments its reference count.
      * @param base - The BaseTexture instance.
@@ -262,7 +263,7 @@ declare class TextTexture extends Texture {
     private _text;
     private _style;
     private options;
-    flipY: boolean;
+    resolution: number;
     constructor(render: Rapid, options?: ITextOptions);
     get text(): string;
     /**
@@ -275,6 +276,7 @@ declare class TextTexture extends Texture {
      */
     set style(value: Partial<ITextStyle>);
     private updateOffset;
+    updateResolution(matrixId?: number): void;
     /**
      * Updates the internal canvas and uploads it to WebGL
      */

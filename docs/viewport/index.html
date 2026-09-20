@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Rapid viewport scaling and expansion test.">
+  <title>Rapid Viewport Test</title>
+  <link rel="icon" href="../image/logo.png">
+  <link rel="stylesheet" href="./viewport.css">
+</head>
+
+<body>
+  <canvas id="game" aria-label="Rapid viewport test"></canvas>
+
+  <aside class="viewport-controls" aria-label="Viewport controls">
+    <h1>Viewport Test</h1>
+
+    <label>
+      <span>Scale mode</span>
+      <select id="scale-mode">
+        <option value="CanvasItem">CanvasItem</option>
+        <option value="Viewport">Viewport</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Expand mode</span>
+      <select id="expand-mode">
+        <option value="KEEP">KEEP</option>
+        <option value="KEEP_W">KEEP_W</option>
+        <option value="KEEP_H">KEEP_H</option>
+        <option value="EXPAND">EXPAND</option>
+        <option value="IGNORE">IGNORE</option>
+        <option value="NONE">NONE</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Logical size</span>
+      <select id="logic-size">
+        <option value="1920x1080">1920 × 1080</option>
+        <option value="960x540">960 × 540</option>
+        <option value="480x270" selected>480 × 270</option>
+        <option value="320x180">320 × 180</option>
+        <option value="160x90">160 × 90</option>
+      </select>
+    </label>
+
+    <output id="viewport-stats" aria-live="polite"></output>
+  </aside>
+
+  <script type="module" src="./viewport.js"></script>
+</body>
+
+</html>

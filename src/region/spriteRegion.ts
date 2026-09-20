@@ -107,7 +107,7 @@ export class SpriteRegion extends Region {
     ): void {
         const o = matrixIndex * 6;
         const md = this.matrixStore.data;
-
+        texture.updateResolution(matrixIndex)
         this.drawSpriteAffine(
             texture,
             md[o],
@@ -129,7 +129,7 @@ export class SpriteRegion extends Region {
         );
     }
 
-    drawSpriteAffine(
+    private drawSpriteAffine(
         texture: Texture,
 
         matrixA: number,

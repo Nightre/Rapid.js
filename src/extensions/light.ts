@@ -23,6 +23,9 @@ export class LightShader extends CustomGlShader {
             usedTextureUnitNum + 2,
             uniforms
         )
+    }
+
+    beforePreCompile(){
         this.prefix.push("light_")
     }
 

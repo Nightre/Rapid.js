@@ -265,9 +265,12 @@ export default async function (rapid, { canvas, loop }) {
 
         rapid.clear();
         rapid.matrixStack.save();
+
+        // The demo stores camera.x/y as the visible world's top-left corner,
+        // while applyCamera() expects the camera's center position.
         rapid.applyCamera({
-            x: camera.x,
-            y: camera.y,
+            x: camera.x + rapid.width / (2 * camera.zoom),
+            y: camera.y + rapid.height / (2 * camera.zoom),
             scale: 1 / camera.zoom,
         });
         for (let i = 0; i < visibleChunks.length; i++) {

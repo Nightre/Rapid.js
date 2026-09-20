@@ -103,6 +103,8 @@ export class GraphicRegion extends Region {
         this.matrixIndex = matrixIndex;
         this.drawMode = drawMode;
         this.texture = texture;
+        texture?.updateResolution(matrixIndex)
+
         if (this.texture?.glTexture) {
             // It does not rely on the region to set the texture;
             // it merely occupies a texture unit to prevent the custom shader from overwriting it

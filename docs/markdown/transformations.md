@@ -145,44 +145,30 @@ const raw = matrix.getMatrix(node.local);
 ms.restore();
 ```
 
-This pattern is ideal for long-lived hierarchical structures such as skeletons, joints, and robotic arms.
+This pattern is useful when you need to inspect or adjust matrix data directly during the current frame. Keep long-lived transform state in your own scene objects and rebuild the stack while traversing them.
 
-## updateMatrixSubtree: Modify One Node, Update Its Subtree
+## Saved Matrix IDs After restore
 
-Sometimes you need to modify an already-built matrix stack repeatedly within the same frame. Rebuilding the entire matrix stack would be too expensive, so `updateMatrixSubtree` updates only the affected subtree.
-
-If you directly modify a node's local matrix, neither its world matrix nor the world matrices of its descendants are recalculated automatically. Calling `updateMatrixSubtree(child)` recalculates the affected world matrices starting from that node.
+`save()` returns the node's `parent`, `local`, and `world` matrix IDs. Restoring the stack changes the current state, but the returned IDs remain available for drawing during the current frame.
 
 ```ts
 const stack = rapid.matrixStack;
-const matrix = rapid.matrix;
-
 const root = stack.save();
 stack.translate(200, 200);
 
 const child = stack.save();
 stack.translate(80, 0);
-rapid.drawSprite({ texture: stick }); // (200 + 80, 200 + 0)
+stack.restore();
 stack.restore();
 
-stack.restore();
-
-// Later, modify only root's local matrix
-matrix.identity(root.local);
-matrix.translate(root.local, 100, 100);
-stack.updateMatrixSubtree(root); // This automatically updates root.world and child.world
-
+// The stack is back at its root, but child.world is still valid this frame.
 rapid.drawSprite({
   texture: stick,
   customMatrix: child.world,
-}); // (100 + 80, 100 + 0)
+}); // (200 + 80, 200 + 0)
 ```
 
-`updateMatrixSubtree(child)` only recalculates `child` and its descendant nodes without affecting sibling nodes. It performs the recalculation:
-
-```ts
-world = parent.world * local;
-```
+`MatrixStack` is immediate-mode and does not retain a traversable subtree. `rapid.clear()` resets it for the next frame, so rebuild the hierarchy with current game state each frame. Changing a saved local matrix does not automatically propagate to descendants.
 
 ## customMatrix: Bypass MatrixStack and Use Matrix Directly
 
@@ -195,7 +181,7 @@ rapid.drawSprite({
 });
 ```
 
-It is commonly used together with `MatrixStore` and `updateMatrixSubtree`.
+It can use a world ID returned by `save()` or a matrix ID that you allocate and manage directly through `MatrixStore`.
 
 ## Vec2
 

@@ -41,7 +41,7 @@ export class ParticleRegion extends SpriteRegion {
 
     enter(customShader?: GLShader | CustomGlShader): void {
         super.enter(customShader)
-        this.currentShader.setUniform("u_projection", this.rapid.projection);
+        this.currentShader.setUniform("u_matrix", this.rapid.projection);
     }
 
     createShader(vs: string, fs: string) {
@@ -95,6 +95,7 @@ export class ParticleRegion extends SpriteRegion {
         if (this.texture && texture !== this.texture) {
             this.flush();
         }
+        texture.updateResolution()
 
         const uniScaleX = typeof scaleX == "number"
         const uniScaleY = typeof scaleY == "number"
@@ -155,7 +156,7 @@ export class ParticleRegion extends SpriteRegion {
             x, y, scaleX, scaleY, rotation, u0, v0, u1, v1, color,
             f32, u32, rawWidth, rawHeight, uv2texW, uv2texH,
             rotationOffset, staticColor,
-            originX, originY, count, batchCount, index
+            1 - originX, 1 - originY, count, batchCount, index
         )
 
         buf.usedElemNum = index;
@@ -257,7 +258,7 @@ return function( x, y, scaleX, scaleY, rotation, u0, v0, u1, v1, color, f32, u32
         const worldMatrix = m.getMatrix(this.customMatrix ?? ms.curWorldM)
 
         const matrix = composeProjectionWithAffine(this.rapid.projection, worldMatrix)
-        this.currentShader.setUniform("u_projection", matrix);
+        this.currentShader.setUniform("u_matrix", matrix);
 
         drawArraysInstanced(gl, gl.TRIANGLE_STRIP, 0, 4, this.instanceCount);
         this.rapid.drawcallCount++;
