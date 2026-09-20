@@ -598,7 +598,6 @@ export class MatrixStack {
     /** Internal stack maintaining structural information. */
     stack = new DynamicArrayBuffer(ArrayType.Uint32)
     currStack = new DynamicArrayBuffer(ArrayType.Uint32)
-    prevStack = new DynamicArrayBuffer(ArrayType.Uint32)
 
     /** The index of the current local matrix in the matrix store. */
     curLocalM = -1
@@ -654,6 +653,34 @@ export class MatrixStack {
         while (this.stack.length > 0) {
             this.restore();
         }
+    }
+
+    /**
+     * Removes a matrix from the current and previous frame recycle queues so
+     * it remains valid across `reset()` calls.
+     *
+     * Passing a `MatrixSaveState` retains its `local` and `world` matrices;
+     * `parent` is not retained because it belongs to the parent stack state.
+     * Retained matrices must eventually be released with `matrix.free()`.
+     *
+     * @param matrix A matrix ID or the state returned by `save()`.
+     */
+    retainMatrix(matrix: number | MatrixSaveState) {
+        const matrixIds = new Set(
+            typeof matrix === "number"
+                ? [matrix]
+                : [matrix.local, matrix.world]
+        );
+
+        const indices: number[] = [];
+
+        for (let index = 0; index < this.currStack.length; index++) {
+            if (matrixIds.has(this.currStack.get(index))) {
+                indices.push(index);
+            }
+        }
+
+        DynamicArrayBuffer.removeAtIndices(indices, [this.currStack]);
     }
 
     /**
@@ -720,12 +747,10 @@ export class MatrixStack {
      */
     reset(): void {
         //this.matrix.reset();
-        for (let index = 0; index < this.prevStack.length; index++) {
-            this.matrix.free(this.prevStack.typedArray[index])
+        for (let index = 0; index < this.currStack.length; index++) {
+            this.matrix.free(this.currStack.typedArray[index])
         }
-        this.prevStack.clear();
-        [this.currStack, this.prevStack] = [this.prevStack, this.currStack]
-
+        this.currStack.clear();
         this.stack.clear();
 
         this.curLocalM = this.matrix.alloc(); // localM

@@ -110,3 +110,46 @@ test("MatrixStack save states remain usable after restore", () => {
     assertPointClose(stack.matrix.getPosition(child.world), { x: 15, y: 20 }, "saved child");
     assertPointClose(stack.localToWorld(0, 0), { x: 0, y: 0 }, "restored root");
 });
+
+test("MatrixStack.retainMatrix removes matrices from automatic recycling", () => {
+    const stack = createStack();
+    const saved = stack.save();
+    stack.translate(12, 34);
+    stack.restore();
+
+    assert.equal(stack.retainMatrix(saved), saved);
+
+    // Two resets normally move the saved matrices to prevStack and then free
+    // them. Retained IDs must remain allocated instead.
+    stack.reset();
+    stack.reset();
+
+    assert.equal(stack.matrix.freeFlag.typedArray[saved.local], 1);
+    assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 1);
+    assertPointClose(stack.matrix.getPosition(saved.world), { x: 12, y: 34 });
+
+    stack.matrix.free(saved.local);
+    stack.matrix.free(saved.world);
+    assert.equal(stack.matrix.freeFlag.typedArray[saved.local], 0);
+    assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 0);
+});
+
+test("MatrixStack.retainMatrix can retain one matrix from prevStack", () => {
+    const stack = createStack();
+    const saved = stack.save();
+    stack.translate(12, 34);
+    stack.restore();
+
+    stack.reset();
+    assert.equal(stack.retainMatrix(saved.world), saved.world);
+    stack.reset();
+
+    assert.equal(stack.matrix.freeFlag.typedArray[saved.world], 1);
+    assertPointClose(stack.matrix.getPosition(saved.world), { x: 12, y: 34 }, "retained world");
+
+    // The unretained local ID has been recycled as the new root and reset.
+    assert.equal(saved.local, stack.curLocalM);
+    assertPointClose(stack.matrix.getPosition(saved.local), { x: 0, y: 0 }, "recycled local");
+
+    stack.matrix.free(saved.world);
+});

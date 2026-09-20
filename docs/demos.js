@@ -131,7 +131,6 @@ const renderLoading = (rapid) => {
     texture: loadingLabel,
     x: rapid.width / 2,
     y: rapid.height / 2,
-    origin: 0.5
   });
   rapid.flush();
 };
