@@ -1,7 +1,6 @@
 import { Vec2 } from "./math";
 import type { ITransformOptions } from "./matrix-engine";
 import { CanvasScaleMode, type IAppOptions, type Rapid } from "./render";
-import { Texture } from "./texture";
 
 export enum ExpandMode {
 	KEEP_W,

@@ -25,7 +25,10 @@ export interface ITextureOptions {
 declare class TextureManager {
     private render;
     private cache;
+    texture: Set<Texture>;
     constructor(render: Rapid);
+    addTexture<T extends Texture = Texture>(t: T): T;
+    removeTexture<T extends Texture = Texture>(t: T): T;
     /**
      * Asynchronously loads a texture from a URL.
      * @param url - The image URL to load.
@@ -131,7 +134,7 @@ declare class Texture {
     protected _px: number;
     protected _py: number;
     constructor(base?: BaseTexture);
-    updateResolution(_matrixId?: number): void;
+    updateResolution(): void;
     /**
      * Sets the base texture and increments its reference count.
      * @param base - The BaseTexture instance.
@@ -279,7 +282,7 @@ declare class TextTexture extends Texture {
      */
     set style(value: Partial<ITextStyle>);
     private updateOffset;
-    updateResolution(matrixId?: number): void;
+    updateResolution(): void;
     /**
      * Updates the internal canvas and uploads it to WebGL
      */

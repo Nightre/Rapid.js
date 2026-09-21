@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CanvasScaleMode } from "../src/render.ts";
 import { ExpandMode, ViewPort } from "../src/viewport.ts";
 
 const resizeViewport = (expandMode, cssWidth, cssHeight) => {
+    const updateResolution = vi.fn();
     const rapid = {
         flush() {},
         canvas: {
@@ -19,6 +20,9 @@ const resizeViewport = (expandMode, cssWidth, cssHeight) => {
         logicHeight: 300,
         scaleMode: CanvasScaleMode.CanvasItem,
         gl: { viewport() {} },
+        texture: {
+            texture: new Set([{ updateResolution }]),
+        },
     };
     const viewport = new ViewPort(rapid, { expand: expandMode });
 
@@ -59,5 +63,22 @@ describe("ViewPort scissor bounds", () => {
         const viewport = resizeViewport(ExpandMode.KEEP_H, 1600, 900);
 
         expect(viewport.scissorViewport).toBeNull();
+    });
+});
+
+describe("ViewPort resolution", () => {
+    it("updates registered textures when the canvas resolution changes", () => {
+        const viewport = resizeViewport(ExpandMode.KEEP, 1600, 900);
+        const texture = [...viewport.rapid.texture.texture][0];
+
+        expect(viewport.resolution).toBe(3);
+        expect(texture.updateResolution).toHaveBeenCalledTimes(1);
+
+        viewport.resize(400, 300, 1600, 900);
+        expect(texture.updateResolution).toHaveBeenCalledTimes(1);
+
+        viewport.resize(400, 300, 800, 600);
+        expect(viewport.resolution).toBe(2);
+        expect(texture.updateResolution).toHaveBeenCalledTimes(2);
     });
 });
