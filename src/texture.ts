@@ -677,7 +677,6 @@ class TextTexture extends Texture {
     private _text: string;
     private _style: ITextStyle;
     private options: ITextOptions
-    private fontScale = 1
     resolution: number = 1
 
     constructor(render: Rapid, options?: ITextOptions) {
@@ -700,6 +699,7 @@ class TextTexture extends Texture {
         const glTexture = createTexture(render, this.canvas, this.options);
         this.setBase(new BaseTexture(glTexture, 1, 1));
         this.updateResolution()
+        this.update()
     }
 
     public get text(): string {
@@ -746,8 +746,7 @@ class TextTexture extends Texture {
 
         if (requiredResolution != this.resolution) {
             this.resolution = requiredResolution;
-            
-            this.update()   
+            this.update()
         }
     }
 
@@ -763,10 +762,11 @@ class TextTexture extends Texture {
         const lineHeightRate = style.lineHeight!;
 
         const MIN_FONT_SIZE = 32;
-        const fontScale = fontSize / MIN_FONT_SIZE;
+        const measureFontSize = Math.max(fontSize, MIN_FONT_SIZE);
+        const fontScale = fontSize / measureFontSize;
 
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-        const getSizefont = `${fontWeight} ${MIN_FONT_SIZE}px ${fontFamily}`;
+        const getSizefont = `${fontWeight} ${measureFontSize}px ${fontFamily}`;
 
         const resolution = this.resolution
 
@@ -815,19 +815,13 @@ class TextTexture extends Texture {
         const totalHeight =
             topAscent + lastDescent + (lines.length - 1) * lineStep
 
-        const padding = 0 //Math.ceil(strokeThickness / 2) + 2 / resolution
+        const padding = strokeThickness / 2 + 2 / resolution
 
-        const logicalWidth = Math.max(
-            1,
-            Math.ceil(maxWidth + padding * 2)
-        );
-        const logicalHeight = Math.max(
-            1,
-            Math.ceil(totalHeight + padding * 2)
-        );
-
-        const pixelWidth = Math.ceil(logicalWidth * resolution);
-        const pixelHeight = Math.ceil(logicalHeight * resolution);
+        const contentWidth = maxWidth + padding * 2;
+        const contentHeight = totalHeight + padding * 2;
+        const pixelWidth = Math.max(1, Math.ceil(contentWidth * resolution));
+        const pixelHeight = Math.max(1, Math.ceil(contentHeight * resolution));
+        const logicalWidth = pixelWidth / resolution;
 
         if (
             this.canvas.width !== pixelWidth ||
@@ -879,7 +873,6 @@ class TextTexture extends Texture {
         const alphabeticBaselineOffset =
             targetDescent - alphabeticDescent;
 
-        this.fontScale = fontScale
         this.scale = 1 / this.resolution;
         this.offsetX = -startX
         this.offsetY = (-padding - topAscent + alphabeticBaselineOffset);
