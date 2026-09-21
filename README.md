@@ -177,19 +177,6 @@ We'd love to feature your work! Please [**Submit a Pull Request**](https://githu
   </tr>
 </table>
 
-## Architecture Recipes
-
-Rapid.js handles only the rendering layer, leaving your game architecture entirely in your hands.
-
-Rapid.js is frame-stateless, making it easy to build games with different architectures. Below are minimal, working implementations of several popular architectures built on Rapid.js, each in **around 100 lines** of JavaScript.
-
-- **Architecture recipes**  
-  [Game Object](recipes/game-object.js) · [Component](recipes/component.js) · [Display List](recipes/display-list.js) · [ECS Integration](recipes/ecs-integration.js) · [Immediate Mode](recipes/immediate-mode.js)
-
-- **Game-engine-style recipes**  
-[Kaplay-like](recipes/game-engine/kaplay-like.js) · [Pixi-like](recipes/game-engine/pixi-like.js) · [Phaser-like](recipes/game-engine/phaser-like.js) · [Excalibur-like](recipes/game-engine/excalibur-like.js) · [LittleJS-like](recipes/game-engine/littlejs-like.js) · [p5-like](recipes/game-engine/p5-like.js)
-
-
 ## Contributing
 
 Contributions, issues, and feature requests are welcome!
