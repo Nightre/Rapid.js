@@ -1,4 +1,4 @@
-import { Color, Rapid, Vec2 } from "rapid-render";
+import { Color, ExpandMode, Rapid, Vec2 } from "rapid-render";
 
 const canvas = document.querySelector("#game");
 const stats = document.querySelector("#text-stats");
@@ -17,16 +17,12 @@ const controls = {
   logicSize: document.querySelector("#logic-size"),
   x: document.querySelector("#position-x"),
   y: document.querySelector("#position-y"),
-  rotation: document.querySelector("#rotation"),
-  scale: document.querySelector("#scale"),
 };
 
 const values = {
   logicSize: document.querySelector("#logic-size-value"),
   x: document.querySelector("#position-x-value"),
   y: document.querySelector("#position-y-value"),
-  rotation: document.querySelector("#rotation-value"),
-  scale: document.querySelector("#scale-value"),
 };
 
 const defaults = Object.fromEntries(
@@ -37,6 +33,7 @@ const rapid = new Rapid({
   canvas,
   logicWidth: 960,
   logicHeight: 540,
+  expand: ExpandMode.EXPAND,
   backgroundColor: Color.fromHex("#10151c"),
   antialias: true,
 });
@@ -74,7 +71,7 @@ const updateStyle = () => {
 controls.text.addEventListener("input", updateText);
 
 for (const [name, control] of Object.entries(controls)) {
-  if (name === "text" || ["logicSize", "x", "y", "rotation", "scale"].includes(name)) continue;
+  if (name === "text" || ["logicSize", "x", "y"].includes(name)) continue;
   control.addEventListener("input", updateStyle);
 }
 
@@ -86,26 +83,28 @@ document.querySelector("#reset").addEventListener("click", () => {
   updateTransformValues();
 });
 
+const logicHeightForCanvas = (width) => (
+  width * window.innerHeight / Math.max(window.innerWidth, 1)
+);
+
 let logicWidth = readNumber(controls.logicSize, 960);
-let logicHeight = Math.round(logicWidth * 9 / 16);
+let logicHeight = logicHeightForCanvas(logicWidth);
 
 const resize = () => {
   rapid.resize(logicWidth, logicHeight, window.innerWidth, window.innerHeight);
 };
 
 const updateTransformValues = () => {
-  values.logicSize.value = `${logicWidth} × ${logicHeight}`;
+  values.logicSize.value = `${Math.round(logicWidth)} × ${Math.round(logicHeight)}`;
   values.x.value = Math.round(readNumber(controls.x, logicWidth / 2));
   values.y.value = Math.round(readNumber(controls.y, logicHeight / 2));
-  values.rotation.value = `${readNumber(controls.rotation, 0).toFixed(0)}°`;
-  values.scale.value = readNumber(controls.scale, 1).toFixed(2);
 };
 
 const applyLogicSize = (preservePosition = true) => {
   const previousWidth = logicWidth;
   const previousHeight = logicHeight;
   logicWidth = readNumber(controls.logicSize, 960);
-  logicHeight = Math.round(logicWidth * 9 / 16);
+  logicHeight = logicHeightForCanvas(logicWidth);
 
   if (preservePosition) {
     controls.x.value = String(readNumber(controls.x, previousWidth / 2) * logicWidth / previousWidth);
@@ -119,29 +118,29 @@ const applyLogicSize = (preservePosition = true) => {
 };
 
 controls.logicSize.addEventListener("input", () => applyLogicSize());
-for (const name of ["x", "y", "rotation", "scale"]) {
+for (const name of ["x", "y"]) {
   controls[name].addEventListener("input", updateTransformValues);
 }
 
-window.addEventListener("resize", resize);
+window.addEventListener("resize", () => applyLogicSize());
 applyLogicSize(false);
 
 const render = () => {
   const x = readNumber(controls.x, 480);
   const y = readNumber(controls.y, 270);
-  const rotationDegrees = readNumber(controls.rotation, 0);
-  const scale = readNumber(controls.scale, 1);
+  const inverseResolution = 1 / rapid.viewport.resolution;
+  const cssPixelInLogic = rapid.dpr * inverseResolution;
 
   rapid.clear();
 
   rapid.drawLine({
     points: Vec2.FromArray([[0, y], [logicWidth, y]]),
-    width: 1,
+    width: inverseResolution,
     color: new Color(69, 86, 104, 180),
   });
   rapid.drawLine({
     points: Vec2.FromArray([[x, 0], [x, logicHeight]]),
-    width: 1,
+    width: inverseResolution,
     color: new Color(69, 86, 104, 180),
   });
 
@@ -149,8 +148,6 @@ const render = () => {
     texture: textTexture,
     x,
     y,
-    rotation: rotationDegrees * Math.PI / 180,
-    scale,
   });
 
   const textureLeft = textTexture.offsetX;
@@ -166,18 +163,16 @@ const render = () => {
       [textureLeft, textureBottom],
     ]),
     closed: true,
-    width: 1 / Math.max(Math.abs(scale), 0.001),
+    width: inverseResolution,
     color: new Color(150, 165, 180, 210),
     x,
     y,
-    rotation: rotationDegrees * Math.PI / 180,
-    scale,
   });
 
   rapid.drawCircle({
     x,
     y,
-    radius: 2,
+    radius: 2 * cssPixelInLogic,
     color: new Color(255, 193, 92),
   });
 
@@ -186,8 +181,6 @@ const render = () => {
   stats.textContent = [
     `Anchor       ${controls.align.value} / ${controls.baseline.value}`,
     `Position     ${x.toFixed(1)}, ${y.toFixed(1)}`,
-    `Rotation     ${rotationDegrees.toFixed(1)}°`,
-    `Scale        ${scale.toFixed(2)}`,
     `Texture      ${textTexture.width.toFixed(1)} × ${textTexture.height.toFixed(1)}`,
     `Resolution   ${textTexture.resolution.toFixed(2)}x`,
   ].join("\n");

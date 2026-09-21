@@ -1,6 +1,7 @@
 import { Vec2 } from "./math";
 import type { ITransformOptions } from "./matrix-engine";
 import { CanvasScaleMode, type IAppOptions, type Rapid } from "./render";
+import { Texture } from "./texture";
 
 export enum ExpandMode {
 	KEEP_W,
@@ -188,6 +189,7 @@ export class ViewPort {
 
 	private updateResolution(){
 		let resolution = 1
+		const textureManager = this.rapid.texture
 		if (this.rapid.scaleMode !== CanvasScaleMode.Viewport) {
 			const viewWidth = this.viewRight - this.viewLeft;
 			const viewHeight = this.viewBottom - this.viewTop;
@@ -199,6 +201,7 @@ export class ViewPort {
 		}
 		if (resolution != this.resolution) {
 			this.resolution = resolution
+			textureManager.texture.forEach(t => t.updateResolution())
 		}
 	}
 

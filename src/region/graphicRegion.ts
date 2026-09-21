@@ -103,7 +103,6 @@ export class GraphicRegion extends Region {
         this.matrixIndex = matrixIndex;
         this.drawMode = drawMode;
         this.texture = texture;
-        texture?.updateResolution(matrixIndex)
 
         if (this.texture?.glTexture) {
             // It does not rely on the region to set the texture;

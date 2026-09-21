@@ -36,9 +36,20 @@ export interface ITextureOptions {
 class TextureManager {
     private render: Rapid
     private cache: Map<string, BaseTexture> = new Map()
+	texture = new Set<Texture>
 
     constructor(render: Rapid) {
         this.render = render
+    }
+
+    addTexture<T extends Texture = Texture>(t: T): T {
+        this.texture.add(t)
+        return t
+    }
+
+    removeTexture<T extends Texture = Texture>(t: T): T {
+        this.texture.delete(t)
+        return t
     }
 
     /**
@@ -50,7 +61,7 @@ class TextureManager {
     async load(url: string, options?: ITextureOptions): Promise<Texture> {
         let base = this.cache.get(url)
         if (base) {
-            return new Texture(base)
+            return this.addTexture(new Texture(base))
         }
 
         try {
@@ -59,7 +70,7 @@ class TextureManager {
             base.uid = url;
             this.cache.set(url, base);
 
-            return new Texture(base);
+            return this.addTexture(new Texture(base));
         } catch (e) {
             console.error(`[TextureManager] Failed to load: ${url}`, e);
             throw e;
@@ -74,7 +85,7 @@ class TextureManager {
      */
     create(source: Images, options?: ITextureOptions): Texture {
         if (options?.key && this.cache.has(options.key)) {
-            return new Texture(this.cache.get(options.key)!);
+            return this.addTexture(new Texture(this.cache.get(options.key)!));
         }
 
         const base = BaseTexture.fromSource(this.render, source, options);
@@ -84,7 +95,7 @@ class TextureManager {
             this.cache.set(options.key, base);
         }
 
-        return new Texture(base);
+        return this.addTexture(new Texture(base));
     }
 
     /**
@@ -95,7 +106,7 @@ class TextureManager {
      * @returns The newly created RenderTexture.
      */
     createRenderTexture(options: IRenderTextureOptions): RenderTexture {
-        return new RenderTexture(this.render, options);
+        return this.addTexture(new RenderTexture(this.render, options))
     }
 
     /**
@@ -104,7 +115,7 @@ class TextureManager {
      * @returns The newly created TextTexture.
      */
     createTextTexture(options?: ITextOptions): TextTexture {
-        return new TextTexture(this.render, options);
+        return this.addTexture(new TextTexture(this.render, options));
     }
 
     /**
@@ -124,6 +135,7 @@ class TextureManager {
         } else if (textureOrUrl instanceof Texture) {
             base = textureOrUrl.base;
             uid = base?.uid;
+            this.removeTexture(textureOrUrl)
             textureOrUrl.destroy(); // Safely decreases the reference count
         } else {
             base = textureOrUrl;
@@ -298,7 +310,7 @@ class Texture {
         if (base) this.setBase(base);
     }
 
-    public updateResolution(_matrixId?:number){}
+    public updateResolution(){}
 
     /**
      * Sets the base texture and increments its reference count.
@@ -728,15 +740,8 @@ class TextTexture extends Texture {
         }
     }
 
-    public updateResolution(matrixId?:number){
+    public updateResolution(){
         let requiredResolution = 1
-
-        if (matrixId !== undefined) {
-            const matrixStore = this.render.matrix
-            const scale = matrixStore.getScale(matrixId)
-            const matrixScale = Math.max(scale.x, scale.y)
-            requiredResolution *= matrixScale
-        }
         requiredResolution *= this.render.viewport.resolution
 
         if (requiredResolution != this.resolution) {

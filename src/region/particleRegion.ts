@@ -95,7 +95,6 @@ export class ParticleRegion extends SpriteRegion {
         if (this.texture && texture !== this.texture) {
             this.flush();
         }
-        texture.updateResolution()
 
         const uniScaleX = typeof scaleX == "number"
         const uniScaleY = typeof scaleY == "number"
