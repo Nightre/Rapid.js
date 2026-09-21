@@ -79,7 +79,7 @@ document.querySelector("#reset").addEventListener("click", () => {
   for (const [name, value] of Object.entries(defaults)) controls[name].value = value;
   updateText();
   updateStyle();
-  applyLogicSize(false);
+  applyLogicSize();
   updateTransformValues();
 });
 
@@ -100,19 +100,17 @@ const updateTransformValues = () => {
   values.y.value = Math.round(readNumber(controls.y, logicHeight / 2));
 };
 
-const applyLogicSize = (preservePosition = true) => {
-  const previousWidth = logicWidth;
-  const previousHeight = logicHeight;
+const applyLogicSize = () => {
+  const x = readNumber(controls.x, logicWidth / 2);
+  const y = readNumber(controls.y, logicHeight / 2);
   logicWidth = readNumber(controls.logicSize, 960);
   logicHeight = logicHeightForCanvas(logicWidth);
 
-  if (preservePosition) {
-    controls.x.value = String(readNumber(controls.x, previousWidth / 2) * logicWidth / previousWidth);
-    controls.y.value = String(readNumber(controls.y, previousHeight / 2) * logicHeight / previousHeight);
-  }
-
-  controls.x.max = String(logicWidth);
-  controls.y.max = String(logicHeight);
+  // Keep the current coordinates stable when zooming or resizing. The range
+  // maximum must not drop below the current value, otherwise the browser
+  // silently clamps the slider and changes the position.
+  controls.x.max = String(Math.max(logicWidth, x));
+  controls.y.max = String(Math.max(logicHeight, y));
   resize();
   updateTransformValues();
 };
@@ -123,7 +121,7 @@ for (const name of ["x", "y"]) {
 }
 
 window.addEventListener("resize", () => applyLogicSize());
-applyLogicSize(false);
+applyLogicSize();
 
 const render = () => {
   const x = readNumber(controls.x, 480);
