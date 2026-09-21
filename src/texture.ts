@@ -677,7 +677,7 @@ class TextTexture extends Texture {
     private _text: string;
     private _style: ITextStyle;
     private options: ITextOptions
-
+    private fontScale = 1
     resolution: number = 1
 
     constructor(render: Rapid, options?: ITextOptions) {
@@ -746,7 +746,7 @@ class TextTexture extends Texture {
 
         if (requiredResolution != this.resolution) {
             this.resolution = requiredResolution;
-            this.scale = 1 / this.resolution;
+            
             this.update()   
         }
     }
@@ -761,7 +761,13 @@ class TextTexture extends Texture {
         const fontWeight = style.fontWeight!;
         const fontFamily = style.fontFamily!;
         const lineHeightRate = style.lineHeight!;
+
+        const MIN_FONT_SIZE = 32;
+        const fontScale = fontSize / MIN_FONT_SIZE;
+
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        const getSizefont = `${fontWeight} ${MIN_FONT_SIZE}px ${fontFamily}`;
+
         const resolution = this.resolution
 
         const baseline: CanvasTextBaseline = style.baseline ?? "top";
@@ -774,38 +780,42 @@ class TextTexture extends Texture {
         const reference = lines[0] || defaultText;
 
         // 内部始终使用 alphabetic 测量和绘制。
-        ctx.font = font;
+        ctx.font = getSizefont;
         ctx.textBaseline = "alphabetic";
         ctx.textAlign = "left";
 
         let maxWidth = 0;
-        let ascent = 0;
-        let descent = 0;
+        let topAscent = 0;
+        let lastDescent = 0;
 
         for (const line of lines) {
             const metrics = ctx.measureText(line || defaultText);
 
-            maxWidth = Math.max(maxWidth, line ? metrics.width : 0);
-            ascent = Math.max(ascent, metrics.actualBoundingBoxAscent);
-            descent = Math.max(descent, metrics.actualBoundingBoxDescent);
+            maxWidth = Math.max(maxWidth, line ? metrics.width * fontScale : 0);
+            if (line == lines.at(0)) {
+                topAscent = metrics.actualBoundingBoxAscent * fontScale
+            }
+            if (line == lines.at(-1)){
+                lastDescent = metrics.actualBoundingBoxDescent * fontScale
+            }
         }
 
         // 测量用户基线相对于 alphabetic 的偏移量
         ctx.textBaseline = "alphabetic";
 
         const alphabeticDescent =
-            ctx.measureText(reference).fontBoundingBoxDescent;
+            ctx.measureText(reference).fontBoundingBoxDescent * fontScale;
 
         ctx.textBaseline = baseline;
 
         const targetDescent =
-            ctx.measureText(reference).fontBoundingBoxDescent;
+            ctx.measureText(reference).fontBoundingBoxDescent * fontScale;
 
         const lineStep = fontSize * lineHeightRate;
         const totalHeight =
-            ascent + descent + (lines.length - 1) * lineStep;
+            topAscent + lastDescent + (lines.length - 1) * lineStep
 
-        const padding = Math.ceil(strokeThickness / 2) + 2;
+        const padding = 0 //Math.ceil(strokeThickness / 2) + 2 / resolution
 
         const logicalWidth = Math.max(
             1,
@@ -851,7 +861,7 @@ class TextTexture extends Texture {
         }
 
         // 因为是 alphabetic baseline。是在字母底座开始，要增加ascent，才是字母顶上
-        const alphabeticY = padding + ascent;
+        const alphabeticY = padding + topAscent;
         let y = alphabeticY;
 
         for (const line of lines) {
@@ -866,14 +876,16 @@ class TextTexture extends Texture {
             y += lineStep;
         }
 
-        this.base?.updateSource(this.render.gl, this.canvas, this.options);
-        this.setRegion(0, 0, pixelWidth, pixelHeight);
-
         const alphabeticBaselineOffset =
             targetDescent - alphabeticDescent;
 
+        this.fontScale = fontScale
+        this.scale = 1 / this.resolution;
         this.offsetX = -startX
-        this.offsetY = (-padding - ascent + alphabeticBaselineOffset);
+        this.offsetY = (-padding - topAscent + alphabeticBaselineOffset);
+
+        this.base?.updateSource(this.render.gl, this.canvas, this.options);
+        this.setRegion(0, 0, pixelWidth, pixelHeight);
     }
 }
 
