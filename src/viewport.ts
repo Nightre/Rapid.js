@@ -1,6 +1,6 @@
 import { Vec2 } from "./math";
 import type { ITransformOptions } from "./matrix-engine";
-import { CanvasScaleMode, type IAppOptions, type Rapid } from "./render";
+import { CanvasScaleMode, IWindowsOptions, type Rapid } from "./render";
 
 export enum ExpandMode {
 	KEEP_W,
@@ -18,14 +18,14 @@ export interface ICamera extends ITransformOptions {
 	limitBottom?: number;
 }
 
-const CAN_EXPAND_DIR = {
+const EXPAND_DIR = {
 	[ExpandMode.EXPAND]: new Vec2(1, 1),
 	[ExpandMode.KEEP_W]: new Vec2(0, 1),
 	[ExpandMode.KEEP_H]: new Vec2(1, 0),
 	[ExpandMode.KEEP]: new Vec2(0, 0),
 };
 
-const EXPAND_RATE = {
+const EXPAND_POSITION = {
 	[ExpandMode.EXPAND]: new Vec2(0.5, 0.5),
 	[ExpandMode.KEEP_W]: new Vec2(0.5, 0),
 	[ExpandMode.KEEP_H]: new Vec2(0, 0.5),
@@ -40,21 +40,27 @@ interface ScissorViewport {
 }
 
 export class ViewPort {
-	viewLeft: number = 0;
-	viewRight: number = 0;
-	viewTop: number = 0;
-	viewBottom: number = 0;
+	private viewLeft: number = 0;
+	private viewRight: number = 0;
+	private viewTop: number = 0;
+	private viewBottom: number = 0;
 
-	expandMode: ExpandMode = ExpandMode.KEEP;
+	private window: IWindowsOptions = {};
+
 	scissorViewport: ScissorViewport | null = null;
 	resolution: number = 0
 
 	constructor(
 		readonly rapid: Rapid,
-		options: IAppOptions,
+		options: IWindowsOptions,
 	) {
-		this.expandMode = options.expand ?? ExpandMode.KEEP;
+		this.updateWindowOption(options)
 	}
+
+	updateWindowOption(window: IWindowsOptions){
+		Object.assign(this.window, window)
+	}
+
 	/**
 	 * Resizes the canvas, updates internal viewport values, and recreates projection boundaries.
 	 * @param logicWidth The new logical display width.
@@ -69,8 +75,15 @@ export class ViewPort {
 		cssHeight?: number,
 	): void {
 		const rapid = this.rapid;
+		const window = this.window;
+		const scale = window.scale ?? 1
+
+		logicWidth /= scale
+		logicHeight /= scale
+
 		rapid.flush();
-		const cssW = cssWidth ?? rapid.canvas.clientWidth ?? rapid.canvas.width;
+		const cssW = 
+			cssWidth ?? rapid.canvas.clientWidth ?? rapid.canvas.width;
 		const cssH =
 			cssHeight ?? rapid.canvas.clientHeight ?? rapid.canvas.height;
 
@@ -93,8 +106,18 @@ export class ViewPort {
 		let bottom = logicHeight;
 		let top = 0;
 
+		const scaleMode = window.scaleMode ?? CanvasScaleMode.CanvasItem
+		
+		const expandMode = window.expand ?? ExpandMode.KEEP;
+		let expandPosition = Vec2.ZERO
+		let expandDir = Vec2.ZERO
+		if (expandMode in EXPAND_POSITION) {
+			expandPosition = window.expandPosition ?? EXPAND_POSITION[expandMode as keyof typeof EXPAND_POSITION]
+			expandDir = EXPAND_DIR[expandMode as keyof typeof EXPAND_POSITION]
+		}
+
 		this.scissorViewport = null;
-		switch (this.expandMode) {
+		switch (expandMode) {
 			case ExpandMode.IGNORE: {
 				left = 0;
 				right = logicWidth;
@@ -109,12 +132,13 @@ export class ViewPort {
 				top = 0;
 				break;
 			}
+			default:
 			case ExpandMode.EXPAND:
 			case ExpandMode.KEEP_W:
 			case ExpandMode.KEEP_H:
 			case ExpandMode.KEEP: {
-				const rate = EXPAND_RATE[this.expandMode];
-				const expand = CAN_EXPAND_DIR[this.expandMode];
+				const rate = expandPosition;
+				const expand = expandDir;
 
 				// 取小的一方
 				const scale = Math.min(
@@ -152,7 +176,7 @@ export class ViewPort {
 			}
 		}
 
-		switch (rapid.scaleMode) {
+		switch (scaleMode) {
 			case CanvasScaleMode.Viewport:
 				// no new pixel
 				rapid.canvas.width = logicWidth;
@@ -160,6 +184,7 @@ export class ViewPort {
 				rapid.canvas.style.imageRendering = "pixelated";
 				rapid.gl.viewport(0, 0, logicWidth, logicHeight);
 				break;
+			default:
 			case CanvasScaleMode.CanvasItem:
 				rapid.canvas.width = rapid.physicsWidth;
 				rapid.canvas.height = rapid.physicsHeight;
@@ -171,10 +196,6 @@ export class ViewPort {
 					rapid.physicsHeight,
 				);
 				break;
-			default:
-				throw new Error(
-					"scaleMode can only be CanvasScaleMode.Viewport or CanvasScaleMode.CanvasItem",
-				);
 		}
 
 		this.viewLeft = left;
@@ -183,13 +204,13 @@ export class ViewPort {
 		this.viewBottom = bottom;
 		this.updateProjection();
 		this.restoreViewportScissor();
-		this.updateResolution()
+		this.updateResolution(scaleMode)
 	}
 
-	private updateResolution(){
+	private updateResolution(scaleMode: CanvasScaleMode){
 		let resolution = 1
 		const textureManager = this.rapid.texture
-		if (this.rapid.scaleMode !== CanvasScaleMode.Viewport) {
+		if (scaleMode !== CanvasScaleMode.Viewport) {
 			const viewWidth = this.viewRight - this.viewLeft;
 			const viewHeight = this.viewBottom - this.viewTop;
 

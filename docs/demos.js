@@ -97,8 +97,8 @@ let loadingLabel = null;
 const getRapid = (canvas) => {
   rapid ??= new Rapid({
     canvas,
-    logicWidth: 480,
-    logicHeight: 300,
+    width: 480,
+    height: 300,
     physicsWidth: 480,
     physicsHeight: 300,
     backgroundColor: new Color(247, 253, 255),

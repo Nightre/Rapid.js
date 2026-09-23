@@ -39,15 +39,10 @@ export interface IAppOptions {
     /** The HTML canvas element to render onto. */
     canvas: HTMLCanvasElement;
 
-    /** Alias ​​for logicWidth */
+    /** logicWidth */
     width?: number,
-    /** Alias ​​for logicHeight */
+    /** logicHeight */
     height?: number,
-
-    /** The logical width of the application (CSS pixels). */
-    logicWidth?: number;
-    /** The logical height of the application (CSS pixels). */
-    logicHeight?: number;
 
     /** The physical width of the application (actual pixels). */
     physicsWidth?: number;
@@ -67,9 +62,14 @@ export interface IAppOptions {
 
     roundPixels?: boolean;
 
-    scaleMode?: CanvasScaleMode;
+    window: IWindowsOptions;
+}
 
-    expand: ExpandMode;
+export interface IWindowsOptions {
+    scaleMode?: CanvasScaleMode;
+    expand?: ExpandMode;
+    expandPosition?: Vec2;
+    scale?: number
 }
 
 /**
@@ -188,8 +188,6 @@ export class Rapid {
     /** Default filtering mode used when sampling textures. */
     textureFilter: TextureFilterMode;
 
-    scaleMode?: CanvasScaleMode;
-
 	viewport: ViewPort;
 
     /** Internal ping-pong RenderTextures for multi-filter chains. */
@@ -213,7 +211,6 @@ export class Rapid {
         this.textureFilter = options.textureFilter ?? TextureFilterMode.NEAREST;
         this.premultipliedAlpha = options.premultipliedAlpha ?? true;
         this.roundPixels = options.roundPixels ?? false;
-        this.scaleMode = options.scaleMode ?? CanvasScaleMode.CanvasItem
 
         const gl = getContext(this.canvas, this.antialias, this.premultipliedAlpha);
         this.gl = gl;
@@ -225,21 +222,21 @@ export class Rapid {
         this.graphicRegion = new GraphicRegion(this);
         this.atlasSpriteRegion = new AtlasSpriteRegion(this);
         this.particleRegion = new ParticleRegion(this);
-        this.viewport = new ViewPort(this, options);
+        this.viewport = new ViewPort(this, options.window);
         this.texture = new TextureManager(this);
         this.regions = [
             this.spriteRegion,
             this.atlasSpriteRegion,
         ]
-        const cssW = this.canvas.clientWidth || this.canvas.width;
-        const cssH = this.canvas.clientHeight || this.canvas.height;
+        const cssW = this.canvas.clientWidth ?? this.canvas.width;
+        const cssH = this.canvas.clientHeight ?? this.canvas.height;
 
         // Initialize physics dimensions; fall back to CSS size * DPR if not provided
-        this.physicsWidth = options.physicsWidth || Math.round(cssW * this.dpr);
-        this.physicsHeight = options.physicsHeight || Math.round(cssH * this.dpr);
+        this.physicsWidth = options.physicsWidth ?? Math.round(cssW * this.dpr);
+        this.physicsHeight = options.physicsHeight ?? Math.round(cssH * this.dpr);
 
-        this.logicWidth = options.logicWidth || options.width || (this.physicsWidth / this.dpr);
-        this.logicHeight = options.logicHeight || options.height || (this.physicsHeight / this.dpr);
+        this.logicWidth = options.width ?? (this.physicsWidth / this.dpr);
+        this.logicHeight = options.height ?? (this.physicsHeight / this.dpr);
 
         this.resize(this.logicWidth, this.logicHeight, this.physicsWidth, this.physicsHeight);
 
