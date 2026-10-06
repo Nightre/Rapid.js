@@ -198,6 +198,7 @@ declare class RenderTexture extends Texture {
     private framebuffer;
     private renderbuffer;
     private gl;
+    private readonly premultipliedAlpha;
     clearColor?: Color;
     /** Actual GPU-allocated dimensions — grow-only, never shrink */
     private _allocW;

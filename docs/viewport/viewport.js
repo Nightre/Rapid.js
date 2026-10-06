@@ -3,7 +3,6 @@ import {
   Color,
   ExpandMode,
   Rapid,
-  Vec2,
 } from "rapid-render";
 
 const canvas = document.querySelector("#game");
@@ -34,18 +33,22 @@ const readLogicSize = () => {
 const initialSize = readLogicSize();
 const rapid = new Rapid({
   canvas,
-  logicWidth: initialSize.width,
-  logicHeight: initialSize.height,
-  scaleMode: scaleModes[scaleModeSelect.value],
-  expand: expandModes[expandModeSelect.value],
+  width: initialSize.width,
+  height: initialSize.height,
+  window: {
+    scaleMode: scaleModes[scaleModeSelect.value],
+    expand: expandModes[expandModeSelect.value],
+  },
   backgroundColor: Color.fromHex("#dff4fb"),
   antialias: false,
 });
 
 const resize = () => {
   const logicSize = readLogicSize();
-  rapid.scaleMode = scaleModes[scaleModeSelect.value];
-  rapid.viewport.expandMode = expandModes[expandModeSelect.value];
+  rapid.viewport.updateWindowOption({
+    scaleMode: scaleModes[scaleModeSelect.value],
+    expand: expandModes[expandModeSelect.value],
+  });
   rapid.resize(
     logicSize.width,
     logicSize.height,

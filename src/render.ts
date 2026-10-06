@@ -426,11 +426,11 @@ export class Rapid {
             // Clear the whole canvas to black, then fill only the retained view.
             gl.clearColor(0, 0, 0, 1);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-            this.backgroundColor.setClearColor(gl);
+            this.backgroundColor.setClearColor(gl, this.premultipliedAlpha);
             this.viewport.restoreViewportScissor();
             gl.clear(gl.COLOR_BUFFER_BIT);
         } else {
-            this.backgroundColor.setClearColor(gl);
+            this.backgroundColor.setClearColor(gl, this.premultipliedAlpha);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         }
         this.drawcallCount = 0;
@@ -546,7 +546,7 @@ export class Rapid {
     clearRenderTexture(color: Color = new Color(0, 0, 0, 0)): void {
         this.flush();
         const gl = this.gl;
-        color.setClearColor(gl)
+        color.setClearColor(gl, this.premultipliedAlpha)
         gl.clear(gl.COLOR_BUFFER_BIT);
     }
 

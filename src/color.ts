@@ -27,8 +27,14 @@ export class Color {
         this.updateUint();
     }
 
-    setClearColor(gl: WebGL2RenderingContext) {
-        gl.clearColor(this.r / 255, this.g / 255, this.b / 255, this.a / 255)
+    setClearColor(gl: WebGL2RenderingContext, premultipliedUint32: boolean = true): void {
+        const color = premultipliedUint32 ? this.premultipliedUint32 : this.uint32;
+        gl.clearColor(
+            (color & 0xFF) / 255,
+            ((color >>> 8) & 0xFF) / 255,
+            ((color >>> 16) & 0xFF) / 255,
+            (color >>> 24) / 255,
+        );
     }
 
     /**

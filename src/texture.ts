@@ -467,6 +467,7 @@ class RenderTexture extends Texture {
     private framebuffer: WebGLFramebuffer | null;
     private renderbuffer: WebGLRenderbuffer | null;
     private gl: WebGL2RenderingContext;
+    private readonly premultipliedAlpha: boolean;
     public clearColor?: Color;
 
     /** Actual GPU-allocated dimensions — grow-only, never shrink */
@@ -476,6 +477,7 @@ class RenderTexture extends Texture {
     constructor(render: Rapid, options: IRenderTextureOptions) {
         super();
         this.gl = render.gl;
+        this.premultipliedAlpha = render.premultipliedAlpha;
 
         this.clearColor = options.clearColor ?? Color.Black;
 
@@ -570,7 +572,7 @@ class RenderTexture extends Texture {
 
         const c = clearColor ?? this.clearColor;
         if (c) {
-            c.setClearColor(gl)
+            c.setClearColor(gl, this.premultipliedAlpha)
             gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         }
     }
