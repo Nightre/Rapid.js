@@ -62,7 +62,7 @@ export interface IAppOptions {
 
     roundPixels?: boolean;
 
-    window: IWindowsOptions;
+    window?: IWindowsOptions;
 }
 
 export interface IWindowsOptions {

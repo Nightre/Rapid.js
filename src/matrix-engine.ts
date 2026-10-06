@@ -86,7 +86,12 @@ export class MatrixStore {
     }
 
     /** Releases a matrix index so it can be reused by a later allocation. */
-    free(index: number): void {
+    free(index: number | MatrixSaveState): void {
+        if (typeof index !== "number") {
+            this.free(index.local)
+            this.free(index.world)
+            return
+        }
         if (!Number.isInteger(index) || index < 0 || index >= this.matrixCount) {
             return;
         }
@@ -619,14 +624,18 @@ export class MatrixStack {
      * Equivalent to context.save().
      * Provided matrix IDs are used directly and remain caller-owned; only matrices
      * created by this call are queued for recycling by reset().
-     * @param matrixWorld Optional world matrix ID from this store; defaults to parent * local.
+     * @param matrixWorld Optional world matrix ID or saved state from this store; defaults to parent * local.
      * @param matrixLocal Optional local matrix ID from this store; defaults to identity.
      * @returns Matrix IDs for the saved parent, local, and world transforms.
      */
-    save(matrixWorld?: number, matrixLocal?: number): MatrixSaveState {
+    save(matrixWorld?: number | MatrixSaveState, matrixLocal?: number): MatrixSaveState {
         this.stack.push(this.curLocalM)
         this.stack.push(this.curWorldM)
         const parentWorldM = this.curWorldM;
+
+        if (matrixWorld !== undefined && typeof matrixWorld !== "number") {
+            [matrixWorld, matrixLocal] = [matrixWorld?.world, matrixWorld?.local]
+        }
 
         this.curLocalM = matrixLocal ?? this.matrix.alloc(); // localM
         this.curWorldM = matrixWorld ?? this.matrix.allocDirty(); // worldM

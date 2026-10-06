@@ -101,79 +101,46 @@ stack.restore(); // 1.root
 rapid.drawSprite(ui);
 ```
 
-## Use Saved World Matrices
+## Reuse MatrixStack Transforms
 
-`save()` returns the current `parent`, `local`, and `world` matrix IDs. The IDs can be used with `customMatrix` after their stack scope has been restored, as long as they belong to the current frame.
-
-```ts
-rapid.clear();
-
-const stack = rapid.matrixStack;
-// Build the hierarchy for this frame.
-const world = stack.save();
-stack.translate(200, 200);
-
-const enemyNode = stack.save();
-stack.translate(80, 0);
-
-stack.restore(); // enemyNode
-stack.restore(); // world
-
-// The stack has been restored, but enemyNode.world is still available during
-// this frame. Build the hierarchy again next frame with the latest game state.
-rapid.drawSprite({
-  texture: enemy,
-  customMatrix: enemyNode.world,
-});
-
-rapid.flush();
-```
-
-## Cache MatrixStack Transforms
-
-Use `retainMatrix()` to keep a matrix from the current stack across `rapid.clear()` / `stack.reset()`. It returns the supplied matrix ID or save state. Pass cached IDs to `save(world, local)` to reuse them directly:
+`save()` returns `parent`, `local`, and `world` matrix IDs. Saved world IDs can be used with `customMatrix` within the current frame. Use `retainMatrix()` to cache transforms across frames and reuse them with `save(cached)`:
 
 ```ts
 const stack = rapid.matrixStack;
+const matrix = rapid.matrix;
 
-// Calculate and retain the transform once.
-stack.save();
-stack.translate(100, 80);
-const world = stack.retainMatrix(stack.curWorldM);
-const local = stack.retainMatrix(stack.curLocalM);
+const cached = stack.retainMatrix(stack.save());
+matrix.translate(cached.local, 100, 80);
+matrix.multiplyOut(cached.world, cached.parent, cached.local);
 stack.restore();
 
 function drawFrame() {
   rapid.clear();
-  stack.save(world, local);
+  stack.save(cached);
   rapid.drawSprite({ texture });
   stack.restore();
   rapid.flush();
 }
 ```
 
-Alternatively, `const cached = stack.retainMatrix(stack.save())` retains both matrices; reuse them with `stack.save(cached.world, cached.local)`.
-
-`save()` accepts either or both IDs:
+`save()` accepts a saved state or individual matrix IDs:
 
 ```ts
-stack.save();                  // Identity local; world inherits the parent.
-stack.save(world, local);      // Use both IDs directly without allocating matrices.
-stack.save(world);             // Use world; create an identity local.
-stack.save(undefined, local);  // Use local; calculate world = parent world * local.
+stack.save();                            // Identity local; inherit parent world.
+stack.save(cached);                      // Reuse the saved world and local IDs.
+stack.save(cached.world, cached.local);  // Pass both IDs explicitly.
+stack.save(cached.world);                // Create an identity local.
+stack.save(undefined, cached.local);     // Calculate world = parent world * local.
 ```
 
 Matrices retained with `stack.retainMatrix()` or created with `rapid.matrix.alloc()` are managed by you. Release them when no longer needed:
 
 ```ts
-rapid.matrix.free(world);
-rapid.matrix.free(local);
+rapid.matrix.free(cached);
 
 const m = rapid.matrix.alloc();
 rapid.matrix.free(m);
 ```
-
-With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. You can use ECS, scene graphs, components, or any hybrid approach you prefer.
 
 For more information about matrix transformations, see the [Transformations](https://nightre.github.io/Rapid.js/docs.html#transformations).
 

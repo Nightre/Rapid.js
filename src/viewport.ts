@@ -52,7 +52,7 @@ export class ViewPort {
 
 	constructor(
 		readonly rapid: Rapid,
-		options: IWindowsOptions,
+		options: IWindowsOptions={},
 	) {
 		this.updateWindowOption(options)
 	}

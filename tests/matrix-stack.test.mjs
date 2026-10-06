@@ -21,6 +21,36 @@ const assertPointClose = (actual, expected, message = "") => {
 
 const createStack = () => new MatrixStack({ flush() {} });
 
+test("MatrixStack.save accepts a retained save state directly across frames", () => {
+    const stack = createStack();
+    const cached = stack.retainMatrix(stack.save());
+    stack.matrix.translate(cached.local, 100, 80);
+    stack.matrix.multiplyOut(cached.world, cached.parent, cached.local);
+    stack.restore();
+
+    for (let frame = 0; frame < 3; frame++) {
+        stack.reset();
+        stack.translate(50, 60);
+        const parent = stack.curWorldM;
+        const matrixCount = stack.matrix.matrixCount;
+        const saved = stack.save(cached);
+
+        assert.deepEqual(saved, { parent, world: cached.world, local: cached.local });
+        assert.equal(stack.matrix.matrixCount, matrixCount);
+        assertPointClose(stack.localToWorld(0, 0), { x: 100, y: 80 });
+        assertPointClose(stack.transformPoint(0, 0), { x: 100, y: 80 });
+        const queued = stack.currStack.getArray(0, stack.currStack.length);
+        assert.equal(queued.includes(cached.world), false);
+        assert.equal(queued.includes(cached.local), false);
+        stack.restore();
+        assert.equal(stack.curWorldM, parent);
+        assertPointClose(stack.localToWorld(0, 0), { x: 50, y: 60 });
+    }
+
+    stack.matrix.free(cached.world);
+    stack.matrix.free(cached.local);
+});
+
 for (const [useWorld, useLocal] of [[false, false], [true, false], [false, true], [true, true]]) {
     test(`MatrixStack.save only recycles its own matrices (world=${useWorld}, local=${useLocal})`, () => {
         const stack = createStack();
