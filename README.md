@@ -103,7 +103,7 @@ rapid.drawSprite(ui);
 
 ## Reuse MatrixStack Transforms
 
-`save()` returns `parent`, `local`, and `world` matrix IDs. Saved world IDs can be used with `customMatrix` within the current frame. Use `retainMatrix()` to cache transforms across frames and reuse them with `save(cached)`:
+`save()` returns `parent`, `local`, and `world` matrix IDs. Saved world IDs can be used with `customMatrix` within the current frame. Use `retainMatrix()` to cache transforms across frames and reuse them with `save(cached)` or `cached.world`:
 
 ```ts
 const stack = rapid.matrixStack;
@@ -119,6 +119,7 @@ function drawFrame() {
   stack.save(cached);
   rapid.drawSprite({ texture });
   stack.restore();
+  rapid.drawSprite({ texture, customMatrix: cached.world });
   rapid.flush();
 }
 ```
