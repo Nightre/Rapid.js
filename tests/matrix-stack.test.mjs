@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 
-import { MatrixStack } from "../src/matrix-engine";
+import { MatrixStack, MatrixStore } from "../src/matrix-engine";
 
 const EPSILON = 1e-5;
 
@@ -20,6 +20,97 @@ const assertPointClose = (actual, expected, message = "") => {
 };
 
 const createStack = () => new MatrixStack({ flush() {} });
+
+test("Numeric applyTransform reuses its result buffer while object results stay independent", () => {
+    const stack = createStack();
+    const matrix = stack.matrix;
+    const objectResult = matrix.applyTransform({ x: 1, y: 2 });
+    const numericResult = matrix.applyTransform(3, 4);
+    const matrixCount = matrix.matrixCount;
+
+    for (let i = 0; i < 100; i++) {
+        assert.equal(matrix.applyTransform(i, i + 1), numericResult);
+        stack.applyTransform(1, 2);
+    }
+
+    assertNumbersClose(objectResult, [1, 0, 0, 1, 1, 2]);
+    assertPointClose(stack.localToWorld(0, 0), { x: 100, y: 200 });
+    assert.equal(matrix.matrixCount, matrixCount);
+});
+
+test("Object applyTransform overload preserves dimensions and explicit matrix targets", () => {
+    const stack = createStack();
+    const world = stack.matrix.alloc();
+    const local = stack.matrix.alloc();
+    stack.matrix.translate(world, 10, 20);
+    stack.applyTransform({ x: 100, y: 50, scale: 2, origin: 0.5 }, 20, 40,
+        undefined, world, local);
+    assertNumbersClose(stack.matrix.getMatrix(local), [2, 0, 0, 2, 80, 10]);
+    assertNumbersClose(stack.matrix.getMatrix(world), [2, 0, 0, 2, 90, 30]);
+    assertPointClose(stack.localToWorld(0, 0), { x: 0, y: 0 });
+    stack.applyTransform({ x: 5, y: 6 }, 0, 0, 0, world, local);
+    assertNumbersClose(stack.matrix.getMatrix(0), [2, 0, 0, 2, 100, 42]);
+    assertNumbersClose(stack.matrix.getMatrix(world), [2, 0, 0, 2, 90, 30]);
+    assertNumbersClose(stack.matrix.getMatrix(local), [2, 0, 0, 2, 80, 10]);
+});
+
+test("MatrixStore.applyTransform composes rotation, scales, anchors and offsets", () => {
+    const matrix = new MatrixStore();
+    const values = matrix.applyTransform(100, 50, 2, 3, Math.PI / 2, 0.5, 0.25, 20, 40, 4, 5);
+    assertNumbersClose(values, [0, 2, -3, 0, 115, 38]);
+    assertNumbersClose(matrix.applyTransform({
+        x: 90, y: 45, position: { x: 10, y: 5 }, scale: { x: 2, y: 3 },
+        rotation: Math.PI / 2, origin: { x: 0.5, y: 0.25 },
+        offsetX: 1, offsetY: 2, offset: { x: 3, y: 3 },
+    }, 20, 40), values);
+    const index = matrix.alloc();
+    matrix.setMatrix(index, values);
+    assertPointClose(matrix.transformPoint(index, 1, 2), { x: 109, y: 40 });
+    assertNumbersClose(matrix.applyTransform(5, 6), [1, 0, 0, 1, 5, 6]);
+    assertNumbersClose(matrix.applyTransform(5, 6, 0, 0), [0, 0, 0, 0, 5, 6]);
+    assertNumbersClose(matrix.applyTransform({ scale: 2, origin: 0.5 }, 20, 40),
+        matrix.applyTransform(0, 0, 2, 2, 0, 0.5, 0.5, 20, 40));
+});
+
+test("MatrixStack.applyTransform composes nested local and world matrices", () => {
+    const stack = createStack();
+    stack.save();
+    stack.applyTransform(10, 20, 2, 3);
+    const child = stack.save();
+    stack.applyTransform(5, 7);
+    assertNumbersClose(stack.matrix.getMatrix(child.local), [1, 0, 0, 1, 5, 7]);
+    assertNumbersClose(stack.matrix.getMatrix(child.world), [2, 0, 0, 3, 20, 41]);
+    assertPointClose(stack.localToWorld(4, 2), { x: 28, y: 47 });
+    stack.restore();
+    assertPointClose(stack.localToWorld(0, 0), { x: 10, y: 20 });
+});
+
+test("MatrixStack.applyTransform matches the object path and supports output ID zero", () => {
+    const stack = createStack();
+    const objectStack = createStack();
+    stack.applyTransform(100, 50, 2, 3, Math.PI / 2, 0.5, 0.25, 20, 40, 4, 5);
+    objectStack.applyTransform({ x: 100, y: 50, scale: { x: 2, y: 3 },
+        rotation: Math.PI / 2, origin: { x: 0.5, y: 0.25 }, offsetX: 4, offsetY: 5 }, 20, 40);
+    assertNumbersClose(stack.getTransform(), objectStack.getTransform());
+    const worldBefore = stack.getTransform();
+    const localBefore = stack.matrix.getMatrix(stack.curLocalM);
+    stack.applyTransform(5, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0);
+    assertNumbersClose(stack.matrix.getMatrix(0), [0, 2, -3, 0, 97, 48]);
+    assertNumbersClose(stack.getTransform(), worldBefore);
+    assertNumbersClose(stack.matrix.getMatrix(stack.curLocalM), localBefore);
+});
+
+test("MatrixStack.applyTransform can update explicit cached matrix targets", () => {
+    const stack = createStack();
+    const world = stack.matrix.alloc();
+    const local = stack.matrix.alloc();
+    stack.matrix.translate(world, 10, 20);
+    stack.applyTransform(5, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, undefined, world, local);
+    assertPointClose(stack.matrix.getPosition(world), { x: 15, y: 26 });
+    assertPointClose(stack.matrix.getPosition(local), { x: 5, y: 6 });
+    assertPointClose(stack.localToWorld(0, 0), { x: 0, y: 0 });
+    assertPointClose(stack.transformPoint(0, 0), { x: 0, y: 0 });
+});
 
 test("MatrixStack.save accepts a retained save state directly across frames", () => {
     const stack = createStack();

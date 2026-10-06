@@ -26,6 +26,7 @@ const NUM_ELEMENTS = 6;
  * Matrices are stored flat in a dynamic Float32Array to improve memory locality and cache performance.
  */
 export class MatrixStore {
+    private readonly transformValues = [1, 0, 0, 1, 0, 0];
     /** Number of matrix slots created, including released slots available for reuse. */
     public matrixCount: number = 0;
     /** The dynamic buffer used to hold matrix data. */
@@ -509,55 +510,52 @@ export class MatrixStore {
         d[o + 5] = ty;
     }
 
+    applyTransform(transform: ITransformOptions, width?: number, height?: number): number[];
+    /** Numeric results reuse an internal array; consume them before the next call. */
     applyTransform(
-        transform: ITransformOptions,
-        width: number = 0,
-        height: number = 0,
-    ) {
-        let x = transform.x ?? 0;
-        let y = transform.y ?? 0;
+        x: number, y: number,
+        scaleX?: number, scaleY?: number, rotation?: number,
+        originX?: number, originY?: number,
+        width?: number, height?: number, offsetX?: number, offsetY?: number,
+    ): number[];
+    applyTransform(
+        arg1: ITransformOptions | number, arg2: number = 0, arg3?: number,
+        scaleY: number = 1, rotation: number = 0,
+        originX: number = 0, originY: number = 0,
+        width: number = 0, height: number = 0,
+        offsetX: number = 0, offsetY: number = 0,
+    ): number[] {
+        let x: number, y: number;
+        let scaleX = arg3 ?? 1;
 
-        if (transform.position) {
-            x += transform.position.x;
-            y += transform.position.y;
+        if (typeof arg1 === "object") {
+            width = arg2 ?? 0;
+            height = arg3 ?? 0;
+
+            const option = arg1
+            x = (option.x ?? 0) + (option.position?.x ?? 0);
+            y = (option.y ?? 0) + (option.position?.y ?? 0);
+            
+            const scale = option.scale;
+
+            scaleX = typeof scale === "number" ? scale : scale?.x ?? 1;
+            scaleY = typeof scale === "number" ? scale : scale?.y ?? 1;
+
+            rotation = option.rotation ?? 0;
+            const origin = option.origin;
+
+            originX = typeof origin === "number" ? origin : origin?.x ?? 0;
+            originY = typeof origin === "number" ? origin : origin?.y ?? 0;
+
+            offsetX = (option.offsetX ?? 0) + (option.offset?.x ?? 0);
+            offsetY = (option.offsetY ?? 0) + (option.offset?.y ?? 0);
+        } else {
+            x = arg1;
+            y = arg2;
         }
 
-        let scaleX = 1;
-        let scaleY = 1;
-
-        const scale = transform.scale;
-
-        if (scale !== undefined) {
-            if (typeof scale === "number") {
-                scaleX = scale;
-                scaleY = scale;
-            } else {
-                scaleX = scale.x;
-                scaleY = scale.y;
-            }
-        }
-
-        const rotation = transform.rotation ?? 0;
-
-        let offsetX = transform.offsetX ?? 0;
-        let offsetY = transform.offsetY ?? 0;
-
-        if (transform.offset) {
-            offsetX += transform.offset.x;
-            offsetY += transform.offset.y;
-        }
-
-        const origin = transform.origin;
-
-        if (origin !== undefined) {
-            if (typeof origin === "number") {
-                offsetX -= origin * width;
-                offsetY -= origin * height;
-            } else {
-                offsetX -= origin.x * width;
-                offsetY -= origin.y * height;
-            }
-        }
+        offsetX -= originX * width;
+        offsetY -= originY * height;
 
         const cos = rotation ? Math.cos(rotation) : 1;
         const sin = rotation ? Math.sin(rotation) : 0;
@@ -575,14 +573,10 @@ export class MatrixStore {
         const tx = x + a * offsetX + c * offsetY;
         const ty = y + b * offsetX + d * offsetY;
 
-        return [
-            a,
-            b,
-            c,
-            d,
-            tx,
-            ty
-        ]
+        const values = this.transformValues;
+        values[0] = a; values[1] = b; values[2] = c;
+        values[3] = d; values[4] = tx; values[5] = ty;
+        return typeof arg1 === "number" ? values : values.slice();
     }
 }
 
@@ -854,13 +848,37 @@ export class MatrixStack {
     }
 
     applyTransform(
-        transform: ITransformOptions,
-        width: number = 0,
-        height: number = 0,
+        transform: ITransformOptions, width?: number, height?: number,
+        customMatrix?: number, worldMatrix?: number, localMatrix?: number,
+    ): void;
+    applyTransform(
+        x: number, y: number,
+        scaleX?: number, scaleY?: number, rotation?: number,
+        originX?: number, originY?: number,
+        width?: number, height?: number, offsetX?: number, offsetY?: number,
+        customMatrix?: number, worldMatrix?: number, localMatrix?: number,
+    ): void;
+    applyTransform(
+        arg1: ITransformOptions | number, arg2: number = 0,
+        arg3?: number, arg4?: number, arg5?: number, arg6?: number,
+        originY: number = 0, width: number = 0, height: number = 0,
+        offsetX: number = 0, offsetY: number = 0,
         customMatrix?: number,
-        worldMatrix: number=this.curWorldM,
-        localMatrix: number=this.curLocalM
-    ) {
+        worldMatrix: number = this.curWorldM, localMatrix: number = this.curLocalM,
+    ): void {
+        let values: number[];
+
+        if (typeof arg1 === "object") {
+            values = this.matrix.applyTransform(arg1, arg2, arg3);
+            customMatrix = arg4;
+            worldMatrix = arg5 ?? this.curWorldM;
+            localMatrix = arg6 ?? this.curLocalM;
+        } else {
+            values = this.matrix.applyTransform(
+                arg1, arg2, arg3, arg4, arg5, arg6, originY, width, height, offsetX, offsetY,
+            );
+        }
+
         const [
             a,
             b,
@@ -868,42 +886,13 @@ export class MatrixStack {
             d,
             tx,
             ty
-        ] = this.matrix.applyTransform(transform,width,height)
+        ] = values;
 
-        if (customMatrix != undefined) {
-            // 不修改matrix stack
-            this.matrix.multiplyAffine(
-                worldMatrix,
-                customMatrix,
-                a,
-                b,
-                c,
-                d,
-                tx,
-                ty
-            )
+        if (customMatrix !== undefined) {
+            this.matrix.multiplyAffine(worldMatrix, customMatrix, a, b, c, d, tx, ty);
         } else {
-            // localMatrix = localMatrix * localTransform
-            this.matrix.multiplyAffineInPlace(
-                localMatrix,
-                a,
-                b,
-                c,
-                d,
-                tx,
-                ty
-            );
-
-            // worldMatrix = worldMatrix * localTransform
-            this.matrix.multiplyAffineInPlace(
-                worldMatrix,
-                a,
-                b,
-                c,
-                d,
-                tx,
-                ty
-            );
+            this.matrix.multiplyAffineInPlace(localMatrix, a, b, c, d, tx, ty);
+            this.matrix.multiplyAffineInPlace(worldMatrix, a, b, c, d, tx, ty);
         }
     }
 }
