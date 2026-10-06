@@ -129,7 +129,49 @@ rapid.drawSprite({
 rapid.flush();
 ```
 
-`MatrixStack` is immediate-mode: rebuild transform hierarchies each frame. For retained scene graphs, keep transforms in your own game objects and feed them into the stack while traversing the scene.
+## Cache MatrixStack Transforms
+
+Use `retainMatrix()` to keep a matrix from the current stack across `rapid.clear()` / `stack.reset()`. It returns the supplied matrix ID or save state. Pass cached IDs to `save(world, local)` to reuse them directly:
+
+```ts
+const stack = rapid.matrixStack;
+
+// Calculate and retain the transform once.
+stack.save();
+stack.translate(100, 80);
+const world = stack.retainMatrix(stack.curWorldM);
+const local = stack.retainMatrix(stack.curLocalM);
+stack.restore();
+
+function drawFrame() {
+  rapid.clear();
+  stack.save(world, local);
+  rapid.drawSprite({ texture });
+  stack.restore();
+  rapid.flush();
+}
+```
+
+Alternatively, `const cached = stack.retainMatrix(stack.save())` retains both matrices; reuse them with `stack.save(cached.world, cached.local)`.
+
+`save()` accepts either or both IDs:
+
+```ts
+stack.save();                  // Identity local; world inherits the parent.
+stack.save(world, local);      // Use both IDs directly without allocating matrices.
+stack.save(world);             // Use world; create an identity local.
+stack.save(undefined, local);  // Use local; calculate world = parent world * local.
+```
+
+Matrices retained with `stack.retainMatrix()` or created with `rapid.matrix.alloc()` are managed by you. Release them when no longer needed:
+
+```ts
+rapid.matrix.free(world);
+rapid.matrix.free(local);
+
+const m = rapid.matrix.alloc();
+rapid.matrix.free(m);
+```
 
 With this flexible matrix stack, you can build your own architecture with minimal friction. It doesn't care how you organize your game logic. You can use ECS, scene graphs, components, or any hybrid approach you prefer.
 

@@ -617,20 +617,30 @@ export class MatrixStack {
     /**
      * Saves the current matrix state and pushes it onto the stack.
      * Equivalent to context.save().
+     * Provided matrix IDs are used directly and remain caller-owned; only matrices
+     * created by this call are queued for recycling by reset().
+     * @param matrixWorld Optional world matrix ID from this store; defaults to parent * local.
+     * @param matrixLocal Optional local matrix ID from this store; defaults to identity.
      * @returns Matrix IDs for the saved parent, local, and world transforms.
      */
-    save(): MatrixSaveState {
+    save(matrixWorld?: number, matrixLocal?: number): MatrixSaveState {
         this.stack.push(this.curLocalM)
         this.stack.push(this.curWorldM)
         const parentWorldM = this.curWorldM;
 
-        this.curLocalM = this.matrix.alloc(); // localM
-        this.curWorldM = this.matrix.allocDirty(); // worldM
+        this.curLocalM = matrixLocal ?? this.matrix.alloc(); // localM
+        this.curWorldM = matrixWorld ?? this.matrix.allocDirty(); // worldM
 
-        this.matrix.copy(this.curWorldM, parentWorldM);
+        if (matrixWorld === undefined) {
+            if (matrixLocal === undefined) {
+                this.matrix.copy(this.curWorldM, parentWorldM);
+            } else {
+                this.matrix.multiplyOut(this.curWorldM, parentWorldM, this.curLocalM);
+            }
+        }
 
-        this.currStack.push(this.curLocalM)
-        this.currStack.push(this.curWorldM)
+        if (matrixLocal === undefined) this.currStack.push(this.curLocalM)
+        if (matrixWorld === undefined) this.currStack.push(this.curWorldM)
 
         return { parent:parentWorldM, world: this.curWorldM, local: this.curLocalM }
     }
@@ -655,7 +665,7 @@ export class MatrixStack {
     }
 
     /**
-     * Removes a matrix from the current and previous frame recycle queues so
+     * Removes a matrix from the frame recycle queue so
      * it remains valid across `reset()` calls.
      *
      * Passing a `MatrixSaveState` retains its `local` and `world` matrices;
@@ -663,8 +673,9 @@ export class MatrixStack {
      * Retained matrices must eventually be released with `matrix.free()`.
      *
      * @param matrix A matrix ID or the state returned by `save()`.
+     * @returns The supplied ID or state, preserving its input type.
      */
-    retainMatrix(matrix: number | MatrixSaveState) {
+    retainMatrix<T extends number | MatrixSaveState>(matrix: T): T {
         const matrixIds = new Set(
             typeof matrix === "number"
                 ? [matrix]
@@ -680,6 +691,8 @@ export class MatrixStack {
         }
 
         DynamicArrayBuffer.removeAtIndices(indices, [this.currStack]);
+
+        return matrix
     }
 
     /**
