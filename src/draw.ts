@@ -120,8 +120,9 @@ export const getColorUint32 = (premultipliedAlpha: boolean, color?: Color): numb
 
 const ATLAS_PADDING = 2
 export const drawSprite = (rapid: Rapid, options: ISpriteOptions): void => {
-    const matrix = withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight)
     const texture = options.texture;
+    texture.ensureUpdated();
+    const matrix = withOptionsTransform(rapid, options, options.texture.rawWidth, options.texture.rawHeight)
     if (!texture?.base || rapid.inCreateMask) {
         return;
     }

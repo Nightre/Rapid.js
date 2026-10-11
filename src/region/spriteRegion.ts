@@ -146,6 +146,8 @@ export class SpriteRegion extends Region {
         flipY: boolean = false,
         isRotated: boolean = false,
     ): void {
+        texture.ensureUpdated();
+
         const base = texture.base!;
 
         const rawWidth = texture.rawWidth;

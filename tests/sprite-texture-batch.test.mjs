@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 
 import { ArrayType, DynamicArrayBuffer } from "../src/buffer";
-import { MatrixStore } from "../src/matrix-engine";
+import { MatrixStack, MatrixStore } from "../src/matrix-engine";
 import { Rapid } from "../src/render";
 import { SpriteRegion } from "../src/region/spriteRegion";
+import { TextTexture, Texture } from "../src/texture";
+import { drawSprite } from "../src/draw";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {
@@ -37,7 +39,7 @@ class TestSpriteRegion extends SpriteRegion {
     }
 }
 
-const makeTexture = (glTexture) => ({
+const makeTexture = (glTexture) => Object.assign(new Texture(), {
     base: { width: 16, height: 16 },
     glTexture,
     rawWidth: 16,
@@ -74,8 +76,12 @@ const createHarness = () => {
         currentRegion: null,
         flush: Rapid.prototype.flush,
         enterRegion: Rapid.prototype.enterRegion,
+        getColorUint32: () => 0xFFFFFFFF,
     };
+    rapid.matrixStack = new MatrixStack(rapid);
+    rapid.matrix = rapid.matrixStack.matrix;
     const spriteRegion = new TestSpriteRegion(rapid);
+    rapid.spriteRegion = spriteRegion;
 
     const drawTextures = (textures) => {
         rapid.enterRegion(spriteRegion);
@@ -105,6 +111,50 @@ test("SpriteRegion batches 16 different textures into one draw call", () => {
         instanceCount: 16,
     }]);
     assert.deepEqual(harness.boundTextures, textures);
+});
+
+const makeDirtyTexture = () => {
+    let updates = 0;
+    const texture = Object.assign(makeTexture({}), {
+        dirty: true,
+        ensureUpdated: TextTexture.prototype.ensureUpdated,
+        update() {
+            updates++;
+            this.rawWidth = 64;
+            this.rawHeight = 32;
+            this.offsetX = 2;
+            this.offsetY = 3;
+            this.dirty = false;
+        },
+    });
+    return { texture, getUpdates: () => updates };
+};
+
+test("direct SpriteRegion drawing uses updated dimensions and offsets", () => {
+    const { rapid, spriteRegion } = createHarness();
+    const { texture, getUpdates } = makeDirtyTexture();
+    rapid.enterRegion(spriteRegion);
+
+    spriteRegion.drawSpriteAffine(texture, 1, 0, 0, 1, 0, 0);
+    const instance = spriteRegion.instanceBuffer.float32;
+    assert.equal(instance[0], 64);
+    assert.equal(instance[4], 32);
+    assert.equal(instance[2], 2);
+    assert.equal(instance[5], 3);
+    assert.equal(getUpdates(), 1);
+});
+
+test("drawSprite computes origin from updated dimensions without a second upload", () => {
+    const { rapid, spriteRegion } = createHarness();
+    const { texture, getUpdates } = makeDirtyTexture();
+
+    drawSprite(rapid, { texture, origin: 0.5 });
+    const instance = spriteRegion.instanceBuffer.float32;
+    assert.equal(instance[0], 64);
+    assert.equal(instance[4], 32);
+    assert.equal(instance[2], -30);
+    assert.equal(instance[5], -13);
+    assert.equal(getUpdates(), 1);
 });
 
 test("SpriteRegion splits 17 different textures at the 16-slot boundary", () => {

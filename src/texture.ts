@@ -311,6 +311,7 @@ class Texture {
     }
 
     public updateResolution(){}
+    public ensureUpdated(){}
 
     /**
      * Sets the base texture and increments its reference count.
@@ -679,7 +680,9 @@ class TextTexture extends Texture {
     private _text: string;
     private _style: ITextStyle;
     private options: ITextOptions
-    resolution: number = 1
+    private resolution: number = 1
+    private _scaleResolution: number = 1
+    private dirty = true
 
     constructor(render: Rapid, options?: ITextOptions) {
         super();
@@ -714,7 +717,7 @@ class TextTexture extends Texture {
     public set text(value: string) {
         if (this._text !== value) {
             this._text = value;
-            this.update();
+            this.dirty = true
         }
     }
 
@@ -722,12 +725,23 @@ class TextTexture extends Texture {
         return this._style;
     }
 
+    public set scaleResolution(scaleResolution: number){
+        if (scaleResolution != this._scaleResolution) {
+            this._scaleResolution = Math.max(0, scaleResolution)
+            this.dirty = true
+        }
+    }
+
+    public get scaleResolution(){
+        return this._scaleResolution
+    }
+
     /**
      * Set new style partially and update the texture
      */
     public set style(value: Partial<ITextStyle>) {
         this._style = { ...this._style, ...value };
-        this.update();
+        this.dirty = true
     }
 
     private updateOffset(width: number, padding: number) {
@@ -748,6 +762,12 @@ class TextTexture extends Texture {
 
         if (requiredResolution != this.resolution) {
             this.resolution = requiredResolution;
+            this.dirty = true
+        }
+    }
+
+    ensureUpdated(){
+        if (this.dirty) {
             this.update()
         }
     }
@@ -756,6 +776,7 @@ class TextTexture extends Texture {
      * Updates the internal canvas and uploads it to WebGL
      */
     public update(): void {
+        this.dirty = false
         const ctx = this.ctx;
         const style = this.style;
         const fontSize = style.fontSize!;
@@ -770,7 +791,7 @@ class TextTexture extends Texture {
         const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
         const getSizefont = `${fontWeight} ${measureFontSize}px ${fontFamily}`;
 
-        const resolution = this.resolution
+        const resolution = this.resolution * this._scaleResolution
 
         const baseline: CanvasTextBaseline = style.baseline ?? "top";
         const align = style.align ?? "left";
@@ -875,7 +896,7 @@ class TextTexture extends Texture {
         const alphabeticBaselineOffset =
             targetDescent - alphabeticDescent;
 
-        this.scale = 1 / this.resolution;
+        this.scale = 1 / resolution;
         this.offsetX = -startX
         this.offsetY = (-padding - topAscent + alphabeticBaselineOffset);
 

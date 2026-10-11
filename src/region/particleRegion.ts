@@ -91,11 +91,12 @@ export class ParticleRegion extends SpriteRegion {
         reverseOrder: boolean = false,
         customMatrix?: number
     ): void {
+        texture.ensureUpdated();
+
         if (!texture.glTexture || count <= 0) return;
         if (this.texture && texture !== this.texture) {
             this.flush();
         }
-
         const uniScaleX = typeof scaleX == "number"
         const uniScaleY = typeof scaleY == "number"
         const uniRotation = typeof rotation == "number"

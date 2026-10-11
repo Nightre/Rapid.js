@@ -4,6 +4,7 @@ import { test } from "vitest";
 import { ArrayType, DynamicArrayBuffer } from "../src/buffer";
 import { ParticleEmitter } from "../src/extensions/particle";
 import { ParticleRegion } from "../src/region/particleRegion";
+import { Texture } from "../src/texture";
 
 class CpuInstanceBuffer extends DynamicArrayBuffer {
     constructor() {
@@ -60,7 +61,7 @@ const createParticleRegion = () => new TestParticleRegion({
     projection: new Float32Array(16),
 });
 
-const atlasTexture = {
+const atlasTexture = Object.assign(new Texture(), {
     glTexture: {},
     updateResolution() {},
     rawWidth: 64,
@@ -69,7 +70,7 @@ const atlasTexture = {
     uvY: 0.125,
     uvW: 0.375,
     uvH: 0.25,
-};
+});
 
 test("ParticleEmitter removes expired particles and keeps its buffers aligned", () => {
     const rapid = { premultipliedAlpha: false };

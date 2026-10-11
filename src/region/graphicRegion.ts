@@ -105,6 +105,7 @@ export class GraphicRegion extends Region {
         this.texture = texture;
 
         if (this.texture?.glTexture) {
+            this.texture.ensureUpdated();
             // It does not rely on the region to set the texture;
             // it merely occupies a texture unit to prevent the custom shader from overwriting it
             this.useTexture(this.texture.glTexture, 0, 0)
